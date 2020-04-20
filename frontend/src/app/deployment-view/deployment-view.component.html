@@ -1,0 +1,28 @@
+<div class="container">
+  <mat-card>
+  <mat-card-title>
+    Deploy configuration {{configuration.name}}
+    </mat-card-title>
+    
+    <form class="create-deployment-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
+      
+     <mat-form-field class="full-width">
+        <mat-label>Batch size for training</mat-label>
+        <input  matInput required type="number" placeholder="10" name="batch" id="batch"  #nameRef="ngModel" [ngModel]="deployment.batch">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+      <mat-label>Training configuration</mat-label>
+        <input matInput required placeholder="epochs=5, steps_per_epoch=1000" pattern="^[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_][ ]*(,[ ]*[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_]*[ ]*)*$" name="kwargs_fit" [ngModel]="deployment.kwargs_fit">
+      </mat-form-field>
+
+      <div class="row-buttons">
+        <span class="spacer"></span>
+        <a (click)="back()" class="form-btn" mat-button>Go Back</a>
+        <button type="submit" class="form-btn" *ngIf="valid" [disabled]="form.invalid" mat-raised-button color="accent">
+            Deploy
+        </button>
+      </div>
+    </form>    
+  </mat-card>
+</div>

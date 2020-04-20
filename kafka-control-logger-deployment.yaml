@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: kafka-control-logger
+  name: kafka-control-logger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-control-logger
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kafka-control-logger
+      name: kafka-control-logger
+    spec:
+      containers:
+      - image: localhost:5000/kafka_control_logger
+        name: kafka-control-logger
+        imagePullPolicy: Never
+        env:
+        - name: BOOTSTRAP_SERVERS
+          value: kafka-cluster:9092
+        - name: CONTROL_TOPIC
+          value: control
+        - name: BACKEND
+          value: backend:8000

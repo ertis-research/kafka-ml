@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-backend
+  template:
+    metadata:
+      labels:
+        name: pod-backend
+      name: backend
+    spec:
+      containers:
+      - image: localhost:5000/backend
+        name: backend
+        ports:
+        - containerPort: 8000
+        imagePullPolicy: Never
+        env:
+        - name: BOOTSTRAP_SERVERS
+          value: kafka-cluster:9092
+        - name: CONTROL_TOPIC
+          value: control
+        - name: TRAINING_MODEL_IMAGE
+          value: localhost:5000/training

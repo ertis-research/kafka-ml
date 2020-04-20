@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="header">
+      <h1>Configurations</h1>
+      <span class="spacer"></span>
+      <a mat-fab color="accent" title="Add a configuration" routerLink="/configuration-create/">
+        <mat-icon aria-label="add">add</mat-icon>
+      </a>
+      <br>
+    </div>
+      <div class="filter-input">
+        <mat-form-field >
+          <input matInput [(ngModel)]="filtered_data"  placeholder="Filter">
+        </mat-form-field>
+      </div>
+  <mat-grid-list cols="2">
+      <mat-card class="dashboard-card" *ngFor="let configuration of configurations | datafilter : filtered_data" >
+        <mat-card-header>
+          <mat-card-title>
+           <h3>{{configuration.name}}</h3> <h6>{{configuration.description}}</h6>
+            <button mat-icon-button class="more-button" [matMenuTriggerFor]="menu" aria-label="Toggle menu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" xPosition="before">
+              <button mat-menu-item routerLink="/configuration/{{configuration.id}}/"><mat-icon>visibility</mat-icon><span class="nav-caption">View</span></button>
+              <button mat-menu-item  routerLink="/deploy/{{configuration.id}}/"><mat-icon>play_arrow</mat-icon><span class="nav-caption">Deploy</span></button>
+              <button mat-menu-item routerLink="/deployments/{{configuration.id}}/"><mat-icon>launch</mat-icon><span class="nav-caption">Deployments</span></button>
+              <button mat-menu-item (click)="confirm(configuration.id)" ><mat-icon>delete</mat-icon><span class="nav-caption">Remove</span></button>
+            </mat-menu>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">          
+          <h3> ML Models:</h3>
+          <div class="column" *ngFor="let model of configuration.ml_models">
+           <a mat-raised-button title="View/Edit Model {{model.id}}" routerLink="/model/{{model.id}}/">{{model.name}}</a>
+          </div>
+          <br>
+        <h3> Deployments:</h3>
+        <div class="column" *ngFor="let deployment of configuration.deployments">
+           <a [ngClass]="{'deployed': deployment.status=='deployed', 'created': deployment.status=='created',  'failed': deployment.status=='failed', 'finished': deployment.status=='finished'}" mat-raised-button 
+           title="View Deployment {{deployment.time}}" routerLink="/deployment/{{deployment.id}}/">{{deployment.time}}</a>        
+        </div>
+        <br>
+        </mat-card-content>
+      </mat-card>
+  </mat-grid-list>
+</div>

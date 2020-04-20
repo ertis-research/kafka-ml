@@ -1,0 +1,66 @@
+<div class="container">
+    <div class="header">
+      <h1>Models</h1>
+      <span class="spacer"></span>
+      <a mat-fab color="accent" title="Add a model"  routerLink="/model-create">
+        <mat-icon aria-label="add">add</mat-icon>
+      </a>
+    </div>
+
+    <div class="table-container mat-elevation-z2">
+      <div class="table-header">
+        <mat-form-field>
+          <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+        </mat-form-field>
+      </div>
+      <mat-table [dataSource]="dataSource">
+
+        <ng-container matColumnDef="id">
+          <mat-header-cell *matHeaderCellDef> ID </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.id}}">{{ element.id}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.name}}">{{ element.name}} </mat-cell>
+        </ng-container>
+    
+        <ng-container matColumnDef="description">
+          <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.description}}"> {{element.description}} </mat-cell>
+        </ng-container>
+    
+        <ng-container matColumnDef="code">
+          <mat-header-cell *matHeaderCellDef> Code </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.code}}"> {{((element.code | slice:0:20) + " ...")}}   </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="imports">
+          <mat-header-cell *matHeaderCellDef> Imports </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.imports}}"> {{ element.imports | slice:0:20}} </mat-cell>
+        </ng-container>
+
+         <ng-container matColumnDef="view">
+          <mat-header-cell *matHeaderCellDef > View </mat-header-cell>
+          <mat-cell *matCellDef="let element">            
+            <a mat-icon-button title="View/edit model" routerLink="/model/{{ element.id }}">
+              <mat-icon color="primary">visibility</mat-icon>
+            </a>
+          </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="delete">
+          <mat-header-cell *matHeaderCellDef> Delete </mat-header-cell>
+          <mat-cell *matCellDef="let element">            
+            <button mat-icon-button title="Delete model" (click)="confirm(element.id)">
+              <mat-icon color="primary">delete</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+    
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      </mat-table>
+
+    </div>
+</div>

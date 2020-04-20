@@ -1,0 +1,484 @@
+import json
+import os
+import sys
+import logging
+import copy
+import traceback
+
+import tensorflow as tf
+from tensorflow import keras
+
+from django.http import HttpResponse
+from django.views import View
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+
+from rest_framework import status
+from rest_framework import generics
+
+from kubernetes import client, config
+
+from automl.serializers import MLModelSerializer, ConfigurationSerializer, DeploymentSerializer, DatasourceSerializer
+from automl.serializers import TrainingResultSerializer, SimpleResultSerializer, DeployDeploymentSerializer
+
+from automl.models import MLModel, Deployment, Configuration, TraningResult, Datasource
+
+from kafka import KafkaProducer
+
+def format_ml_code(code):
+    """Checks if the ML code starts with the string 'model='. Otherwise, it add the string
+        Args:
+            code (str): ML code to check
+        Returns:
+            str: code formatted
+    """
+    if not code.replace(" ", "").startswith('model='):
+        code+='model='
+    return code
+
+def exec_model(imports_code, model_code):
+    """Runs the ML code and returns the generated model
+        Args:
+            imports_code (str): Imports before the code 
+            model_code (str): ML code to run
+        Returns:
+            model: generated model from the code
+    """
+
+    if imports_code is not None and imports_code!='':
+        """Checks if there is any import to be executed before the code"""
+        exec (imports_code, None, globals())
+
+    ml_code=format_ml_code(model_code)   
+    exec (ml_code, None, globals())
+    """Runs the ML code"""
+
+    return model
+
+def parse_kwargs_fit(kwargs_fit):
+    """Converts kwargs_fit to a dictionary string
+            kwargs_fit (str): Arguments for training.
+            Example:
+                epochs=5, steps_per_epoch=1000
+        Returns:
+            str: kwargs_fit formatted as string JSON
+    """
+    dic = {}
+    kwargs_fit=kwargs_fit.replace(" ", "")
+    for l in kwargs_fit.split(","):
+        pair=l.split('=')
+        dic[pair[0]]=int(pair[1])
+    
+    return json.dumps(dic)
+
+class ModelList(generics.ListCreateAPIView):
+    """View to get the list of models and create a new model
+        
+        URL: /models
+    """
+
+    queryset = MLModel.objects.all()
+    serializer_class = MLModelSerializer
+
+    def post(self, request, format=None):
+        """ Expects a JSON in the request body with the information to create a new model.
+
+            Args JSON:
+                name (str): Name of the model
+                imports (str): Imports required to compile the model
+                code (str): Code (formatted) of the model to be compiled
+
+                Example:
+                {   
+                    "name":"ML model",
+                    "imports":"import tensorflow as ta",
+                    "code":"model = ta.keras.Sequential([\n      
+                        ta.keras.layers.Flatten(input_shape=(28, 28)),\n      
+                        ta.keras.layers.Dense(128, activation=tf.nn.relu),\n      
+                        ta.keras.layers.Dense(10, activation=tf.nn.softmax)\n])
+                        \nmodel.compile(optimizer='adam',\n    
+                        loss='sparse_categorical_crossentropy',\n    
+                        metrics=['accuracy'])"
+                }
+            Returns:
+                HTTP_201_CREATED: if the model has been created correctly
+                HTTP_400_BAD_REQUEST: if there has been any error: code not valid, saving the model, etc.
+        """
+        try:
+            data = json.loads(request.body)
+            logging.info("Data code received %s", data['code'])
+            
+            imports_code = '' if 'imports' not in data else data['imports']
+            exec_model(imports_code, data['code'])
+            model.summary()
+            """Prints the information of the model"""
+
+            serializer = MLModelSerializer(data=data)
+            if serializer.is_valid():
+                obj=serializer.save()
+                return HttpResponse(status=status.HTTP_201_CREATED)
+            return HttpResponse("Information not valid", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse('Model not valid', status=status.HTTP_400_BAD_REQUEST)
+
+class ModelID(generics.RetrieveUpdateDestroyAPIView):
+    """View to get the information, update and delete a unique model. The model PK has be passed in the URL.
+        
+        URL: /models/{:model_pk}
+    """
+
+    queryset = MLModel.objects.all()
+    serializer_class = MLModelSerializer
+
+    def put(self, request, pk, format=None):
+        """Updates the model corresponding with PK received
+            Args:
+                pk (int): Primary key of the model (in the URL)
+                
+            Returns:
+                HTTP_200_OK: if the model has been removed
+                HTTP_400_BAD_REQUEST: if there has been any error deleting the model.
+        """
+        try:
+            if MLModel.objects.filter(pk=pk).exists():
+                data = json.loads(request.body)
+                model_obj = MLModel.objects.get(pk=pk)
+                serializer = MLModelSerializer(model_obj, data=data)
+                if serializer.is_valid():
+                    if data['code']!= model_obj.code:
+                        try:
+                            imports_code = '' if 'imports' not in data else data['imports']
+                            exec_model(imports_code, data['code'])
+                            """Execution of ML Mode"""
+                        except Exception as e:
+                            return HttpResponse('Model not valid: '+str(e), status=status.HTTP_400_BAD_REQUEST)
+                    serializer.save()
+                    return HttpResponse(status=status.HTTP_200_OK)
+                else:
+                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+class ConfigurationList(generics.ListCreateAPIView):
+    """View to get the list of configurations and create a new configuration
+        
+        URL: /configurations
+    """
+    queryset = Configuration.objects.all()
+    serializer_class = ConfigurationSerializer
+
+class ConfigurationID(generics.RetrieveUpdateDestroyAPIView):
+    """View to get the information, update and delete a unique configuration. The configuration PK has be passed in the URL.
+        
+        URL: /configurations/{:configuration_pk}
+    """
+    queryset = Configuration.objects.all()
+    serializer_class = ConfigurationSerializer
+
+class DeploymentList(generics.ListCreateAPIView):
+    """View to get the list of deployments and create a new deployment in Kubernetes
+        
+        URL: /deployments
+    """
+    queryset = Deployment.objects.all()
+    serializer_class = DeploymentSerializer
+
+    def post(self, request, format=None):
+        """ Expects a JSON in the request body with the information to create a new deployment
+
+            Args JSON:
+                batch (int): Name of the model
+                kwargs_fit (str): Arguments required for training the models
+                configuration (int): PK of the Configuration associated with the deployment
+
+                Example:
+                {   
+                    "batch":"10,
+                    "kwargs_fit":"epochs=5, steps_per_epoch=1000",
+                    "configuration": 1
+                }
+            Returns:
+                HTTP_201_CREATED: if the deployment has been created correctly and deployed in Kubernetes
+                HTTP_400_BAD_REQUEST: if there has been any error.
+        """
+        try:
+            data = json.loads(request.body)
+            serializer = DeployDeploymentSerializer(data=data)
+            if serializer.is_valid():
+                deployment = serializer.save()
+                
+                """ TODO: KUBERNETES code goes here"""
+                config.load_incluster_config() # To run inside the container
+                #config.load_kube_config() # To run externally
+                api_instance = client.CoreV1Api()
+                
+                for result in TraningResult.objects.filter(deployment=deployment):
+                    pod_manifest = {
+                        'apiVersion': 'v1',
+                        'kind': 'Pod',
+                        'metadata': {
+                            'name': 'model-training-'+str(result.id)
+                        },
+                        'spec': {
+                            'containers': [{
+                                'image': settings.TRAINING_MODEL_IMAGE, 
+                                'name': 'training',
+                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                        {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
+                                        {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                        {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                        {'name': 'BATCH', 'value': str(deployment.batch)},
+                                        {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)}],
+                            }],
+                            'imagePullPolicy': 'Never', # Remove this when the image is DockerHub
+                            'restartPolicy': 'OnFailure',
+                            'ttlSecondsAfterFinished' : '60',
+                        }
+                    }
+                    resp = api_instance.create_namespaced_pod(body=pod_manifest, namespace='default')
+                
+                return HttpResponse(status=status.HTTP_201_CREATED)
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+class DeploymentsConfigurationID(generics.RetrieveAPIView):
+    """View to get the list of deployments of a configuration. The configuration PK has be passed in the URL.
+        
+        URL: /deployments/{:configuration_pk}
+    """
+    def get(self, request, pk, format=None):
+        """Gets the list of deployments of a configuration"""
+
+        if Configuration.objects.filter(pk=pk).exists():
+            configuration= Configuration.objects.get(pk=pk)
+            deployments = Deployment.objects.filter(configuration=configuration)
+            serializer = DeploymentSerializer(deployments, many=True)
+            return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
+        else:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+class TrainingResultList(generics.ListAPIView):
+    """View to get the list of results
+        
+        URL: /results
+    """
+    queryset = TraningResult.objects.all()
+    serializer_class = TrainingResultSerializer
+
+class DeploymentResultID(generics.RetrieveUpdateDestroyAPIView):
+    """View to get the list of results of a deployment.
+        
+        URL: GET /deployments/results/{:id_deployment} to get the list of results of a deployment
+    """
+
+    def get(self, request, pk, format=None):
+        """Gets the list of deployments of a configuration"""
+
+        if Deployment.objects.filter(pk=pk).exists():
+            deployment= Deployment.objects.get(pk=pk)
+            results = TraningResult.objects.filter(deployment=deployment)
+            serializer = TrainingResultSerializer(results, many=True)
+            return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
+        else:
+            return HttpResponse('Deployment not found', status=status.HTTP_400_BAD_REQUEST)
+        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+class DownloadTrainedModel(generics.RetrieveAPIView):
+    """View to download a trained model
+        
+        URL: GET /results/model/{:id_result} to get the model file trained.
+    """
+    def get(self, request, pk, format=None):
+        try:
+            result= TraningResult.objects.get(pk=pk)  
+            filename = path = os.path.join(settings.MEDIA_ROOT, result.trained_model.name)
+            """Obtains the trained model filename"""
+
+            with open(filename, 'rb') as f:
+                file_data = f.read()
+                response = HttpResponse(file_data, content_type='application/force-download')
+                response['Content-Disposition'] = 'attachment; filename="model.h5"'
+                return response
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+class TraningResultID(generics.RetrieveUpdateDestroyAPIView):
+    """View to get and upload the information of a results. 
+        
+        URL: GET /results/{:id_result} to get the model file for training.
+        URL: POST /results/{:id_result} to upload the information of a result.
+    """
+
+    def get(self, request, pk, format=None):
+        """Gets the model file for training"""
+
+        try:
+            result= TraningResult.objects.get(pk=pk)
+            filename = os.path.join(settings.MEDIA_ROOT, settings.MODELS_DIR)+str(result.model.id)+'.h5'
+            """Obtains the model filename"""
+
+            model = exec_model(result.model.imports, result.model.code)
+            """Executes the model code"""
+            
+            model.save(filename)
+            """Saves the model temporally"""
+
+            with open(filename, 'rb') as f:
+                file_data = f.read()
+                f.close()
+                response = HttpResponse(file_data, content_type='application/model')
+                response['Content-Disposition'] = 'attachment; filename="model.h5"'
+                result.status = TraningResult.STATUS.deployed
+                result.save()
+                if os.path.exists(filename):
+                    os.remove(filename)
+                    """Removes the temporally file created"""
+                return response
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, pk, format=None):
+        """ Expects a JSON in the request body with the information to upload the information of a result. 
+            The result PK has to be in the URL.
+
+            Args:
+                pk (int): Primary key of the result (in the URL)
+                trained_model (File): file with the trained model (body)
+                json (str): Information to update the result (in the body).
+                    train_loss_hist (str): List of trained losses
+                    train_acc_hist (str): List of trained accuracies
+                    val_loss (str): Loss in validation
+                    val_acc (str): Accuracy in validation
+                    
+                    Request example:
+                        FILES: trained_model: '...'   
+                        Body:
+                        {
+                            'train_loss_hist': '0.12, 0.01',
+                            'train_acc_hist':  '0.92, 0.95',
+                            'val_loss': 0.12,
+                            'val_acc': 0.95,
+                        }
+            Returns:
+                HTTP_200_OK: if the result has been updated
+                HTTP_400_BAD_REQUEST: if there has been any error updating the result
+        """
+        if request.FILES['trained_model'] and TraningResult.objects.filter(pk=pk).exists():
+            try:
+                print (request.data)
+                data = json.loads(request.data['data'])
+                obj = TraningResult.objects.get(id=pk)
+                serializer = SimpleResultSerializer(obj, data = data, partial=True)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                else:
+                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+                trained_model = request.FILES['trained_model']
+                fs = FileSystemStorage()
+                path = os.path.join(settings.MEDIA_ROOT, settings.TRAINED_MODELS_DIR)
+                if os.path.exists(path+str(obj.id)+'.h5'):
+                    os.remove(path+str(obj.id)+'.h5')
+                
+                filename = fs.save(path+str(obj.id)+'.h5', trained_model)
+                obj.trained_model.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.h5')
+                obj.status = TraningResult.STATUS.finished
+                obj.save()
+                return HttpResponse(status=status.HTTP_200_OK)
+            except Exception as e:
+                return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+        return HttpResponse('File not found', status=status.HTTP_400_BAD_REQUEST)
+
+class DatasourceList(generics.ListCreateAPIView):
+    """View to get the list of datasources and create a new datasource
+        
+        URL: /datasources
+    """
+    queryset = Datasource.objects.all()
+    serializer_class = DatasourceSerializer
+
+
+class DatasourceToKafka(generics.CreateAPIView):
+    """View to create a new datasource and send it to kafka
+        
+        URL: /datasources/kafka
+    """
+    
+    def post(self, request, format=None):
+        """ Expects a JSON in the request body with the information to create a new datasource
+
+            Args JSON:
+                topic (str): Kafka topic where the data has been sent
+                input_format (str): Input format of the data
+                data_type (str): Type of the data
+                label_type (str): Type of the label
+                data_reshape (str): Reshape of the data. Optional
+                label_reshape (str): Reshape of the label. Optional
+                validation_rate (float): Validation rate.
+                total_msg (int): Total messages sent
+                description (str): Description of the dataset
+                time (str): Timemestamp when the dataset was sent
+                deployment (str): Deployment ID for the data
+
+                Example:
+                {   
+                  'topic': 'automl:0:70000'
+                  'input_format': 'RAW',
+                  'data_type' : 'uint8',
+                  'label_type': 'uint8'
+                  'data_reshape' : '28 28',
+                  'label_reshape' : '',
+                  'validation_rate' : 0.1,
+                  'total_msg': 70000
+                  'description': 'Mnist dataset',
+                  'time': '2020-04-03T00:00:00Z',
+                  'deployment': '2',
+                }
+            Returns:
+                HTTP_201_CREATED: if the datasource has been sent correctly to Kafka and created
+                HTTP_400_BAD_REQUEST: if there has been any error: kafka, saving, etc.
+        """
+        try:
+            data = json.loads(request.body)
+            serializer = DatasourceSerializer(data=data)
+            deployment_id = int(data['deployment'])
+            if serializer.is_valid() and Deployment.objects.filter(pk=deployment_id).exists():
+                """Checks data received is valid and the deployment received exists in the system"""
+                
+                producer = KafkaProducer(bootstrap_servers=settings.BOOTSTRAP_SERVERS)
+                """Creates a Kafka Producer to send the message to the control topic"""
+                
+                kafka_data = copy.deepcopy(data)
+                del kafka_data['deployment']
+                del kafka_data['time']
+                """Deletes unused attributes"""
+                
+                kafka_data['configuration'] = json.loads(kafka_data['configuration'])
+
+                key = bytes([deployment_id])
+                data_bytes = json.dumps(kafka_data).encode('utf-8')
+
+                logging.info("Control message to be sent to kafka control topic %s", kafka_data)
+
+                producer.send(settings.CONTROL_TOPIC, key=key, value=data_bytes)
+                """Sends the data to Kafka"""
+                producer.flush()
+                """Waits until data is sent"""
+                producer.close()
+                """Closes the producer"""
+
+                return HttpResponse(status=status.HTTP_201_CREATED)
+            return HttpResponse('Deployment not valid', status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(str(e))
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)

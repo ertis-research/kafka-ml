@@ -1,0 +1,2 @@
+kafka-python==2.0.1
+avro-python3==1.9.2.1 

@@ -1,0 +1,39 @@
+<div class="container">
+  <mat-card>
+  <mat-card-title>
+  <div *ngIf="create">Create Configuration</div>
+  <div *ngIf="!create">Edit Configuration</div>
+    </mat-card-title>
+    
+    <form class="create-model-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
+      <mat-form-field class="full-width">
+        <input matInput autofocus required placeholder="Name" id="name"  #nameRef="ngModel" name="name" [ngModel]="configuration.name">
+      </mat-form-field>
+      
+      <p class="text-danger">
+		<span *ngIf="nameRef.invalid && (nameRef.dirty || nameRef.touched)">This field is required</span>&nbsp;
+	  </p>
+
+      <mat-form-field class="full-width">
+        <input matInput placeholder="Description" name="description" [ngModel]="configuration.description">
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>ML Models</mat-label>
+        
+        <mat-select [ngModel]="configuration.ml_models" required name="ml_models"  [compareWith]="compareModels" multiple>
+            <mat-option *ngFor="let model of models" [value]="model.id">ID{{model.id}}  {{model.name}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <div class="row-buttons">
+        <span class="spacer"></span>
+        <a (click)="back()" class="form-btn" mat-button>Go Back</a>
+        <button type="submit" *ngIf="valid" class="form-btn" [disabled]="form.invalid" mat-raised-button color="accent">
+          <div *ngIf="create">Create</div>
+          <div *ngIf="!create">Edit</div>
+        </button>
+      </div>
+    </form>    
+  </mat-card>
+</div>

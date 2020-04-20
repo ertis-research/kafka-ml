@@ -1,0 +1,101 @@
+.dashboard-card {
+  max-height: 300px; 
+  overflow-y: scroll;
+  margin-top: 20px;
+}
+.mat-grid-tile .mat-figure {
+  max-height: 300px;
+}
+.more-button {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+}
+
+.dashboard-card-content {
+  text-align: left;
+  margin: 1rem;
+}
+
+.header {
+  display: flex;
+  margin-bottom: 1.5rem;
+  padding: 0 0.4rem;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+h6{
+  font-weight:normal
+}
+
+.header h1{
+    display: inline;
+    padding-top: .6rem;
+    font-weight: 400;
+    font-size: 30px;
+  }
+  
+.mat-table {
+  overflow: auto;
+    width: 50%;
+    padding-bottom: 20px;
+}
+th.mat-header-cell{
+
+  height: 24px;
+  padding-top: 10px;
+}
+td.mat-cell, td.mat-footer-cell {
+
+  padding-top: 7px;
+  padding-bottom: 5px;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-style: solid;
+}
+
+.row {
+  display: flex;
+}
+
+.column {
+  flex: 50%;
+}
+
+.column .mat-raised-button{    
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.created{
+  background: grey;
+  color: white;
+  
+}
+
+.deployed{
+  background: #3F51B5;
+  color: white;
+}
+
+.failed{
+  background: rgb(233, 48, 48);
+  color: white;
+}
+
+.finished{
+  background: green;
+  color: white;
+}
+
+.filter-input {
+  min-height: 64px;
+  padding: 8px 24px 0;
+  margin-top: 20px;
+  background-color: #ededed;
+}
+
+.mat-form-field {
+  font-size: 14px;
+  width: 90%;
+}

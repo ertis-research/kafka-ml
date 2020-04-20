@@ -1,0 +1,17 @@
+
+<h2 mat-dialog-title>Send datasource to deployment</h2>
+
+<mat-dialog-content>
+    <p> Please, make sure that the timestamp of the datasource is less than KAFKA_LOG_RETENTION_DAYS. 
+    Otherwise, the datasource could have been deleted from Kafka </p>
+    <br>
+    <mat-form-field>
+        <input matInput required type="number"
+                placeholder="Deployment ID" [(ngModel)]="deployment">
+    </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Cancel</button>
+  <button mat-button class="mat-raised-button mat-primary" [disabled]="deployment==null" [mat-dialog-close]="deployment">Send</button>
+</mat-dialog-actions>

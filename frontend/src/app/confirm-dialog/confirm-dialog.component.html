@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Are you sure?</h2>
+
+<mat-dialog-content>
+  You will remove <strong>{{ data.title }}</strong>
+</mat-dialog-content>
+<br>
+<mat-dialog-actions align="center">  
+  <button mat-button mat-dialog-close>Cancel</button> 
+
+  <button mat-button class="mat-raised-button mat-primary" [mat-dialog-close]="true">Ok</button>
+</mat-dialog-actions>

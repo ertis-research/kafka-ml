@@ -1,0 +1,86 @@
+<div class="container">
+    <div class="header">
+      <h1>Results <a *ngIf="deploymentID!=null"> of Deployment {{deploymentID}}</a></h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="table-container mat-elevation-z2">
+      <div class="table-header">
+        <mat-form-field>
+          <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+        </mat-form-field>
+      </div>
+      <mat-table [dataSource]="dataSource">
+        <ng-container matColumnDef="model">
+          <mat-header-cell *matHeaderCellDef> Model </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{ element.model.name}}"> {{ element.model.name}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="train_loss_hist">
+          <mat-header-cell *matHeaderCellDef> Training loss </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.train_loss_hist}}"> {{ element.train_loss_hist}} </mat-cell>
+        </ng-container>
+    
+        <ng-container matColumnDef="train_acc_hist">
+          <mat-header-cell *matHeaderCellDef> Training accuracy </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.train_acc_hist}}"> {{element.train_acc_hist}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="val_loss">
+          <mat-header-cell *matHeaderCellDef> Validation loss </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.val_loss}}"> {{element.val_loss}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="val_acc">
+          <mat-header-cell *matHeaderCellDef> Validation accuracy </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.val_acc}}"> {{element.val_acc}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <mat-header-cell *matHeaderCellDef> Status</mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.status}}"> 
+          <mat-icon class="created"  *ngIf="element.status=='created'" >create</mat-icon>
+          <mat-icon class="deployed"  *ngIf="element.status=='deployed'" >input</mat-icon>
+          <mat-icon class="failed" *ngIf="element.status=='failed'" >stop</mat-icon>
+          <mat-icon class="finished" *ngIf="element.status=='finished'" >done</mat-icon>
+          </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="status_changed">
+          <mat-header-cell *matHeaderCellDef> Last status change</mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.status_changed}}"> {{element.status_changed}}  </mat-cell>
+        </ng-container>
+
+         <ng-container matColumnDef="view">
+          <mat-header-cell *matHeaderCellDef > View </mat-header-cell>
+          <mat-cell *matCellDef="let element">            
+            <a mat-icon-button title="View result" >
+              <mat-icon color="primary">visibility</mat-icon>
+            </a>
+          </mat-cell>
+        </ng-container>
+        
+        <ng-container matColumnDef="download">
+          <mat-header-cell *matHeaderCellDef > Download </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+           <button mat-icon-button *ngIf="element.status=='finished'" title="Download trained model" (click)="getTrainedModel(element.id)">
+              <mat-icon color="primary">archive</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="delete">
+          <mat-header-cell *matHeaderCellDef> Delete </mat-header-cell>
+          <mat-cell *matCellDef="let element">            
+            <button mat-icon-button title="remove" (click)="confirm(element.id)">
+              <mat-icon color="primary">delete</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+    
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      </mat-table>
+
+    </div>
+</div>

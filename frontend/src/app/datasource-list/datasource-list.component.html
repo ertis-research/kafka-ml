@@ -1,0 +1,71 @@
+<div class="container">
+    <div class="header">
+      <h1>Datasources received</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="table-container mat-elevation-z2">
+      <div class="table-header">
+        <mat-form-field>
+          <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+        </mat-form-field>
+      </div>
+      <mat-table [dataSource]="dataSource">
+         
+         <ng-container matColumnDef="description">
+          <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.description}}">{{ element.description}} </mat-cell>
+        </ng-container>
+
+         <ng-container matColumnDef="deployment">
+          <mat-header-cell *matHeaderCellDef> Deployment </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.deployment}}">{{ element.deployment}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="topic">
+          <mat-header-cell *matHeaderCellDef> Kafka topic </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.topic}}">{{ element.topic}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="input_format">
+          <mat-header-cell *matHeaderCellDef> Input format </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.input_format}}">{{ element.input_format}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="configuration">
+          <mat-header-cell *matHeaderCellDef> Configuration</mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.configuration}}">{{ element.configuration}} </mat-cell>
+        </ng-container>
+
+
+        <ng-container matColumnDef="validation_rate">
+          <mat-header-cell *matHeaderCellDef> Validation rate </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.validation_rate}}">{{ element.validation_rate}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="total_msg">
+          <mat-header-cell *matHeaderCellDef> Total msg </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.total_msg}}">{{ element.total_msg}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="time">
+          <mat-header-cell *matHeaderCellDef> Time </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.time}}">{{ element.time}} </mat-cell>
+        </ng-container>
+
+         <ng-container matColumnDef="deploy">
+          <mat-header-cell *matHeaderCellDef > Sent again </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <button mat-icon-button title="Sent again to another deployment" (click)="confirm(element)">
+              <mat-icon color="primary">input</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+
+    
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      </mat-table>
+
+    </div>
+</div>

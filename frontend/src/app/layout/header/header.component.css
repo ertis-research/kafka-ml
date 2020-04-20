@@ -1,0 +1,36 @@
+a {
+    text-decoration: none;
+    color: white;
+}
+ 
+a:hover, a:active{
+    color: lightgray;
+}
+.navigation-items{
+    list-style-type: none;
+    padding: 10px;
+    margin: 0;
+}
+
+@media screen and (max-width: 600px) {
+    .navigation-items {
+      display: none;
+    }
+  }
+
+.navigation-items li {
+    display: inline-block;
+}
+
+mat-toolbar{
+    border-radius: 3px;
+}
+
+li a {
+    text-align: center;
+    padding: 10px;
+  }
+
+  .mat-toolbar-row, .mat-toolbar-single-row {
+    height: 55px;
+}

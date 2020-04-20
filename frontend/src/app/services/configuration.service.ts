@@ -1,0 +1,41 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from  '@angular/common/http';
+
+import { environment } from '../environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+
+export class ConfigurationService {
+
+  baseUrl = environment.baseUrl;
+
+  constructor(private httpClient: HttpClient) { }
+
+    url = this.baseUrl + '/configurations/';
+    
+    getConfigurations(){
+      return this.httpClient.get<JSON[]>(this.url);
+    }
+    
+    createConfiguration(data: JSON){
+      return this.httpClient.post<JSON>(this.url, data)
+    }
+
+    getConfiguration(id: number){
+      const url = `${this.url}${id}`
+      return this.httpClient.get(url);
+    }
+
+    deleteConfiguration(id: number){
+      const url = `${this.url}${id}`
+      return this.httpClient.delete<JSON>(url);
+    }
+
+    editConfiguration(id: number, data: JSON){
+      const url = `${this.url}${id}`
+      return this.httpClient.put<JSON>(url, data);
+    }
+
+}
