@@ -1,6 +1,6 @@
 # Kafka-ML
 
-This project provides a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference to make predictions from data streams. The training and inference information in the ML models are fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
+This project provides a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference to make predictions from data streams. The training and inference datasets for the ML models are fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both machine learning experts and non-experts on ML/AI.
 
@@ -64,4 +64,4 @@ Currently, the project supports AMD64 architectures.
     ng serve
     ```
 
-8. Finally, you will be able to access the Web UI with this URL: http://localhost:4200/ 
+8. Finally, you will be able to access the Web UI: http://localhost:4200/ 
