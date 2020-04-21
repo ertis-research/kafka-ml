@@ -4,16 +4,19 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import tensorflow_io.kafka as kafka_io
+
+from kafka import KafkaConsumer
+
 import os
-import urllib
-from config import *
 import logging
 import sys
 import json
-from kafka import KafkaConsumer
 import requests
 import time
 import traceback
+
+from config import *
+from utils import *
 
 PRE_MODEL_PATH='pre_model.h5'
 '''Path of the received pre-model'''
@@ -45,110 +48,6 @@ def load_environment_vars():
   kwargs_fit = json.loads(os.environ.get('KWARGS_FIT').replace("'", '"'))
 
   return (bootstrap_servers, result_url, control_topic, deployment_id, batch, kwargs_fit)
-
-def download_pre_model(result_url):
-  """Downloads the pre-model from the URL received and saves it in the filesystem
-  Args:
-      result_url(str): URL of the pre-model 
-  """
-  finished = False
-  retry = 0
-  while not finished and retry < RETRIES:
-    try:
-      filedata = urllib.request.urlopen(result_url)
-      datatowrite = filedata.read()
-      with open(PRE_MODEL_PATH, 'wb') as f:
-          f.write(datatowrite)
-      finished = True
-      logging.info("Downloaded file model from server!")
-    except Exception as e:
-      retry +=1
-      logging.error("Error downloading the model file [%s]", str(e))
-      time.sleep(SLEEP_BETWEEN_REQUESTS)
-
-
-def string_to_tensorflow_type(out_type):
-  """Converts a string with the same name to a Tensorflow type.
-  Acceptable types are half, float, double, int32, uint16, uint8, 
-            int16, int8, int64, string, bool.
-  Args:
-      out_type (str): Output type to convert
-  Returns:
-    Tensorflow DType: Tensorflow DType of the intput
-  """
-
-  if out_type == 'half':
-    return tf.half
-  elif out_type == 'float':
-    return tf.float
-  elif out_type == 'double':
-    return tf.double
-  elif out_type == 'int64':
-    return tf.int64
-  elif out_type == 'int32':
-    return tf.int32
-  elif out_type == 'int16':
-    return tf.int16 
-  elif out_type == 'int8':
-    return tf.int8
-  elif out_type == 'uint16':
-    return tf.uint16 
-  elif out_type == 'uint8':
-    return tf.uint8 
-  elif out_type == 'string':
-    return tf.string
-  elif out_type == 'bool':
-    return tf.bool
-  else:
-    raise Exception('string_to_tensorflow_type: Unsupported type')
-
-def load_model():
-  """Returns the model saved previously in the filesystem.
-  
-  Returns:
-    Tensorflow model: tensorflow model loaded
-  """
-
-  model = keras.models.load_model(PRE_MODEL_PATH)
-  if DEBUG:
-    model.summary()
-    """Prints model architecture"""
-  return model
-
-def decode_raw(x, output_type, output_reshape):
-  """Decodes the raw data received from Kafka and reshapes it if needed.
-
-    Args:
-      x (raw): input data
-      output_type (tensorflow type): output type of the received data
-      reshape (array): reshape the tensorflow type (optional)
-    
-    Returns:
-      DType: raw data to tensorflow model loaded
-  """
-  res = tf.io.decode_raw(x, out_type=output_type)
-  res = tf.reshape(res, output_reshape)
-  return res
-
-def decode_input(x, y, output_type_x, reshape_x, output_type_y, reshape_y):
-  """Decodes the input data received from Kafka and reshapes it if needed.
-
-    Args:
-      x (bytes): train data
-      output_type_x (:obj:DType): output type of the train data
-      reshape_x (:obj:`list`): reshape the tensorflow train data (optional)
-      y (bytes): label data
-      out_type_y (:obj:DType): output type of the label data
-      reshape_y (:obj:`list`): reshape the tensorflow label data (optional)
-    
-    Returns:
-      tuple: tuple with the (train, label) data received
-  """
-
-  x = decode_raw(x, output_type_x, reshape_x)
-  x = tf.image.convert_image_dtype(x, tf.float32)
-  y = decode_raw(y, output_type_y, reshape_y)
-  return (x, y)
 
 def raw_kafka(boostrap_servers, kafka_topic, out_type_x, out_type_y, reshape_x, reshape_y, batch):
   """Obtains the data and labels for training from Kafka
@@ -194,10 +93,10 @@ if __name__ == '__main__':
     logging.info("Received environment information (bootstrap_servers, result_url, control_topic, deployment_id, batch, kwargs_fit ) ([%s], [%s], [%s], [%d], [%d], [%s])", 
               bootstrap_servers, result_url, control_topic, deployment_id, batch, str(kwargs_fit))
     
-    download_pre_model(result_url)
+    download_model(result_url, PRE_MODEL_PATH, RETRIES, SLEEP_BETWEEN_REQUESTS)
     """Downloads the model from the URL received and saves in the filesystem"""
     
-    model = load_model()
+    model = load_model(PRE_MODEL_PATH)
     """Loads the model from the filesystem to a Tensorflow model"""
     
     consumer = KafkaConsumer(control_topic, bootstrap_servers=bootstrap_servers, auto_offset_reset='earliest', enable_auto_commit=False)
