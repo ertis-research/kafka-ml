@@ -227,6 +227,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                 'name': 'training',
                                 'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
                                         {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
+                                        {'name': 'RESULT_ID', 'value': str(result.id)},
                                         {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                         {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
                                         {'name': 'BATCH', 'value': str(deployment.batch)},

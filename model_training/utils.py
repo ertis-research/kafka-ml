@@ -109,6 +109,6 @@ def decode_input(x, y, output_type_x, reshape_x, output_type_y, reshape_y):
   """
 
   x = decode_raw(x, output_type_x, reshape_x)
-  x = tf.image.convert_image_dtype(x, tf.float32)
+  #x = tf.image.convert_image_dtype(x, tf.float32)
   y = decode_raw(y, output_type_y, reshape_y)
   return (x, y)
