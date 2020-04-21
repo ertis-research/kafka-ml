@@ -46,17 +46,18 @@ export class ResultListComponent implements OnInit {
         this.results = data;
         this.dataSource.data = this.results;
       }, (err) => {
-        this.snackbar.open('Error connecting with the server'), {
+        this.snackbar.open('Error connecting with the server', '', {
           duration: 10000
-        }
+        });
       });
     }
   }
   ngOnInit(): void {
     this.refreshData();
+    /* Uncomment to enable automatic refresh
     this.interval = setInterval(() => {
       this.refreshData();
-    }, 5000);
+    }, 5000); */
   }
 
   ngOnDestroy(){
