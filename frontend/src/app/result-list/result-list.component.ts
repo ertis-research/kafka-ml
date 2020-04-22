@@ -61,7 +61,9 @@ export class ResultListComponent implements OnInit {
   }
 
   ngOnDestroy(){
+    /* Uncomment to enable automatic refresh
     clearInterval(this.interval);
+    */
   }
 
   applyFilter(value: string) {
