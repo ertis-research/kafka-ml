@@ -52,11 +52,11 @@
         </ng-container>
 
          <ng-container matColumnDef="view">
-          <mat-header-cell *matHeaderCellDef > View </mat-header-cell>
+          <mat-header-cell *matHeaderCellDef > Inference </mat-header-cell>
           <mat-cell *matCellDef="let element">            
-            <a mat-icon-button title="View result" >
-              <mat-icon color="primary">visibility</mat-icon>
-            </a>
+            <button mat-icon-button *ngIf="element.status=='finished'"  title="Deploy it for Inference" routerLink="/results/inference/{{element.id}}/">
+              <mat-icon color="primary">play_arrow</mat-icon>
+            </button>
           </mat-cell>
         </ng-container>
         

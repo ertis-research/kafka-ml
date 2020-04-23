@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from  '@angular/common/http';
 import { environment } from '../environment';
+import {Inference} from '../shared/inference.model'
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,16 @@ export class ResultService {
     getTrainedModel(id: number){
       const url = `${this.url}model/${id}`
       return this.httpClient.get(url, {responseType: "blob"});
+    }
+
+    getInferenceInfo(id: number){
+      const url = `${this.url}inference/${id}`
+      return this.httpClient.get(url);
+    }
+
+    deployInference(id: number, inference: Inference){
+      const url = `${this.url}inference/${id}`
+      return this.httpClient.post(url, inference);
     }
 
 }

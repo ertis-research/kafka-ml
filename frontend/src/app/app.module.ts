@@ -44,6 +44,7 @@ import { ResultListComponent } from './result-list/result-list.component';
 import { DataFilterPipe } from './shared/filter';
 import { DatasourceListComponent } from './datasource-list/datasource-list.component';
 import { DatasourceDialogComponent } from './datasource-dialog/datasource-dialog.component';
+import { InferenceViewComponent } from './inference-view/inference-view.component';
 
 @NgModule({
   declarations: [
@@ -62,6 +63,7 @@ import { DatasourceDialogComponent } from './datasource-dialog/datasource-dialog
     DataFilterPipe,
     DatasourceListComponent,
     DatasourceDialogComponent,
+    InferenceViewComponent,
 
   ],
   imports: [

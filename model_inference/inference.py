@@ -23,12 +23,12 @@ SLEEP_BETWEEN_REQUESTS = 5
 
 def load_environment_vars():
   """Loads the environment information received from dockers
-  boostrap_servers, trained_model_url, input_topic, output_topic
+  bootstrap_servers, trained_model_url, input_topic, output_topic
   Returns:
-      boostrap_servers (str): list of boostrap server for the Kafka connection
+      bootstrap_servers (str): list of bootstrap server for the Kafka connection
       model_url (str): URL for downloading the trained model
       input_format (str): Format of the input data (RAW, AVRO)
-      configuration (str): 
+      input_config (str): Configuration contains the information needed to process the input
       input_topic (str): Kafka topic for the input data
       output_topic (str): Kafka topic for the output data
       group_id (str): Kafka group id for consuming data
@@ -36,12 +36,12 @@ def load_environment_vars():
   bootstrap_servers = os.environ.get('BOOTSTRAP_SERVERS')
   model_url = os.environ.get('MODEL_URL')
   input_format = os.environ.get('INPUT_FORMAT')
-  configuration = os.environ.get('CONFIGURATION')
+  input_config = os.environ.get('INPUT_CONFIG')
   input_topic = os.environ.get('INPUT_TOPIC')
   output_topic = os.environ.get('OUTPUT_TOPIC')
   group_id = os.environ.get('GROUP_ID')
 
-  return (bootstrap_servers, model_url, input_format, configuration, input_topic, output_topic, group_id)
+  return (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id)
 
 if __name__ == '__main__':
   try:
@@ -61,14 +61,14 @@ if __name__ == '__main__':
           )
     """Configures the logging"""
 
-    bootstrap_servers, model_url, input_format, configuration, input_topic, output_topic, group_id = load_environment_vars()
+    bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id = load_environment_vars()
     """Loads the environment information"""
     
-    configuration = json.loads(configuration)
+    input_config = json.loads(input_config)
     """Parse the configuration"""
 
-    logging.info("Received environment information (bootstrap_servers, model_url, input_format, configuration, input_topic, output_topic, group_id) ([%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
-              bootstrap_servers, model_url, input_format, str(configuration), input_topic, output_topic, group_id)
+    logging.info("Received environment information (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id) ([%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
+              bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, group_id)
     
     download_model(model_url, MODEL_PATH, RETRIES, SLEEP_BETWEEN_REQUESTS)
     """Downloads the model from the URL received and saves in the filesystem"""
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     
     logging.info("Started Kafka producer in [%s] topic", output_topic)
 
-    decoder = DecoderFactory.get_decoder(input_format, configuration)
+    decoder = DecoderFactory.get_decoder(input_format, input_config)
     """Creates the data decoder"""
 
     for msg in consumer:

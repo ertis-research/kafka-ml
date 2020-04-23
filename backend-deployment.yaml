@@ -27,4 +27,6 @@ spec:
         - name: CONTROL_TOPIC
           value: control
         - name: TRAINING_MODEL_IMAGE
-          value: localhost:5000/training
+          value: localhost:5000/model_training
+        - name: INFERENCE_MODEL_IMAGE
+          value: localhost:5000/model_inference

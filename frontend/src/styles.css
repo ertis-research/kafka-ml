@@ -22,3 +22,12 @@ body {
   .spacer {
     flex: 1 1 auto;
   }
+
+  .mat-card {
+    min-width: 150px;
+    max-width: 500px;
+  }
+  
+  .full-width {
+    width: 100%;
+  }

@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from automl.models import MLModel, Configuration, Deployment, TraningResult, Datasource
+from automl.models import MLModel, Configuration, Deployment, TraningResult, Datasource, Inference
 
 class MLModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -126,3 +126,18 @@ class DatasourceSerializer(serializers.ModelSerializer):
         model = Datasource
         fields = ['input_format', 'deployment', 'configuration',
         'description', 'topic', 'validation_rate', 'total_msg', 'time']
+
+class DeployInferenceSerializer(serializers.ModelSerializer):
+    model_result = serializers.PrimaryKeyRelatedField(read_only=True)
+    
+    class Meta:
+        model = Inference
+        fields = ['model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic']
+
+    def create(self, validated_data):
+        """Creates a new deployment, associated it with the configuration and creates related results"""
+
+        result_id = self.initial_data.get("model_result") if "model_result" in self.initial_data else ''
+        result = TraningResult.objects.get(pk=result_id)
+        inference = Inference.objects.create(model_result=result, **validated_data)
+        return inference

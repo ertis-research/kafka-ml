@@ -1,0 +1,43 @@
+<div class="container">
+  <mat-card>
+  <mat-card-title>
+    Deploy Training result {{resultID}} for inference
+    </mat-card-title>
+    
+    <form class="create-inference-form" #form="ngForm" (ngSubmit)="deployInference(form.value)" autocomplete="off">
+      
+     <mat-form-field class="full-width">
+        <mat-label>Number of replicas</mat-label>
+        <input  matInput required type="number" placeholder="1" name="replicas"  #nameRef="ngModel" [ngModel]="inference.replicas">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Input format of data</mat-label>
+        <input  matInput required  placeholder="RAW" name="input_format"  #nameRef="ngModel" [ngModel]="inference.input_format">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Configutation for input data</mat-label>
+        <input  matInput required  placeholder="RAW" name="input_config"  #nameRef="ngModel" [ngModel]="inference.input_config">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+      <mat-label>Kafka topic for input data</mat-label>
+        <input matInput required placeholder="input_topic" name="input_topic" #nameRef="ngModel"  [ngModel]="inference.input_topic">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+      <mat-label>Kafka output topic for predictions</mat-label>
+        <input matInput required pplaceholder="ouput_topic"  name="output_topic"  #nameRef="ngModel" [ngModel]="inference.output_topic">
+      </mat-form-field>
+
+      <div class="row-buttons">
+        <span class="spacer"></span>
+        <a (click)="back()" class="form-btn" mat-button>Go Back</a>
+        <button type="submit" class="form-btn" *ngIf="valid" [disabled]="form.invalid" mat-raised-button color="accent">
+            Deploy
+        </button>
+      </div>
+    </form>    
+  </mat-card>
+</div>

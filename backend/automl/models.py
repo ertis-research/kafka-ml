@@ -71,3 +71,22 @@ class Datasource(models.Model):
 
     class Meta(object):
         ordering = ('-time', )
+
+class Inference(models.Model):
+    """Training result information obtained once deployed a model"""
+    INPUT_FORMAT = Choices('RAW', 'AVRO')
+    STATUS = Choices('deployed', 'stopped')
+    """Sets its default value to the first item in the STATUS choices:"""
+    
+    status = StatusField()
+    status_changed = MonitorField(monitor='status')
+    model_result = models.ForeignKey(TraningResult, default=None, related_name='inferences', on_delete=models.CASCADE)
+    replicas = models.IntegerField(default=1)
+    input_format = StatusField(choices_name='INPUT_FORMAT')
+    input_config = models.TextField(blank=True)
+    input_topic =  models.TextField(blank=True)
+    output_topic =  models.TextField(blank=True)
+    time = models.DateTimeField(default=now, editable=False)
+
+    class Meta(object):
+        ordering = ('-time', )

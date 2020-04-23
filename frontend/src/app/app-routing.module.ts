@@ -8,6 +8,7 @@ import { DeploymentListComponent } from './deployment-list/deployment-list.compo
 import { DeploymentViewComponent } from './deployment-view/deployment-view.component';
 import { ResultListComponent } from './result-list/result-list.component';
 import {DatasourceListComponent} from './datasource-list/datasource-list.component'
+import {InferenceViewComponent} from './inference-view/inference-view.component'
 
 const routes: Routes = [
   {path: 'configuration-create', component: ConfigurationViewComponent},
@@ -21,7 +22,8 @@ const routes: Routes = [
   {path: 'models', component: ModelListComponent},
   {path: 'model/:id', component: ModelViewComponent},
   {path: 'results', component: ResultListComponent},
-  {path: 'results/:id', component: ResultListComponent}
+  {path: 'results/:id', component: ResultListComponent},
+  {path: 'results/inference/:id', component: InferenceViewComponent}
 ];
 
 @NgModule({
