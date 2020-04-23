@@ -1,10 +1,8 @@
-# Kafka-ML
+# Kafka-ML: connecting the data stream with ML/AI
 
-This project provides a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference to make predictions from data streams. The training and inference datasets for the ML models are fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
+This project provides a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both machine learning experts and non-experts on ML/AI.
-
-Currently, the project supports AMD64 architectures.
 
 ## For development
 
@@ -43,6 +41,13 @@ Currently, the project supports AMD64 architectures.
     docker push localhost:5000/kafka_control_logger 
     ```
 
+5. Build the model_inference component and push the image into the local register:
+    ```
+    cd model_inference
+    docker build --tag localhost:5000/model_inference .
+    docker push localhost:5000/v 
+    ```
+
 6. Once built the images, you can deploy the system components in Kubernetes following this order:
     ```
     kubectl apply -f zookeeper-pod.yaml
@@ -65,3 +70,6 @@ Currently, the project supports AMD64 architectures.
     ```
 
 8. Finally, you will be able to access the Web UI: http://localhost:4200/ 
+
+## License
+MIT
