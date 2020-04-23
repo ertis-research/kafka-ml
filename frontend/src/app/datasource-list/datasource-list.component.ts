@@ -12,7 +12,7 @@ import {DatasourceDialogComponent} from '../datasource-dialog/datasource-dialog.
 })
 export class DatasourceListComponent implements OnInit {
 
-  displayedColumns = ['description', 'deployment', 'input_format', 'configuration', 'topic',
+  displayedColumns = ['description', 'deployment', 'input_format', 'input_config', 'topic',
                       'validation_rate','total_msg','time','deploy'];
   datasources : JSON[];
   dataSource = new MatTableDataSource(this.datasources);

@@ -62,7 +62,7 @@ class KafkaMLSink(object):
         self.group_id = group_id
         self.total_messages = 0
         self.__partitions = {}
-        self.configuration = {}
+        self.input_config = {}
         self.__consumer = KafkaConsumer(
             bootstrap_servers=self.boostrap_servers,
             group_id=self.group_id,
@@ -147,7 +147,7 @@ class KafkaMLSink(object):
             'topic': self.__stringify_partitions(),
             'input_format': self.input_format,
             'description' : self.description,
-            'configuration' : self.configuration,
+            'input_config' : self.input_config,
             'validation_rate' : self.validation_rate,
             'total_msg':self.total_messages, 
         }

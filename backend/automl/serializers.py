@@ -124,7 +124,7 @@ class TrainingResultSerializer(serializers.ModelSerializer):
 class DatasourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Datasource
-        fields = ['input_format', 'deployment', 'configuration',
+        fields = ['input_format', 'deployment', 'input_config',
         'description', 'topic', 'validation_rate', 'total_msg', 'time']
 
 class DeployInferenceSerializer(serializers.ModelSerializer):
@@ -135,7 +135,7 @@ class DeployInferenceSerializer(serializers.ModelSerializer):
         fields = ['model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic']
 
     def create(self, validated_data):
-        """Creates a new deployment, associated it with the configuration and creates related results"""
+        """Creates a new inference, associated it with the result"""
 
         result_id = self.initial_data.get("model_result") if "model_result" in self.initial_data else ''
         result = TraningResult.objects.get(pk=result_id)

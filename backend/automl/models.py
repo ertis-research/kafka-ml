@@ -62,7 +62,7 @@ class Datasource(models.Model):
     """Sets its default value to the first item in the STATUS choices:"""
     input_format = StatusField(choices_name='INPUT_FORMAT')
     deployment = models.TextField() 
-    configuration = models.TextField(blank=True) 
+    input_config = models.TextField(blank=True) 
     description = models.TextField(blank=True)
     topic = models.TextField()
     total_msg= models.IntegerField()

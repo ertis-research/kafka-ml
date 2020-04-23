@@ -74,6 +74,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'autoweb.wsgi.application'
 
+REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False,
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases

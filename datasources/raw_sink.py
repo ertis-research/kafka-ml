@@ -41,7 +41,7 @@ class RawSink(KafkaMLSink):
         self.label_type = label_type
         self.data_reshape = data_reshape
         self.label_reshape = label_reshape
-        self.configuration =  {
+        self.input_config =  {
             'data_type' : self.data_type,
             'label_type': self.label_type,
             'data_reshape' : self.data_reshape,

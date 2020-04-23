@@ -426,7 +426,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                 datasources = Datasource.objects.filter(deployment=str(result.deployment.id))
                 if datasources.count() > 0:
                     response['input_format']=datasources[0].input_format
-                    response['input_config']=datasources[0].configuration # TODO change to input_config
+                    response['input_config']=datasources[0].input_config # TODO change to input_config
             return HttpResponse(json.dumps(response), status=status.HTTP_200_OK)
 
         return HttpResponse('Result not found', status=status.HTTP_400_BAD_REQUEST)    
@@ -585,7 +585,7 @@ class DatasourceToKafka(generics.CreateAPIView):
                 del kafka_data['time']
                 """Deletes unused attributes"""
                 
-                kafka_data['configuration'] = json.loads(kafka_data['configuration'])
+                kafka_data['input_config'] = json.loads(kafka_data['input_config'])
 
                 key = bytes([deployment_id])
                 data_bytes = json.dumps(kafka_data).encode('utf-8')

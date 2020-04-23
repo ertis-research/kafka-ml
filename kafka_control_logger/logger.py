@@ -65,7 +65,7 @@ if __name__ == '__main__':
               dic={
                   'topic': ..,
                   'input_format': ..,
-                  'configuration' : ..,
+                  'input_config' : ..,
                   'validation_rate' : ..,
                   'total_msg': ..
                   'description': ..,
@@ -74,7 +74,7 @@ if __name__ == '__main__':
           
           retry = 0
           data['deployment'] = str(deployment_id)
-          data['configuration'] = json.dumps(data['configuration'])
+          data['input_config'] = json.dumps(data['input_config'])
           data['time'] = datetime.datetime.utcfromtimestamp(msg.timestamp/1000.0).strftime("%Y-%m-%dT%H:%M:%S%Z")
           ok = False
           logging.info("Sending datasource to backend: [%s]", data)

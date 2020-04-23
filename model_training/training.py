@@ -125,7 +125,7 @@ if __name__ == '__main__':
                 dic={
                     'topic': ..,
                     'input_format': ..,
-                    'configuration' : ..,
+                    'input_config' : ..,
                     'description': ..,
                     'validation_rate' : ..,
                     'total_msg': ..
@@ -134,7 +134,7 @@ if __name__ == '__main__':
             kafka_topic = data['topic']
             logging.info("Received control confirmation of data from Kafka for deployment ID %s. Ready to receive data from topic %s with batch %d", str(kafka_topic), deployment_id, batch)
             
-            decoder = DecoderFactory.get_decoder(data['input_format'], data['configuration'])
+            decoder = DecoderFactory.get_decoder(data['input_format'], data['input_config'])
             """Gets the decoder from the information received"""
 
             kafka_dataset = get_train_data(bootstrap_servers, kafka_topic, result_id, batch, decoder)
