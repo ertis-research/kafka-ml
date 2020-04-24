@@ -1,6 +1,6 @@
 <div class="container">
     <div class="header">
-      <h1>Results <a *ngIf="deploymentID!=null"> of Deployment {{deploymentID}}</a></h1>
+      <h1>Training results <a *ngIf="deploymentID!=null"> of Deployment {{deploymentID}}</a></h1>
       <span class="spacer"></span>
     </div>
 
@@ -11,6 +11,12 @@
         </mat-form-field>
       </div>
       <mat-table [dataSource]="dataSource">
+        
+        <ng-container matColumnDef="id">
+          <mat-header-cell *matHeaderCellDef> ID </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{ element.id}}"> {{ element.id}} </mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="model">
           <mat-header-cell *matHeaderCellDef> Model </mat-header-cell>
           <mat-cell *matCellDef="let element" title="{{ element.model.name}}"> {{ element.model.name}} </mat-cell>

@@ -12,7 +12,7 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class ResultListComponent implements OnInit {
 
-  displayedColumns = ['model', 'train_loss_hist', 'train_acc_hist', 'val_loss', 'val_acc', 'status', 'status_changed', 'view', 'delete', 'download'];
+  displayedColumns = ['id' ,'model', 'train_loss_hist', 'train_acc_hist', 'val_loss', 'val_acc', 'status', 'status_changed', 'view', 'delete', 'download'];
 
   results: JSON[];
   dataSource = new MatTableDataSource(this.results);

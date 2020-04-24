@@ -9,6 +9,7 @@ import { DeploymentViewComponent } from './deployment-view/deployment-view.compo
 import { ResultListComponent } from './result-list/result-list.component';
 import {DatasourceListComponent} from './datasource-list/datasource-list.component'
 import {InferenceViewComponent} from './inference-view/inference-view.component'
+import {InferenceListComponent} from './inference-list/inference-list.component'
 
 const routes: Routes = [
   {path: 'configuration-create', component: ConfigurationViewComponent},
@@ -16,6 +17,7 @@ const routes: Routes = [
   {path: 'configuration/:id', component: ConfigurationViewComponent},
   {path: 'datasources', component: DatasourceListComponent},
   {path: 'deploy/:id', component: DeploymentViewComponent},
+  {path: 'inferences', component: InferenceListComponent},
   {path: 'model-create', component: ModelViewComponent},
   {path: 'deployments', component: DeploymentListComponent},
   {path: 'deployments/:id', component: DeploymentListComponent},

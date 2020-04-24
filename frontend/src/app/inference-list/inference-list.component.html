@@ -1,0 +1,83 @@
+<div class="container">
+    <div class="header">
+      <h1>Inference</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="table-container mat-elevation-z2">
+      <div class="table-header">
+        <mat-form-field>
+          <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+        </mat-form-field>
+      </div>
+      <mat-table [dataSource]="dataSource">
+
+         <ng-container matColumnDef="id">
+          <mat-header-cell *matHeaderCellDef> ID </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.id}}">{{ element.id}} </mat-cell>
+        </ng-container> 
+
+         <ng-container matColumnDef="model_result">
+          <mat-header-cell *matHeaderCellDef> Training ID </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.model_result}}">{{ element.model_result}} </mat-cell>
+        </ng-container>
+
+         <ng-container matColumnDef="replicas">
+          <mat-header-cell *matHeaderCellDef> Replicas </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.replicas}}">{{ element.replicas}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="input_topic">
+          <mat-header-cell *matHeaderCellDef> Kafka input topic </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.input_topic}}">{{ element.input_topic}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="output_topic">
+          <mat-header-cell *matHeaderCellDef> Kafka output topic </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.output_topic}}">{{ element.output_topic}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="input_format">
+          <mat-header-cell *matHeaderCellDef> Input format </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.input_format}}">{{ element.input_format}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="input_config">
+          <mat-header-cell *matHeaderCellDef> Input configuration</mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.input_config}}">{{ element.input_config}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="time">
+          <mat-header-cell *matHeaderCellDef> Time </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.time}}">{{ element.time}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.status}}">{{ element.status}} </mat-cell>
+        </ng-container>
+
+         <ng-container matColumnDef="stop">
+          <mat-header-cell *matHeaderCellDef > Stop</mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <button mat-icon-button title="Stop inference" (click)="stopInference(element.id)" >
+              <mat-icon color="primary">stop</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="delete">
+          <mat-header-cell *matHeaderCellDef> Delete </mat-header-cell>
+          <mat-cell *matCellDef="let element">            
+            <button mat-icon-button title="remove" (click)="confirm(element.id)">
+              <mat-icon color="primary">delete</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+    
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      </mat-table>
+
+    </div>
+</div>

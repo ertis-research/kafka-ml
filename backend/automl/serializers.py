@@ -141,3 +141,11 @@ class DeployInferenceSerializer(serializers.ModelSerializer):
         result = TraningResult.objects.get(pk=result_id)
         inference = Inference.objects.create(model_result=result, **validated_data)
         return inference
+
+
+class InferenceSerializer(serializers.ModelSerializer):
+    model_result = serializers.PrimaryKeyRelatedField(read_only=True)
+    
+    class Meta:
+        model = Inference
+        fields = ['id', 'model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'time', 'status', 'status_changed']

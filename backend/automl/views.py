@@ -20,6 +20,7 @@ from kubernetes import client, config
 
 from automl.serializers import MLModelSerializer, ConfigurationSerializer, DeploymentSerializer, DatasourceSerializer
 from automl.serializers import TrainingResultSerializer, SimpleResultSerializer, DeployDeploymentSerializer, DeployInferenceSerializer
+from automl.serializers import InferenceSerializer
 
 from automl.models import MLModel, Deployment, Configuration, TraningResult, Datasource, Inference
 
@@ -401,6 +402,14 @@ class TraningResultID(generics.RetrieveUpdateDestroyAPIView):
             except Exception as e:
                 return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
         return HttpResponse('File not found', status=status.HTTP_400_BAD_REQUEST)
+
+class InferenceList(generics.ListCreateAPIView):
+    """View to get the list of inferences
+        
+        URL: /inferences
+    """
+    queryset = Inference.objects.all()
+    serializer_class = InferenceSerializer
 
 class InferenceResultID(generics.ListCreateAPIView):
     """View to get information and deploy a new inference from a training result
