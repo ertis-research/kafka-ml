@@ -44,4 +44,9 @@ export class ResultService {
       return this.httpClient.post(url, inference);
     }
 
+    stopTraining(id: number){
+      const url = `${this.url}stop/${id}`
+      return this.httpClient.post(url, null);
+    }
+
 }

@@ -39,7 +39,7 @@ class Deployment(models.Model):
 class TrainingResult(models.Model):
     """Training result information obtained once deployed a model"""
     
-    STATUS = Choices('created', 'deployed', 'failed', 'finished')
+    STATUS = Choices('created', 'deployed', 'stopped', 'finished')
     """Sets its default value to the first item in the STATUS choices:"""
     status = StatusField()
     status_changed = MonitorField(monitor='status')

@@ -54,23 +54,20 @@
 
         <ng-container matColumnDef="status">
           <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
-          <mat-cell *matCellDef="let element" title="{{element.status}}">{{ element.status}} </mat-cell>
+          <mat-cell *matCellDef="let element" title="{{element.status}}">
+          <mat-icon class="stopped" *ngIf="element.status=='stopped'" >stop</mat-icon>
+          <mat-icon class="deployed" *ngIf="element.status=='deployed'" >done</mat-icon>
+           </mat-cell>
         </ng-container>
 
-         <ng-container matColumnDef="stop">
-          <mat-header-cell *matHeaderCellDef > Stop</mat-header-cell>
-          <mat-cell *matCellDef="let element">
-            <button mat-icon-button title="Stop inference" (click)="stopInference(element.id)" >
-              <mat-icon color="primary">stop</mat-icon>
-            </button>
-          </mat-cell>
-        </ng-container>
-
-        <ng-container matColumnDef="delete">
-          <mat-header-cell *matHeaderCellDef> Delete </mat-header-cell>
+        <ng-container matColumnDef="manage">
+          <mat-header-cell *matHeaderCellDef> Manage </mat-header-cell>
           <mat-cell *matCellDef="let element">            
-            <button mat-icon-button title="remove" (click)="confirm(element.id)">
+            <button *ngIf="element.status=='stopped'" mat-icon-button title="Remove inference" (click)="confirmDeletion(element.id)">
               <mat-icon color="primary">delete</mat-icon>
+            </button>
+            <button *ngIf="element.status=='deployed'" mat-icon-button title="Stop inference" (click)="confirmStopping(element.id)">
+              <mat-icon color="primary">stop</mat-icon>
             </button>
           </mat-cell>
         </ng-container>

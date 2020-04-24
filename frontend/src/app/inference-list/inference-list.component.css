@@ -1,0 +1,17 @@
+.mat-column-manage    {
+    flex: 0 0 50px !important;
+    white-space: unset !important;
+  }
+
+.mat-column-status {
+    flex: 0 0 50px !important;
+    white-space: unset !important;
+  }
+
+  .stopped{
+    color: rgb(233, 48, 48);
+}
+
+.deployed{
+    color: green;
+}

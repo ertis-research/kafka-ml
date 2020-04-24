@@ -18,13 +18,14 @@ export class InferenceService {
       return this.httpClient.get<JSON[]>(this.url);
     }
 
-    stopInference(data){
-      return this.httpClient.post<JSON[]>(this.url, data);
-    }
-
     deleteInference(id: number){
       const url = `${this.url}${id}`
       return this.httpClient.delete(url);
+    }
+
+    stopInference(id: number){
+      const url = `${this.url}${id}`
+      return this.httpClient.post(url, null);
     }
 
 }

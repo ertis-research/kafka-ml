@@ -47,7 +47,7 @@
           <mat-cell *matCellDef="let element" title="{{element.status}}"> 
           <mat-icon class="created"  *ngIf="element.status=='created'" >create</mat-icon>
           <mat-icon class="deployed"  *ngIf="element.status=='deployed'" >input</mat-icon>
-          <mat-icon class="failed" *ngIf="element.status=='failed'" >stop</mat-icon>
+          <mat-icon class="stopped" *ngIf="element.status=='stopped'" >stop</mat-icon>
           <mat-icon class="finished" *ngIf="element.status=='finished'" >done</mat-icon>
           </mat-cell>
         </ng-container>
@@ -57,7 +57,7 @@
           <mat-cell *matCellDef="let element" title="{{element.status_changed}}"> {{element.status_changed}}  </mat-cell>
         </ng-container>
 
-         <ng-container matColumnDef="view">
+         <ng-container matColumnDef="inference">
           <mat-header-cell *matHeaderCellDef > Inference </mat-header-cell>
           <mat-cell *matCellDef="let element">            
             <button mat-icon-button *ngIf="element.status=='finished'"  title="Deploy it for Inference" routerLink="/results/inference/{{element.id}}/">
@@ -75,11 +75,14 @@
           </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="delete">
-          <mat-header-cell *matHeaderCellDef> Delete </mat-header-cell>
+        <ng-container matColumnDef="manage">
+          <mat-header-cell *matHeaderCellDef> Manage </mat-header-cell>
           <mat-cell *matCellDef="let element">            
-            <button mat-icon-button title="remove" (click)="confirm(element.id)">
+            <button *ngIf="element.status!='deployed'" mat-icon-button title="Remove training" (click)="confirmDeletion(element.id)">
               <mat-icon color="primary">delete</mat-icon>
+            </button>
+            <button *ngIf="element.status=='deployed'" mat-icon-button title="Stop training" (click)="confirmStopping(element.id)">
+              <mat-icon color="primary">stop</mat-icon>
             </button>
           </mat-cell>
         </ng-container>

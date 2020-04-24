@@ -13,8 +13,8 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class InferenceListComponent implements OnInit {
 
-  displayedColumns = ['id', 'model_result', 'input_format', 'input_config', 
-  'input_topic', 'output_topic', 'time', 'status', 'stop', 'delete'];
+  displayedColumns = ['id',  'model_result', 'replicas', 'input_format', 'input_config', 
+  'input_topic', 'output_topic', 'time', 'status', 'manage'];
 
   inferences: JSON[];
   dataSource = new MatTableDataSource(this.inferences);
@@ -41,10 +41,35 @@ export class InferenceListComponent implements OnInit {
     this.dataSource.filter = value;
   }
 
-  stopInference(id: number){
-      // TODO
+  confirmStopping(id: number){
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '300px',
+      data: { title: 'Inference '+id + ' running from Kubernetes'}
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.stopInference(id);
+      }
+    });
   }
-  confirm(id: number) {
+  stopInference(id: number){
+    this.inferenceService.stopInference(id).subscribe(
+      (data) => {},  //changed
+      (err)=>{
+        this.snackbar.open('Error stopping the inference: '+err.error, '', {
+          duration: 4000
+        });
+      },
+      ()=>{
+            this.snackbar.open('Inference stopped', '', {
+            duration: 3000
+          });
+          window.location.reload();
+        }
+   );
+  }
+  confirmDeletion(id: number) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '300px',
       data: { title: 'Inference '+id }

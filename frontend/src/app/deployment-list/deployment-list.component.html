@@ -27,7 +27,7 @@
           <h3> Training results</h3>
           <div class="column" *ngFor="let result of deployment.results">
            
-           <a [ngClass]="{'deployed': result.status=='deployed', 'created': result.status=='created',  'failed': result.status=='failed', 'finished': result.status=='finished'}"  mat-raised-button title="Result {{result.id}} status {{result.status}}"  routerLink="/results/{{deployment.id}}/">
+           <a [ngClass]="{'deployed': result.status=='deployed', 'created': result.status=='created',  'stopped': result.status=='stopped', 'finished': result.status=='finished'}"  mat-raised-button title="Result {{result.id}} status {{result.status}}"  routerLink="/results/{{deployment.id}}/">
            Model {{result.model.name}}, last change {{result.status_changed}}
            </a>
           

@@ -4,12 +4,12 @@
     width: 80%;
   }
 
-  .mat-column-view   {
-    flex: 0 0 50px !important;
+  .mat-column-inference   {
+    flex: 0 0 60px !important;
     white-space: unset !important;
   }
 
-  .mat-column-delete,  .mat-column-download, .mat-column-status {
+  .mat-column-manage,  .mat-column-download, .mat-column-status {
     flex: 0 0 50px !important;
     white-space: unset !important;
   }
@@ -23,7 +23,7 @@
     color: #3F51B5;
 }
 
-.failed{
+.stopped{
     color: rgb(233, 48, 48);
 }
 

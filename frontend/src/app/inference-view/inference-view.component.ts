@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ResultService } from '../services/result.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute } from '@angular/router';
+import {Router, ActivatedRoute } from '@angular/router';
 import {Inference} from '../shared/inference.model'
 import {Location} from '@angular/common';
 
@@ -19,6 +19,7 @@ export class InferenceViewComponent implements OnInit {
   constructor(private resultService: ResultService,
   private snackbar: MatSnackBar,
   private route: ActivatedRoute,
+  private router: Router,
   private location: Location) { }
 
   ngOnInit(): void {
@@ -50,7 +51,7 @@ export class InferenceViewComponent implements OnInit {
         this.snackbar.open('Model deployed for inference', '', {
           duration: 3000
         });
-        this.location.back();
+        this.router.navigateByUrl('/inferences');
       },
       (err) => {
         this.snackbar.open('Error deploying the model for inference', '', {

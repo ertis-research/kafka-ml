@@ -12,7 +12,7 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class ResultListComponent implements OnInit {
 
-  displayedColumns = ['id' ,'model', 'train_loss_hist', 'train_acc_hist', 'val_loss', 'val_acc', 'status', 'status_changed', 'view', 'delete', 'download'];
+  displayedColumns = ['id' ,'model', 'train_loss_hist', 'train_acc_hist', 'val_loss', 'val_acc', 'status', 'status_changed', 'inference', 'manage', 'download'];
 
   results: JSON[];
   dataSource = new MatTableDataSource(this.results);
@@ -71,7 +71,7 @@ export class ResultListComponent implements OnInit {
     this.dataSource.filter = value;
   }
 
-  confirm(id: number) {
+  confirmDeletion(id: number) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '300px',
       data: { title: 'Result ' + id }
@@ -128,4 +128,32 @@ export class ResultListComponent implements OnInit {
     this.dataSource._updateChangeSubscription(); // <-- Refresh the datasource
   }
 
+  confirmStopping(id: number){
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '300px',
+      data: { title: 'Training result '+id + ' running from Kubernetes'}
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.stopTraining(id);
+      }
+    });
+  }
+  stopTraining(id: number){
+    this.resultService.stopTraining(id).subscribe(
+      (data) => {},  //changed
+      (err)=>{
+        this.snackbar.open('Error stopping the training: '+err.error, '', {
+          duration: 4000
+        });
+      },
+      ()=>{
+            this.snackbar.open('Training stopped', '', {
+            duration: 3000
+          });
+          window.location.reload();
+        }
+   );
+  }
 }

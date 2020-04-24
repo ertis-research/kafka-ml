@@ -459,7 +459,7 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
         try:
             if TrainingResult.objects.filter(pk=pk).exists():
                 obj = TrainingResult.objects.get(pk=pk)
-                if obj.status not in ['finished', 'failed']:
+                if obj.status not in ['finished', 'stopped']:
                     return HttpResponse('Training result in use, please stop it before delete.',
                             status=status.HTTP_400_BAD_REQUEST)
                 
@@ -485,6 +485,34 @@ class InferenceList(generics.ListCreateAPIView):
     queryset = Inference.objects.all()
     serializer_class = InferenceSerializer
 
+class TrainingResultStop(generics.CreateAPIView):
+    """View to stop from Kubernetes and delete a training result
+        
+        URL: /inferences/{:id_inference}
+    """
+    
+    def post(self, request, pk, format=None):
+        try:
+            if TrainingResult.objects.filter(pk=pk).exists():
+                result = TrainingResult.objects.get(pk=pk)
+                if result.status == 'deployed':
+                    config.load_incluster_config() # To run inside the container
+                    #config.load_kube_config() # To run externally
+                    api_instance = client.CoreV1Api()
+                    api_response = api_instance.delete_namespaced_pod(
+                    name='model-training-'+str(result.id),
+                    namespace="default",
+                    body=client.V1DeleteOptions(
+                        propagation_policy='Foreground',
+                        grace_period_seconds=5))
+                    result.status = 'stopped'
+                    result.save()
+                    return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Result not found or not running", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
 class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
     """View to stop from Kubernetes and delete an inference
         
@@ -493,6 +521,28 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
     queryset = Inference.objects.all()
     serializer_class = InferenceSerializer
     
+    def post(self, request, pk, format=None):
+        try:
+            if Inference.objects.filter(pk=pk).exists():
+                inference = Inference.objects.get(pk=pk)
+                if inference.status == 'deployed':
+                    config.load_incluster_config() # To run inside the container
+                    #config.load_kube_config() # To run externally
+                    api_instance = client.CoreV1Api()
+                    api_response = api_instance.delete_namespaced_replication_controller(
+                    name='model-inference-'+str(inference.id),
+                    namespace="default",
+                    body=client.V1DeleteOptions(
+                        propagation_policy='Foreground',
+                        grace_period_seconds=5))
+                    inference.status = 'stopped'
+                    inference.save()
+                    return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Inference not found or not running", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk, format=None):
         """Deletes an inference"""
         try:
