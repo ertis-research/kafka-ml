@@ -38,7 +38,7 @@
         <h3> Deployments:</h3>
         <div class="column" *ngFor="let deployment of configuration.deployments">
            <a class="deployed" mat-raised-button 
-           title="View Deployment {{deployment.time}}" routerLink="/deployment/{{deployment.id}}/">{{deployment.time}}</a>        
+           title="View Deployment {{deployment.time}}" routerLink="/results/{{deployment.id}}/">{{deployment.time}}</a>        
         </div>
         <br>
         </mat-card-content>
