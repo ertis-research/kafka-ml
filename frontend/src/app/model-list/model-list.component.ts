@@ -27,7 +27,7 @@ export class ModelListComponent implements OnInit {
      this.models=data;
      this.dataSource.data=this.models;
     },(err)=>{
-      this.snackbar.open('Error connecting with the server'), {
+      this.snackbar.open('Error connecting with the server', ''), {
         duration: 3000
       }
     });

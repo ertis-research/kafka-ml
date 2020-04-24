@@ -1,8 +1,14 @@
-.dashboard-card {
-    max-height: 300px;
-    overflow-y: scroll;
-    margin-top: 20px;
-  }
+.dashboard-card  {
+  max-height: 400px;
+  overflow-y: scroll;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  position: absolute;
+  margin: 20px;
+}
   
   .more-button {
     position: absolute;

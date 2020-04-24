@@ -1,30 +1,3 @@
-.mat-table {
-    overflow: auto;
-    max-height: 500px;
-  }
-  
-  .header {
-    display: flex;
-    margin-bottom: 1.5rem;
-    padding: 0 0.4rem;
-    font-family: Roboto, "Helvetica Neue", sans-serif;
-  }
-    .header h1{
-      display: inline;
-      padding-top: .6rem;
-      font-weight: 400;
-      font-size: 30px;
-    }
-    
-  .table-header {
-    min-height: 64px;
-    padding: 8px 24px 0;
-    background-color: #ededed;
-  }
-  .mat-form-field {
-    font-size: 14px;
-    width: 80%;
-  }
 
   .mat-column-view   {
     flex: 0 0 70px !important;

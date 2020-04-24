@@ -8,25 +8,3 @@
     min-width: 150px;
     max-width: 500px;
   }
-  
-  .full-width {
-    width: 100%;
-  }
-  
-  textarea {
-    resize: none;
-  }
-  
-  .row-input {
-    padding-top: 1.25rem;
-    padding-bottom: 1rem;
-  }
-  
-  .row-buttons {
-    display: flex;
-    padding: 1rem 0;
-  }
-  
-  .form-btn {
-    margin-left: 0.5rem;
-  }

@@ -9,7 +9,8 @@
       </div>
       <br>
   <mat-grid-list cols="2">
-      <mat-card class="dashboard-card" *ngFor="let deployment of deployments | datafilter : filtered_data" >
+  <mat-grid-tile *ngFor="let deployment of deployments | datafilter : filtered_data" >
+      <mat-card class="dashboard-card"  >
         <mat-card-header>
           <mat-card-title>
            <h3>Deployment {{deployment.id}}</h3> <h6>{{deployment.time}}</h6>
@@ -37,5 +38,6 @@
           <h3 class="h3-content">Training arguments: </h3> <p> {{deployment.kwargs_fit}} </p> <br>
         </mat-card-content>
       </mat-card>
+      </mat-grid-tile>
   </mat-grid-list>
 </div>

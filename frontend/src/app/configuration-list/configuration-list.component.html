@@ -12,8 +12,9 @@
           <input matInput [(ngModel)]="filtered_data"  placeholder="Filter">
         </mat-form-field>
       </div>
-  <mat-grid-list cols="2">
-      <mat-card class="dashboard-card" *ngFor="let configuration of configurations | datafilter : filtered_data" >
+  <mat-grid-list cols="3" >
+  <mat-grid-tile *ngFor="let configuration of configurations | datafilter : filtered_data" >
+      <mat-card class="dashboard-card" >
         <mat-card-header>
           <mat-card-title>
            <h3>{{configuration.name}}</h3> <h6>{{configuration.description}}</h6>
@@ -42,5 +43,6 @@
         <br>
         </mat-card-content>
       </mat-card>
+      </mat-grid-tile>
   </mat-grid-list>
 </div>

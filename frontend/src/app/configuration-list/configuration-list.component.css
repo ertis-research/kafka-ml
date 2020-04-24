@@ -1,11 +1,19 @@
 .dashboard-card {
-  max-height: 300px; 
   overflow-y: scroll;
+  min-height: 400px;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  position: absolute;
   margin-top: 20px;
 }
+/*
 .mat-grid-tile .mat-figure {
   max-height: 300px;
 }
+*/
 .more-button {
   position: absolute;
   top: 5px;
@@ -15,6 +23,8 @@
 .dashboard-card-content {
   text-align: left;
   margin: 1rem;
+  height: 400px;
+  width: 100%
 }
 
 .header {
@@ -99,3 +109,7 @@ td.mat-cell, td.mat-footer-cell {
   font-size: 14px;
   width: 90%;
 }
+
+  .mat-card{
+    padding: 00px;
+  }
