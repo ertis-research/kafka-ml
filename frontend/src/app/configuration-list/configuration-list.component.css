@@ -1,19 +1,14 @@
 .dashboard-card {
   overflow-y: scroll;
   min-height: 400px;
-  width: 100%;
+  width: 90%;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   position: absolute;
-  margin-top: 20px;
+  margin: 30px;
 }
-/*
-.mat-grid-tile .mat-figure {
-  max-height: 300px;
-}
-*/
 .more-button {
   position: absolute;
   top: 5px;
