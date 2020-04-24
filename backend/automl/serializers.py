@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from automl.models import MLModel, Configuration, Deployment, TraningResult, Datasource, Inference
+from automl.models import MLModel, Configuration, Deployment, TrainingResult, Datasource, Inference
 
 class MLModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -57,7 +57,7 @@ class SimpleTrainingResultSerializer(serializers.ModelSerializer):
     model = SimpleModelSerializer()
 
     class Meta:
-        model = TraningResult
+        model = TrainingResult
         fields = ['id', 'status', 'model', 'status_changed']
 
 class DeployDeploymentSerializer(serializers.ModelSerializer):
@@ -88,7 +88,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         configuration = Configuration.objects.get(pk=configuration_id)
         deployment = Deployment.objects.create(configuration=configuration, **validated_data)
         for model in configuration.ml_models.all():
-                    TraningResult.objects.create(model=model, deployment=deployment)
+                    TrainingResult.objects.create(model=model, deployment=deployment)
         return deployment
 
 class DeploymentSerializer(serializers.ModelSerializer):
@@ -109,7 +109,7 @@ class SimpleResultSerializer(serializers.ModelSerializer):
     val_loss = RoundingDecimalField(max_digits=15, decimal_places=10)
     val_acc = RoundingDecimalField(max_digits=15, decimal_places=10)
     class Meta:
-        model = TraningResult
+        model = TrainingResult
         fields = ['id', 'train_loss_hist', 'train_acc_hist', 'val_loss', 'val_acc']
 
 class TrainingResultSerializer(serializers.ModelSerializer):
@@ -117,7 +117,7 @@ class TrainingResultSerializer(serializers.ModelSerializer):
     model = SimpleModelSerializer()
     
     class Meta:
-        model = TraningResult
+        model = TrainingResult
         fields = ['id', 'status', 'status_changed', 'deployment', 
                 'model', 'train_loss_hist','train_acc_hist','val_loss','val_acc']
 
@@ -138,7 +138,7 @@ class DeployInferenceSerializer(serializers.ModelSerializer):
         """Creates a new inference, associated it with the result"""
 
         result_id = self.initial_data.get("model_result") if "model_result" in self.initial_data else ''
-        result = TraningResult.objects.get(pk=result_id)
+        result = TrainingResult.objects.get(pk=result_id)
         inference = Inference.objects.create(model_result=result, **validated_data)
         return inference
 

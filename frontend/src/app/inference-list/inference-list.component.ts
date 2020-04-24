@@ -44,8 +44,41 @@ export class InferenceListComponent implements OnInit {
   stopInference(id: number){
       // TODO
   }
-  confirm(id: number){
-     // TODO
+  confirm(id: number) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '300px',
+      data: { title: 'Inference '+id }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.delete(id);
+      }
+    });
+  }
+
+  delete(id: number) {
+    this.inferenceService.deleteInference(id).subscribe(
+      (data) => {},  //changed
+      (err)=>{
+        this.snackbar.open('Error deleting the inference: '+err.error, '', {
+          duration: 4000
+        });
+      },
+      ()=>{
+            this.snackbar.open('Inference deleted', '', {
+            duration: 3000
+          });
+          this.deleteRowDataTable(id);
+        }
+   );
+  }
+
+  deleteRowDataTable (id: number) {
+    const itemIndex = this.dataSource.data.findIndex(obj => obj['id'] === id);
+    console.log(itemIndex);
+    this.dataSource.data.splice(itemIndex, 1);
+    this.dataSource._updateChangeSubscription(); // <-- Refresh the datasource
   }
 
 }

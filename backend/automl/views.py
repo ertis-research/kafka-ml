@@ -22,7 +22,7 @@ from automl.serializers import MLModelSerializer, ConfigurationSerializer, Deplo
 from automl.serializers import TrainingResultSerializer, SimpleResultSerializer, DeployDeploymentSerializer, DeployInferenceSerializer
 from automl.serializers import InferenceSerializer
 
-from automl.models import MLModel, Deployment, Configuration, TraningResult, Datasource, Inference
+from automl.models import MLModel, Deployment, Configuration, TrainingResult, Datasource, Inference
 
 from kafka import KafkaProducer
 
@@ -161,6 +161,22 @@ class ModelID(generics.RetrieveUpdateDestroyAPIView):
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        """Deletes a model"""
+        try:
+            if MLModel.objects.filter(pk=pk).exists():
+                model_obj = MLModel.objects.get(pk=pk)
+                if Configuration.objects.filter(ml_models=model_obj).exists():
+                    return HttpResponse('Model cannot be deleted since it is used in a configuration. Consider to delete the configuration.', 
+                    status=status.HTTP_400_BAD_REQUEST)     
+                model_obj.delete()
+                return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Model does not exist", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+        
 
 class ConfigurationList(generics.ListCreateAPIView):
     """View to get the list of configurations and create a new configuration
@@ -177,6 +193,21 @@ class ConfigurationID(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Configuration.objects.all()
     serializer_class = ConfigurationSerializer
+
+    def delete(self, request, pk, format=None):
+        """Deletes a configuration"""
+        try:
+            if Configuration.objects.filter(pk=pk).exists():
+                obj = Configuration.objects.get(pk=pk)
+                if Deployment.objects.filter(configuration=obj).exists():
+                    return HttpResponse('Configuration cannot be deleted since it is used by a deployment. Consider to delete the deployment.',
+                            status=status.HTTP_400_BAD_REQUEST)
+                obj.delete()
+                return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Model does not exist", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 class DeploymentList(generics.ListCreateAPIView):
     """View to get the list of deployments and create a new deployment in Kubernetes
@@ -215,7 +246,7 @@ class DeploymentList(generics.ListCreateAPIView):
                     #config.load_kube_config() # To run externally
                     api_instance = client.CoreV1Api()
         
-                    for result in TraningResult.objects.filter(deployment=deployment):
+                    for result in TrainingResult.objects.filter(deployment=deployment):
                         pod_manifest = {
                             'apiVersion': 'v1',
                             'kind': 'Pod',
@@ -252,10 +283,12 @@ class DeploymentList(generics.ListCreateAPIView):
             traceback.print_exc()
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
-class DeploymentsConfigurationID(generics.RetrieveAPIView):
-    """View to get the list of deployments of a configuration. The configuration PK has be passed in the URL.
+class DeploymentsConfigurationID(generics.RetrieveDestroyAPIView):
+    """View to get the list of deployments of a configuration and delete an deployment. The configuration PK has be passed in the URL.
+
         
-        URL: /deployments/{:configuration_pk}
+        URL: GET /deployments/{:configuration_pk}
+        URL: DELETE /deployments/{:configuration_pk}
     """
     def get(self, request, pk, format=None):
         """Gets the list of deployments of a configuration"""
@@ -268,16 +301,32 @@ class DeploymentsConfigurationID(generics.RetrieveAPIView):
         else:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        """Deletes a deployment"""
+        try:
+            if Deployment.objects.filter(pk=pk).exists():
+                obj = Deployment.objects.get(pk=pk)
+                if TrainingResult.objects.filter(deployment=obj).exists():
+                    return HttpResponse('Deployment cannot be deleted. Please delete its training results first.',
+                            status=status.HTTP_400_BAD_REQUEST)
+                obj.delete()
+                return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Deployment does not exist", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
 
 class TrainingResultList(generics.ListAPIView):
     """View to get the list of results
         
         URL: /results
     """
-    queryset = TraningResult.objects.all()
+    queryset = TrainingResult.objects.all()
     serializer_class = TrainingResultSerializer
 
-class DeploymentResultID(generics.RetrieveUpdateDestroyAPIView):
+class DeploymentResultID(generics.RetrieveDestroyAPIView):
     """View to get the list of results of a deployment.
         
         URL: GET /deployments/results/{:id_deployment} to get the list of results of a deployment
@@ -288,12 +337,13 @@ class DeploymentResultID(generics.RetrieveUpdateDestroyAPIView):
 
         if Deployment.objects.filter(pk=pk).exists():
             deployment= Deployment.objects.get(pk=pk)
-            results = TraningResult.objects.filter(deployment=deployment)
+            results = TrainingResult.objects.filter(deployment=deployment)
             serializer = TrainingResultSerializer(results, many=True)
             return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
         else:
             return HttpResponse('Deployment not found', status=status.HTTP_400_BAD_REQUEST)
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+    
 
 class DownloadTrainedModel(generics.RetrieveAPIView):
     """View to download a trained model
@@ -302,7 +352,7 @@ class DownloadTrainedModel(generics.RetrieveAPIView):
     """
     def get(self, request, pk, format=None):
         try:
-            result= TraningResult.objects.get(pk=pk)  
+            result= TrainingResult.objects.get(pk=pk)  
             filename = path = os.path.join(settings.MEDIA_ROOT, result.trained_model.name)
             """Obtains the trained model filename"""
 
@@ -315,18 +365,19 @@ class DownloadTrainedModel(generics.RetrieveAPIView):
             logging.error(str(e))
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
-class TraningResultID(generics.RetrieveUpdateDestroyAPIView):
+class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
     """View to get and upload the information of a results. 
         
         URL: GET /results/{:id_result} to get the model file for training.
         URL: POST /results/{:id_result} to upload the information of a result.
+        URL: DELETE /results/{:id_result} to delete a result.
     """
 
     def get(self, request, pk, format=None):
         """Gets the model file for training"""
 
         try:
-            result= TraningResult.objects.get(pk=pk)
+            result= TrainingResult.objects.get(pk=pk)
             filename = os.path.join(settings.MEDIA_ROOT, settings.MODELS_DIR)+str(result.model.id)+'.h5'
             """Obtains the model filename"""
 
@@ -341,7 +392,7 @@ class TraningResultID(generics.RetrieveUpdateDestroyAPIView):
                 f.close()
                 response = HttpResponse(file_data, content_type='application/model')
                 response['Content-Disposition'] = 'attachment; filename="model.h5"'
-                result.status = TraningResult.STATUS.deployed
+                result.status = TrainingResult.STATUS.deployed
                 result.save()
                 if os.path.exists(filename):
                     os.remove(filename)
@@ -377,10 +428,10 @@ class TraningResultID(generics.RetrieveUpdateDestroyAPIView):
                 HTTP_200_OK: if the result has been updated
                 HTTP_400_BAD_REQUEST: if there has been any error updating the result
         """
-        if request.FILES['trained_model'] and TraningResult.objects.filter(pk=pk).exists():
+        if request.FILES['trained_model'] and TrainingResult.objects.filter(pk=pk).exists():
             try:
                 data = json.loads(request.data['data'])
-                obj = TraningResult.objects.get(id=pk)
+                obj = TrainingResult.objects.get(id=pk)
                 serializer = SimpleResultSerializer(obj, data = data, partial=True)
                 
                 if serializer.is_valid():
@@ -396,12 +447,35 @@ class TraningResultID(generics.RetrieveUpdateDestroyAPIView):
                 
                 filename = fs.save(path+str(obj.id)+'.h5', trained_model)
                 obj.trained_model.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.h5')
-                obj.status = TraningResult.STATUS.finished
+                obj.status = TrainingResult.STATUS.finished
                 obj.save()
                 return HttpResponse(status=status.HTTP_200_OK)
             except Exception as e:
                 return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
         return HttpResponse('File not found', status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        """Deletes a training result"""
+        try:
+            if TrainingResult.objects.filter(pk=pk).exists():
+                obj = TrainingResult.objects.get(pk=pk)
+                if obj.status not in ['finished', 'failed']:
+                    return HttpResponse('Training result in use, please stop it before delete.',
+                            status=status.HTTP_400_BAD_REQUEST)
+                
+                filename = os.path.join(settings.MEDIA_ROOT, settings.TRAINED_MODELS_DIR)+str(obj.id)+'.h5'
+                """Obtains the model filename"""
+                
+                if os.path.exists(filename):
+                    os.remove(filename)
+                """Deletes the trained model"""
+
+                obj.delete()
+                return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Result does not exist", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 class InferenceList(generics.ListCreateAPIView):
     """View to get the list of inferences
@@ -411,6 +485,28 @@ class InferenceList(generics.ListCreateAPIView):
     queryset = Inference.objects.all()
     serializer_class = InferenceSerializer
 
+class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
+    """View to stop from Kubernetes and delete an inference
+        
+        URL: /inferences/{:id_inference}
+    """
+    queryset = Inference.objects.all()
+    serializer_class = InferenceSerializer
+    
+    def delete(self, request, pk, format=None):
+        """Deletes an inference"""
+        try:
+            if Inference.objects.filter(pk=pk).exists():
+                obj = Inference.objects.get(pk=pk)
+                if obj.status not in ['stopped']:
+                    return HttpResponse('Inference in use, please stop it before delete.',
+                            status=status.HTTP_400_BAD_REQUEST)
+                obj.delete()
+                return HttpResponse(status=status.HTTP_200_OK)
+            return HttpResponse("Inference does not exist", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 class InferenceResultID(generics.ListCreateAPIView):
     """View to get information and deploy a new inference from a training result
         
@@ -421,12 +517,12 @@ class InferenceResultID(generics.ListCreateAPIView):
         """ Checks the training result exists and returns the input format and configuration if there any in other inference or 
             datasource objects to facilitate the inference deployment.
         """
-        if TraningResult.objects.filter(pk=pk).exists():
+        if TrainingResult.objects.filter(pk=pk).exists():
             response = {
                 'input_format': '',
                 'input_config': '',
             }
-            result = TraningResult.objects.get(id=pk)
+            result = TrainingResult.objects.get(id=pk)
             inferences = Inference.objects.filter(model_result=result)
             if inferences.count() > 0:
                 response['input_format']=inferences[0].input_format
@@ -468,13 +564,13 @@ class InferenceResultID(generics.ListCreateAPIView):
                 HTTP_200_OK: if the inference has been deployed
                 HTTP_400_BAD_REQUEST: if there has been any error deploying the inference
         """
-        if TraningResult.objects.filter(pk=pk).exists():
+        if TrainingResult.objects.filter(pk=pk).exists():
             try:
                 data = json.loads(request.body)
-                result = TraningResult.objects.get(id=pk)
+                result = TrainingResult.objects.get(id=pk)
                 serializer = DeployInferenceSerializer(data = data)
                 
-                if serializer.is_valid():
+                if serializer.is_valid() and result.status == 'finished':
                     inference = serializer.save()
                     try:
                         config.load_incluster_config() # To run inside the container

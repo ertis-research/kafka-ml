@@ -22,4 +22,9 @@ export class InferenceService {
       return this.httpClient.post<JSON[]>(this.url, data);
     }
 
+    deleteInference(id: number){
+      const url = `${this.url}${id}`
+      return this.httpClient.delete(url);
+    }
+
 }

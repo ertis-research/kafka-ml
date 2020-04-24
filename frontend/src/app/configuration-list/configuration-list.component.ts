@@ -52,8 +52,8 @@ export class ConfigurationListComponent {
       });
       this.updateData(id);
     },(err)=>{
-        this.snackbar.open('Error deleting the configuration: '+err, '', {
-          duration: 3000
+        this.snackbar.open('Error deleting the configuration: '+err.error, '', {
+          duration: 4000
         });
       },
       

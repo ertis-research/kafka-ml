@@ -19,8 +19,7 @@
             </button>
             <mat-menu #menu="matMenu" xPosition="before">
               <button mat-menu-item routerLink="/results/{{deployment.id}}/"><mat-icon>visibility</mat-icon><span class="nav-caption">Results</span></button>
-              <button mat-menu-item><mat-icon>stop</mat-icon><span class="nav-caption">Stop</span></button>
-              <button mat-menu-item><mat-icon>delete</mat-icon><span class="nav-caption">Remove</span></button>
+              <button (click)="confirm(deployment.id)" mat-menu-item><mat-icon>delete</mat-icon><span class="nav-caption">Remove</span></button>
             </mat-menu>
           </mat-card-title>
         </mat-card-header>

@@ -19,6 +19,10 @@ class Configuration(models.Model):
     name = models.CharField(unique=True, max_length=30)
     description = models.CharField(max_length=100, blank=True)
     ml_models = models.ManyToManyField(MLModel)
+    time = models.DateTimeField(default=now, editable=False)
+
+    class Meta(object):
+        ordering = ('-time', )
     
 
 class Deployment(models.Model):
@@ -36,7 +40,7 @@ class Deployment(models.Model):
     class Meta(object):
         ordering = ('-time', )
     
-class TraningResult(models.Model):
+class TrainingResult(models.Model):
     """Training result information obtained once deployed a model"""
     
     STATUS = Choices('created', 'deployed', 'failed', 'finished')
@@ -80,7 +84,7 @@ class Inference(models.Model):
     
     status = StatusField()
     status_changed = MonitorField(monitor='status')
-    model_result = models.ForeignKey(TraningResult, default=None, related_name='inferences', on_delete=models.CASCADE)
+    model_result = models.ForeignKey(TrainingResult, null=True, related_name='inferences', on_delete=models.SET_NULL)
     replicas = models.IntegerField(default=1)
     input_format = StatusField(choices_name='INPUT_FORMAT')
     input_config = models.TextField(blank=True)

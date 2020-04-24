@@ -56,7 +56,7 @@ export class ModelListComponent implements OnInit {
       (data) => {},  //changed
       (err)=>{
         this.snackbar.open('Error deleting the model: '+err.error, '', {
-          duration: 3000
+          duration: 4000
         });
       },
       ()=>{

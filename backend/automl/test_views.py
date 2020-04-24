@@ -1,6 +1,6 @@
 
 from django.test import TestCase
-from automl.models import MLModel, Deployment, Configuration, TraningResult
+from automl.models import MLModel, Deployment, Configuration, TrainingResult
 from rest_framework import status
 import json
 import os
@@ -73,7 +73,7 @@ class ResultViewTest(TestCase):
         configuration.ml_models.add(model)
         configuration.save()
         deployment = Deployment.objects.create(batch=1, configuration=configuration)
-        result = TraningResult.objects.create(deployment=deployment, model=model)
+        result = TrainingResult.objects.create(deployment=deployment, model=model)
         self.resultID=result.pk
     
     def test_upload_results(self):
@@ -120,7 +120,7 @@ class ResultViewTest(TestCase):
         filepath = os.path.join(settings.MEDIA_ROOT, settings.TRAINED_MODELS_DIR)+str(self.resultID)+'.h5'
         self.assertTrue(os.path.exists(filepath))
         
-        self.obj = TraningResult.objects.get(id=self.resultID)
+        self.obj = TrainingResult.objects.get(id=self.resultID)
 
         self.assertEqual(self.obj.status, 'finished')
         
