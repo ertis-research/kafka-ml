@@ -15,7 +15,7 @@ class SimpleModelSerializer(serializers.ModelSerializer):
 class SimpleDeploymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deployment
-        fields = ['id','time', 'status']
+        fields = ['id','time']
         
 class ConfigurationSerializer(serializers.ModelSerializer):
     ml_models = SimpleModelSerializer(many=True, read_only=True)
@@ -97,7 +97,7 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'status', 'status_changed', 'batch', 'kwargs_fit', 'time']
+        fields = ['id', 'configuration', 'results', 'batch', 'kwargs_fit', 'time']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""

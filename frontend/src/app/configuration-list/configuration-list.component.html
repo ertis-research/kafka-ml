@@ -37,7 +37,7 @@
           <br>
         <h3> Deployments:</h3>
         <div class="column" *ngFor="let deployment of configuration.deployments">
-           <a [ngClass]="{'deployed': deployment.status=='deployed', 'created': deployment.status=='created',  'failed': deployment.status=='failed', 'finished': deployment.status=='finished'}" mat-raised-button 
+           <a class="deployed" mat-raised-button 
            title="View Deployment {{deployment.time}}" routerLink="/deployment/{{deployment.id}}/">{{deployment.time}}</a>        
         </div>
         <br>

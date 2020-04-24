@@ -72,24 +72,9 @@ td.mat-cell, td.mat-footer-cell {
   margin-top: 0.5rem;
 }
 
-.created{
-  background: grey;
-  color: white;
-  
-}
 
 .deployed{
   background: #3F51B5;
-  color: white;
-}
-
-.failed{
-  background: rgb(233, 48, 48);
-  color: white;
-}
-
-.finished{
-  background: green;
   color: white;
 }
 

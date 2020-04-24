@@ -28,10 +28,6 @@ class Configuration(models.Model):
 class Deployment(models.Model):
     """Deployment of a configuration of models for training"""
 
-    STATUS = Choices('created', 'deployed', 'failed', 'finished')
-    """Sets its default value to the first item in the STATUS choices:"""
-    status = StatusField()
-    status_changed = MonitorField(monitor='status')
     batch = models.IntegerField(default=1)
     kwargs_fit = models.CharField(max_length=100, blank=True)
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
