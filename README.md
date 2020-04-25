@@ -1,8 +1,8 @@
 # Kafka-ML: connecting the data stream with ML/AI
 
-Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
+Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline allows the design, training, and inference of ML models. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT.  
 
-ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both machine learning experts and non-experts on ML/AI.
+ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both experts and non-experts on ML/AI.
 
 ![Kafka-ML](images/frontend.png)
 ## For development
