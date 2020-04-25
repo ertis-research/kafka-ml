@@ -20,12 +20,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'zbtes53q%twx0#&@$c-b2^299qv1fi4v3ldv*&u9po%bbd8asu'
+SECRET_KEY = 'zbtes53q%twx0#&@$c-b2^299qv1fi4v3ldv*&u9po%bbd8asu' if os.environ.get('SECRET_KEY') is None else os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if os.environ.get('DEBUG') is None or os.environ.get('DEBUG')== '1' else False
 
-ALLOWED_HOSTS = ['backend','127.0.0.1', 'localhost', '[::1]']
+ALLOWED_HOSTS = ['backend', 'frontend', '127.0.0.1', 'localhost', '[::1]']
 
 
 # Application definition
@@ -127,9 +127,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+FRONTEND_URL = 'http://localhost' if os.environ.get('FRONTEND_URL') is None else os.environ.get('FRONTEND_URL')
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
-    "http://localhost:4200"
+    "http://localhost:4200",
+    FRONTEND_URL
 ]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'models')

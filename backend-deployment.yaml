@@ -30,3 +30,9 @@ spec:
           value: localhost:5000/model_training
         - name: INFERENCE_MODEL_IMAGE
           value: localhost:5000/model_inference
+        - name: FRONTEND_URL
+          value: http://localhost
+        # - name: SECRET_KEY
+        #  value: ...
+        # - name: DEBUG
+        #  value: 0
