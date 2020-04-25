@@ -1,9 +1,10 @@
 # Kafka-ML: connecting the data stream with ML/AI
 
-This project provides a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
+Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline involves the ML model design, training, and inference. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT. 
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both machine learning experts and non-experts on ML/AI.
 
+![Kafka-ML](images/frontend.png)
 ## For development
 
 ### Requirements
@@ -45,10 +46,19 @@ ML models can be easily defined in the Web UI with no need for external librarie
     ```
     cd model_inference
     docker build --tag localhost:5000/model_inference .
-    docker push localhost:5000/v 
+    docker push localhost:5000/model_inference 
     ```
 
-6. Once built the images, you can deploy the system components in Kubernetes following this order:
+6. Install the libraries and execute the frontend:
+    ```
+    cd frontend
+    npm install
+    ng build -c production
+    docker build --tag localhost:5000/frontend .
+    docker push localhost:5000/frontend 
+    ```
+
+7. Once built the images, you can deploy the system components in Kubernetes following this order:
     ```
     kubectl apply -f zookeeper-pod.yaml
     kubectl apply -f zookeeper-service.yaml
@@ -59,17 +69,13 @@ ML models can be easily defined in the Web UI with no need for external librarie
     kubectl apply -f backend-deployment.yaml
     kubectl apply -f backend-service.yaml
 
+    kubectl apply -f frontend-deployment.yaml
+    kubectl apply -f frontend-service.yaml
+
     kubectl apply -f kafka-control-logger-deployment.yaml
     ```
 
-7. Install the libraries and execute the frontend:
-    ```
-    cd frontend
-    npm install
-    ng serve
-    ```
-
-8. Finally, you will be able to access the Web UI: http://localhost:4200/ 
+8. Finally, you will be able to access the Kafka-ML Web UI: http://localhost/
 
 ## License
 MIT
