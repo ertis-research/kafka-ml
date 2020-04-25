@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  baseUrl: 'http://backend:8000'  
+  baseUrl: window["env"]["API_SERVER_URL"]
 };
