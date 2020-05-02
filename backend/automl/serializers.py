@@ -65,7 +65,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deployment
-        fields = ['batch', 'kwargs_fit', 'configuration']
+        fields = ['batch', 'kwargs_fit', 'kwargs_val', 'configuration']
     
     def validate_batch(self, value):
         """Checks that batch size is greater than 0"""
@@ -78,6 +78,13 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         """Checks that arguments for training have the expected format"""
         import re
         if not bool(re.match('^[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_][ ]*(,[ ]*[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_]*[ ]*)*$', value)):
+            raise serializers.ValidationError("Arguments for training do not have the expected format")
+        return value
+
+    def validate_kwargs_val(self, value):
+        """Checks that arguments for training have the expected format"""
+        import re
+        if not bool(re.match('^([a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_][ ]*(,[ ]*[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_]*[ ]*)*)*$', value)):
             raise serializers.ValidationError("Arguments for training do not have the expected format")
         return value
 
@@ -97,7 +104,7 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'batch', 'kwargs_fit', 'time']
+        fields = ['id', 'configuration', 'results', 'batch', 'kwargs_fit', 'kwargs_val', 'time']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""

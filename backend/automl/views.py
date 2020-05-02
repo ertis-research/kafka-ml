@@ -65,10 +65,11 @@ def parse_kwargs_fit(kwargs_fit):
             str: kwargs_fit formatted as string JSON
     """
     dic = {}
-    kwargs_fit=kwargs_fit.replace(" ", "")
-    for l in kwargs_fit.split(","):
-        pair=l.split('=')
-        dic[pair[0]]=int(pair[1])
+    if kwargs_fit is not None and kwargs_fit is not '':
+        kwargs_fit=kwargs_fit.replace(" ", "")
+        for l in kwargs_fit.split(","):
+            pair=l.split('=')
+            dic[pair[0]]=int(pair[1])
     
     return json.dumps(dic)
 
@@ -266,7 +267,9 @@ class DeploymentList(generics.ListCreateAPIView):
                                                     {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                     {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
                                                     {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                    {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)}],
+                                                    {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
+                                                    {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)}
+                                                    ],
                                         }],
                                         'imagePullPolicy': 'Never', # TODO: Remove this when the image is in DockerHub
                                         'restartPolicy': 'OnFailure'

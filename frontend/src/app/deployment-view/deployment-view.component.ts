@@ -41,6 +41,7 @@ export class DeploymentViewComponent implements OnInit {
   }
   onSubmit(deployment: Deployment) {
     deployment.configuration=this.configurationID;
+    deployment.kwargs_val = deployment.kwargs_val  || "";
     this.deploymentService.deploy(deployment).subscribe(
       () => {
         this.router.navigateByUrl('/deployments');

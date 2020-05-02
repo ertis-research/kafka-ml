@@ -30,6 +30,7 @@ class Deployment(models.Model):
 
     batch = models.IntegerField(default=1)
     kwargs_fit = models.CharField(max_length=100, blank=True)
+    kwargs_val = models.CharField(max_length=100, blank=True)
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
     time = models.DateTimeField(default=now, editable=False)
 

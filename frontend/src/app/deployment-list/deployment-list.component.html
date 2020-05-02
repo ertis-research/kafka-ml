@@ -35,6 +35,7 @@
           <h3 class="h3-content">Configuration: </h3> <a mat-raised-button title="View/Edit Configuration {{deployment.configuration.name}}" routerLink="/configuration/{{deployment.configuration.id}}/">{{deployment.configuration.name}}</a> <br>
           <h3 class="h3-content">Batch size: </h3><p>{{deployment.batch}} </p><br>
           <h3 class="h3-content">Training arguments: </h3> <p> {{deployment.kwargs_fit}} </p> <br>
+          <h3 class="h3-content">Validation arguments: </h3> <p> {{deployment.kwargs_val}} </p> <br>
         </mat-card-content>
       </mat-card>
       </mat-grid-tile>

@@ -41,6 +41,7 @@ def load_environment_vars():
       deployment_id (int): deployment ID of the application
       batch (int): Batch size used for training
       kwargs_fit (:obj:json): JSON with the arguments used for training
+      kwargs_val (:obj:json): JSON with the arguments used for validation
   """
   bootstrap_servers = os.environ.get('BOOTSTRAP_SERVERS')
   result_url = os.environ.get('RESULT_URL')
@@ -49,8 +50,9 @@ def load_environment_vars():
   deployment_id = int(os.environ.get('DEPLOYMENT_ID'))
   batch = int(os.environ.get('BATCH'))
   kwargs_fit = json.loads(os.environ.get('KWARGS_FIT').replace("'", '"'))
+  kwargs_val = json.loads(os.environ.get('KWARGS_VAL').replace("'", '"'))
 
-  return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit)
+  return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val)
 
 def get_train_data(boostrap_servers, kafka_topic, group, batch, decoder):
   """Obtains the data and labels for training from Kafka
@@ -87,11 +89,11 @@ if __name__ == '__main__':
           )
     """Configures the logging"""
 
-    bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit  = load_environment_vars()
+    bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val  = load_environment_vars()
     """Loads the environment information"""
 
-    logging.info("Received environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit ) ([%s], [%s], [%s], [%s], [%d], [%d], [%s])", 
-              bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, str(kwargs_fit))
+    logging.info("Received environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val) ([%s], [%s], [%s], [%s], [%d], [%d], [%s], [%s])", 
+              bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, str(kwargs_fit), str(kwargs_val))
     
     download_model(result_url, PRE_MODEL_PATH, RETRIES, SLEEP_BETWEEN_REQUESTS)
     """Downloads the model from the URL received and saves in the filesystem"""
@@ -157,8 +159,8 @@ if __name__ == '__main__':
             logging.info("Model trainned! %s", model_trained.history)
 
             if validation_size > 0:
-              logging.info("Model ready to evaluation")
-              evaluation = model.evaluate(validation_dataset, steps=10)
+              logging.info("Model ready to evaluation with configuration %s", str(kwargs_val))
+              evaluation = model.evaluate(validation_dataset, **kwargs_val)
               """Validates the model"""
               logging.info("Validation results: "+str(evaluation))
 
