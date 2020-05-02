@@ -244,33 +244,37 @@ class DeploymentList(generics.ListCreateAPIView):
                     """ KUBERNETES code goes here"""
                     config.load_incluster_config() # To run inside the container
                     #config.load_kube_config() # To run externally
-                    api_instance = client.CoreV1Api()
+                    api_instance = client.BatchV1Api()
         
                     for result in TrainingResult.objects.filter(deployment=deployment):
-                        pod_manifest = {
-                            'apiVersion': 'v1',
-                            'kind': 'Pod',
+                        job_manifest = {
+                            'apiVersion': 'batch/v1',
+                            'kind': 'Job',
                             'metadata': {
                                 'name': 'model-training-'+str(result.id)
                             },
                             'spec': {
-                                'containers': [{
-                                    'image': settings.TRAINING_MODEL_IMAGE, 
-                                    'name': 'training',
-                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                            {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
-                                            {'name': 'RESULT_ID', 'value': str(result.id)},
-                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                            {'name': 'BATCH', 'value': str(deployment.batch)},
-                                            {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)}],
-                                }],
-                                'imagePullPolicy': 'Never', # TODO: Remove this when the image is in DockerHub
-                                'restartPolicy': 'OnFailure',
-                                'ttlSecondsAfterFinished' : '60',
+                                'ttlSecondsAfterFinished' : 10,
+                                'template' : {
+                                    'spec': {
+                                        'containers': [{
+                                            'image': settings.TRAINING_MODEL_IMAGE, 
+                                            'name': 'training',
+                                            'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                    {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
+                                                    {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                    {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                    {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                    {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                    {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)}],
+                                        }],
+                                        'imagePullPolicy': 'Never', # TODO: Remove this when the image is in DockerHub
+                                        'restartPolicy': 'OnFailure'
+                                    }
+                                }
                             }
                         }
-                        resp = api_instance.create_namespaced_pod(body=pod_manifest, namespace='default')
+                        resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
                     
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except Exception as e:
@@ -498,8 +502,8 @@ class TrainingResultStop(generics.CreateAPIView):
                 if result.status == 'deployed':
                     config.load_incluster_config() # To run inside the container
                     #config.load_kube_config() # To run externally
-                    api_instance = client.CoreV1Api()
-                    api_response = api_instance.delete_namespaced_pod(
+                    api_instance = client.BatchV1Api()
+                    api_response = api_instance.delete_namespaced_job(
                     name='model-training-'+str(result.id),
                     namespace="default",
                     body=client.V1DeleteOptions(
