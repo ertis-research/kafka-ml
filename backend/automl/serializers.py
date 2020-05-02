@@ -107,10 +107,10 @@ class RoundingDecimalField(serializers.DecimalField):
 
 class SimpleResultSerializer(serializers.ModelSerializer):
     val_loss = RoundingDecimalField(max_digits=15, decimal_places=10)
-    val_acc = RoundingDecimalField(max_digits=15, decimal_places=10)
+    train_loss = RoundingDecimalField(max_digits=15, decimal_places=10)
     class Meta:
         model = TrainingResult
-        fields = ['id', 'train_loss_hist', 'train_acc_hist', 'val_loss', 'val_acc']
+        fields = ['id', 'train_loss', 'train_metrics', 'val_loss', 'val_metrics']
 
 class TrainingResultSerializer(serializers.ModelSerializer):
     deployment = SimpleDeploymentSerializer()
@@ -119,7 +119,7 @@ class TrainingResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainingResult
         fields = ['id', 'status', 'status_changed', 'deployment', 
-                'model', 'train_loss_hist','train_acc_hist','val_loss','val_acc']
+                'model', 'train_loss','train_metrics','val_loss','val_metrics']
 
 class DatasourceSerializer(serializers.ModelSerializer):
     class Meta:

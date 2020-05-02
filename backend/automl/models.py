@@ -45,10 +45,10 @@ class TrainingResult(models.Model):
     status_changed = MonitorField(monitor='status')
     deployment = models.ForeignKey(Deployment, default=None, related_name='results', on_delete=models.CASCADE)
     model = models.ForeignKey(MLModel, related_name='trained', on_delete=models.CASCADE)
-    train_loss_hist =  models.TextField(blank=True)
-    train_acc_hist =  models.TextField(blank=True)
+    train_loss =  models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
+    train_metrics =  models.TextField(blank=True)
     val_loss = models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
-    val_acc = models.DecimalField(max_digits=12, decimal_places=10, blank=True,  null=True)
+    val_metrics =  models.TextField(blank=True)
     trained_model = models.FileField(upload_to=settings.TRAINED_MODELS_DIR, blank=True)
 
     class Meta(object):

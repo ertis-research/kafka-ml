@@ -22,14 +22,14 @@
           <mat-cell *matCellDef="let element" title="{{ element.model.name}}"> {{ element.model.name}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="train_loss_hist">
+        <ng-container matColumnDef="train_loss">
           <mat-header-cell *matHeaderCellDef> Training loss </mat-header-cell>
-          <mat-cell *matCellDef="let element" title="{{element.train_loss_hist}}"> {{ element.train_loss_hist}} </mat-cell>
+          <mat-cell *matCellDef="let element" title="{{element.train_loss}}"> {{ element.train_loss}} </mat-cell>
         </ng-container>
     
-        <ng-container matColumnDef="train_acc_hist">
-          <mat-header-cell *matHeaderCellDef> Training accuracy </mat-header-cell>
-          <mat-cell *matCellDef="let element" title="{{element.train_acc_hist}}"> {{element.train_acc_hist}} </mat-cell>
+        <ng-container matColumnDef="train_metrics">
+          <mat-header-cell *matHeaderCellDef> Training metrics </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.train_metrics}}"> {{element.train_metrics}} </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="val_loss">
@@ -37,9 +37,9 @@
           <mat-cell *matCellDef="let element" title="{{element.val_loss}}"> {{element.val_loss}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="val_acc">
-          <mat-header-cell *matHeaderCellDef> Validation accuracy </mat-header-cell>
-          <mat-cell *matCellDef="let element" title="{{element.val_acc}}"> {{element.val_acc}} </mat-cell>
+        <ng-container matColumnDef="val_metrics">
+          <mat-header-cell *matHeaderCellDef> Validation metrics </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.val_metrics}}"> {{element.val_metrics}} </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="status">

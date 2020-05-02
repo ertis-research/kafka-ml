@@ -154,16 +154,27 @@ if __name__ == '__main__':
             model_trained = model.fit(train_dataset, **kwargs_fit)
             """Trains the model"""
 
-            logging.info("Model trainned! loss (%s), accuracy(%s)", model_trained.history['loss'], model_trained.history['accuracy'])
+            logging.info("Model trainned! %s", model_trained.history)
 
             if validation_size > 0:
-              model_validate = model.evaluate(validation_dataset)
+              logging.info("Model ready to evaluation")
+              evaluation = model.evaluate(validation_dataset, steps=10)
               """Validates the model"""
-              logging.info("Validation results: "+str(model_validate))
+              logging.info("Validation results: "+str(evaluation))
 
             retry = 0
             finished = False
-            
+            train_loss =  model_trained.history['loss'][-1]
+            """Get last value of lost"""
+
+            metrics_dic = {}
+            train_metrics = ""
+            for key in model_trained.history.keys():
+              if key!='loss':
+                metrics_dic[key] = model_trained.history[key][-1]
+                train_metrics += key+": "+str(round(model_trained.history[key][-1],10))+"\n"
+            """Get all metrics except the loss"""
+
             while not finished and retry < RETRIES:
               try:
                 model.save(TRAINED_MODEL_PATH)
@@ -172,13 +183,17 @@ if __name__ == '__main__':
                 files = {'trained_model': open(TRAINED_MODEL_PATH, 'rb')}
 
                 results = {
-                        'train_loss_hist': str(model_trained.history['loss']),
-                        'train_acc_hist':  str(model_trained.history['accuracy']),
+                        'train_loss': round(train_loss,10),
+                        'train_metrics':  train_metrics,
                 }
                 if validation_size > 0:
                   """if validation has been defined"""
-                  results['val_loss'] = float(model_validate[0]) # Loss is in the first element
-                  results['val_acc'] = float(model_validate[1]) # Accuracy in the second
+                  results['val_loss'] = float(evaluation[0]) # Loss is in the first element
+                  results['val_metrics'] =''
+                  index = 1
+                  for key in metrics_dic:
+                    results['val_metrics']+=key+": "+str(round(evaluation[index], 10))+"\n"
+                    index += 1
 
                 data = {'data' : json.dumps(results)}
                 logging.info("Sending result data to backend")
