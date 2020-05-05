@@ -503,15 +503,18 @@ class TrainingResultStop(generics.CreateAPIView):
             if TrainingResult.objects.filter(pk=pk).exists():
                 result = TrainingResult.objects.get(pk=pk)
                 if result.status == 'deployed':
-                    config.load_incluster_config() # To run inside the container
-                    #config.load_kube_config() # To run externally
-                    api_instance = client.BatchV1Api()
-                    api_response = api_instance.delete_namespaced_job(
-                    name='model-training-'+str(result.id),
-                    namespace="default",
-                    body=client.V1DeleteOptions(
-                        propagation_policy='Foreground',
-                        grace_period_seconds=5))
+                    try:
+                        config.load_incluster_config() # To run inside the container
+                        #config.load_kube_config() # To run externally
+                        api_instance = client.BatchV1Api()
+                        api_response = api_instance.delete_namespaced_job(
+                        name='model-training-'+str(result.id),
+                        namespace="default",
+                        body=client.V1DeleteOptions(
+                            propagation_policy='Foreground',
+                            grace_period_seconds=5))
+                    except:
+                        pass
                     result.status = 'stopped'
                     result.save()
                     return HttpResponse(status=status.HTTP_200_OK)
@@ -533,15 +536,18 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
             if Inference.objects.filter(pk=pk).exists():
                 inference = Inference.objects.get(pk=pk)
                 if inference.status == 'deployed':
-                    config.load_incluster_config() # To run inside the container
-                    #config.load_kube_config() # To run externally
-                    api_instance = client.CoreV1Api()
-                    api_response = api_instance.delete_namespaced_replication_controller(
-                    name='model-inference-'+str(inference.id),
-                    namespace="default",
-                    body=client.V1DeleteOptions(
-                        propagation_policy='Foreground',
-                        grace_period_seconds=5))
+                    try:
+                        config.load_incluster_config() # To run inside the container
+                        #config.load_kube_config() # To run externally
+                        api_instance = client.CoreV1Api()
+                        api_response = api_instance.delete_namespaced_replication_controller(
+                        name='model-inference-'+str(inference.id),
+                        namespace="default",
+                        body=client.V1DeleteOptions(
+                            propagation_policy='Foreground',
+                            grace_period_seconds=5))
+                    except:
+                        pass
                     inference.status = 'stopped'
                     inference.save()
                     return HttpResponse(status=status.HTTP_200_OK)
