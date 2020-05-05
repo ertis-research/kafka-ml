@@ -6,11 +6,12 @@ ML models can be easily defined in the Web UI with no need for external librarie
 
 
 ## Usage
-To follow this tutorial, please deploy Kafka-ML as indicated bellow (Installation and development).
+To follow this tutorial, please deploy Kafka-ML as indicated below (Installation and development).
 
 Create a model (just the TF/Keras code and some imports if required). Maybe this model for the MINST dataset is a simple way to start:
 
-```model = tf.keras.Sequential([
+```
+model = tf.keras.Sequential([
     tf.keras.layers.Flatten(input_shape=(28, 28)),
     tf.keras.layers.Dense(128, activation=tf.nn.relu),
     tf.keras.layers.Dense(10, activation=tf.nn.softmax)
@@ -19,20 +20,19 @@ model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 ````
-
-![](./images/create-model.png)
+<img src="images/create-model.png" width="500">
 
 Create a configuration: a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel.
 
-![](./images/create-configuration.png)
+<img src="images/create-configuration.png" width="500">
 
 Deploy a configuration of models in Kubernetes for training 
 
-![](./images/deploy-configuration.png)
+<img src="images/deploy-configuration.png" width="500">
 
 Change the batch size, training and validation parameters used for training with the same format than TensorFlow. Validation parameters are optional
 
-![](./images/configure-deployment.png)
+<img src="images/configure-deployment.png" width="500">
 
 Once the configuration is deployed, you will see one training result per model in the configuration
 
@@ -56,7 +56,7 @@ Once sent the data stream and deployed and trained the models, you will see the 
 
 When deploying a model for inference, the parameters for the input data stream will be automatically configured based on previous data streams received, you might also change this. Mostly you will have to configure the number of replicas you want to deploy for inference and the Kafka topics for input data (values to predict) and output data (predictions).
 
-![](./images/deploy-inference.png)
+<img src="images/deploy-inference.png" width="500">
 
 Finally, test the inference deployed using the MNIST example for inference in the topics deployed or your own example.
 
