@@ -4,9 +4,15 @@ Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learn
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both experts and non-experts on ML/AI.
 
+## Table of Contents
+- [Usage](#usage)
+- [Installation and development](#Installation-and-development)
+    - [Requirements](#requirements) 
+    - [Steps to build and execute Kafka-ML](#Steps-to-build-and-execute-Kafka-ML)
+- [License](#license)
 
 ## Usage
-To follow this tutorial, please deploy Kafka-ML as indicated below (Installation and development).
+To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
 
 Create a model (just the TF/Keras code and some imports if required). Maybe this model for the MINST dataset is a simple way to start:
 
@@ -20,6 +26,9 @@ model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 ````
+
+You can insert the ML code into the Kafka-ML UI
+
 <img src="images/create-model.png" width="500">
 
 Create a configuration: a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel.
@@ -73,7 +82,7 @@ python mnist_dataset_inference_example.py
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
 
-### Steps to build and execute the project locally
+### Steps to build and execute Kafka-ML
 
 1. You may need to deploy a local register to upload your Docker images. You can deploy it in the port 5000:
     ```
