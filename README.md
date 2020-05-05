@@ -14,7 +14,7 @@ ML models can be easily defined in the Web UI with no need for external librarie
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
 
-Create a model (just the TF/Keras code and some imports if required). Maybe this model for the MINST dataset is a simple way to start:
+Create a model with just a TF/Keras model source code and some imports/functions if needed. Maybe this model for the MINST dataset is a simple way to start:
 
 ```
 model = tf.keras.Sequential([
@@ -27,11 +27,11 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 ````
 
-You can insert the ML code into the Kafka-ML UI
+Insert the ML code into the Kafka-ML UI.
 
 <img src="images/create-model.png" width="500">
 
-Create a configuration: a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel.
+Create a configuration. A configuration is a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel. A configuration can also contain a single ML model.
 
 <img src="images/create-configuration.png" width="500">
 
@@ -39,17 +39,17 @@ Deploy a configuration of models in Kubernetes for training
 
 <img src="images/deploy-configuration.png" width="500">
 
-Change the batch size, training and validation parameters used for training with the same format than TensorFlow. Validation parameters are optional
+Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0* in the stream data received).
 
 <img src="images/configure-deployment.png" width="500">
 
-Once the configuration is deployed, you will see one training result per model in the configuration
+Once the configuration is deployed, you will see one training result per model in the configuration. Models are now ready to be trained and receive stream data.
 
 ![](./images/training-results.png)
 
 Now, it is time to ingest the model(s) with your data stream for training and maybe evaluation
 
-If you have used the MINST model you can use the example `mnist_dataset_training_example.py`. You only need to configure the *deployment_id* attribute to the one generated in Kafka-ML, maybe it is still 1, and you may need to install the Python libraries listed in datasources/requirements.txt.
+If you have used the MINST model you can use the example `mnist_dataset_training_example.py`. You only need to configure the *deployment_id* attribute to the one generated in Kafka-ML, maybe it is still 1. This is the way to match data streams with configurations and models during training. You may need to install the Python libraries listed in datasources/requirements.txt.
 
 If so, please execute the MISNT example for training:
 
@@ -57,9 +57,9 @@ If so, please execute the MISNT example for training:
 python mnist_dataset_training_example.py
 ````
 
-You can use your own example using the AvroSink (for Apache Avro types) and RawSink (for simple types) sink libraries to send training and evaluation data to Kafka. Remember, you always have to configure the *deployment_id* attribute to the one generated in Kafka-ML. This is the way to match data streams with configurations and models during training.
+You can use your own example using the AvroSink (for Apache Avro types) and RawSink (for simple types) sink libraries to send training and evaluation data to Kafka. Remember, you always have to configure the *deployment_id* attribute to the one generated in Kafka-ML. 
 
-Once sent the data stream and deployed and trained the models, you will see the models metrics and results in Kafka-ML. Now You can download the trained models, or just continue the ML pipeline to deploy a model for inference.
+Once sent the data stream, and deployed and trained the models, you will see the models metrics and results in Kafka-ML. You can download now the trained models, or just continue the ML pipeline to deploy a model for inference.
 
 ![](./images/training-metrics.png)
 
@@ -67,7 +67,7 @@ When deploying a model for inference, the parameters for the input data stream w
 
 <img src="images/deploy-inference.png" width="500">
 
-Finally, test the inference deployed using the MNIST example for inference in the topics deployed or your own example.
+Finally, test the inference deployed using the MNIST example for inference in the topics deployed:
 
 ````
 python mnist_dataset_inference_example.py
