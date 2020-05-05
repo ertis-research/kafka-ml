@@ -4,12 +4,71 @@ Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learn
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both experts and non-experts on ML/AI.
 
-![Kafka-ML](images/frontend.png)
-## For development
+
+## Usage
+To follow this tutorial, please deploy Kafka-ML as indicated bellow (Installation and development).
+
+Create a model (just the TF/Keras code and some imports if required). Maybe this model for the MINST dataset is a simple way to start:
+
+```model = tf.keras.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28, 28)),
+    tf.keras.layers.Dense(128, activation=tf.nn.relu),
+    tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+])
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+````
+
+![](./images/create-model.png)
+
+Create a configuration: a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel.
+
+![](./images/create-configuration.png)
+
+Deploy a configuration of models in Kubernetes for training 
+
+![](./images/deploy-configuration.png)
+
+Change the batch size, training and validation parameters used for training with the same format than TensorFlow. Validation parameters are optional
+
+![](./images/configure-deployment.png)
+
+Once the configuration is deployed, you will see one training result per model in the configuration
+
+![](./images/training-results.png)
+
+Now, it is time to ingest the model(s) with your data stream for training and maybe evaluation
+
+If you have used the MINST model you can use the example `mnist_dataset_training_example.py`. You only need to configure the *deployment_id* attribute to the one generated in Kafka-ML, maybe it is still 1, and you may need to install the Python libraries listed in datasources/requirements.txt.
+
+If so, please execute the MISNT example for training:
+
+````
+python mnist_dataset_training_example.py
+````
+
+You can use your own example using the AvroSink (for Apache Avro types) and RawSink (for simple types) sink libraries to send training and evaluation data to Kafka. Remember, you always have to configure the *deployment_id* attribute to the one generated in Kafka-ML. This is the way to match data streams with configurations and models during training.
+
+Once sent the data stream and deployed and trained the models, you will see the models metrics and results in Kafka-ML. Now You can download the trained models, or just continue the ML pipeline to deploy a model for inference.
+
+![](./images/training-metrics.png)
+
+When deploying a model for inference, the parameters for the input data stream will be automatically configured based on previous data streams received, you might also change this. Mostly you will have to configure the number of replicas you want to deploy for inference and the Kafka topics for input data (values to predict) and output data (predictions).
+
+![](./images/deploy-inference.png)
+
+Finally, test the inference deployed using the MNIST example for inference in the topics deployed or your own example.
+
+````
+python mnist_dataset_inference_example.py
+````
+
+## Installation and development
 
 ### Requirements
 
-- [Python 3.6-3.8](https://www.python.org/)
+- [Python supported by Tensorflow 3.5–3.7](https://www.python.org/)
 - [Node.js](https://nodejs.org/)
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
