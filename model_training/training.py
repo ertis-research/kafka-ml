@@ -38,6 +38,7 @@ def load_environment_vars():
       boostrap_servers (str): list of boostrap server for the Kafka connection
       result_url (str): URL for downloading the pre model
       result_id (str): Result ID of the model
+      control_topic(str): Control topic
       deployment_id (int): deployment ID of the application
       batch (int): Batch size used for training
       kwargs_fit (:obj:json): JSON with the arguments used for training

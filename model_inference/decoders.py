@@ -42,8 +42,14 @@ class AvroDecoder:
 
     """
     def __init__(self, configuration):
-        self.scheme = configuration['scheme']
+        self.data_scheme = str(configuration['data_scheme']).replace("'", '"')
     
     def decode(self, msg):
-        return tfio.experimental.serialization.decode_avro(msg, schema=self.scheme).values()
+        decode_x = tfio.experimental.serialization.decode_avro(msg, schema=self.data_scheme)
+      
+        res= []
+        for key in decode_x.keys():
+            res.append(decode_x.get(key))
+        
+        return res
     

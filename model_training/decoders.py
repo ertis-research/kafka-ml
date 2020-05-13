@@ -48,12 +48,25 @@ class AvroDecoder:
         ARGS:
             configuration (dic): configuration properties
         Attributes:
-            scheme(str): scheme of the AVRO implementation
+            data_scheme(str): scheme of the AVRO implementation for data
+            label_scheme(str): scheme of the AVRO implementation for label
 
     """
     def __init__(self, configuration):
-        self.scheme = configuration['scheme']
+        self.data_scheme = str(configuration['data_scheme']).replace("'", '"')
+        self.label_scheme = str(configuration['label_scheme']).replace("'", '"')
     
     def decode(self, x, y):
-        return tfio.experimental.serialization.decode_avro(x, schema=self.scheme).values()
+        decode_x = tfio.experimental.serialization.decode_avro(x, schema=self.data_scheme)
+        decode_y = tfio.experimental.serialization.decode_avro(y, schema=self.label_scheme)
+      
+        res_x= []
+        for key in decode_x.keys():
+            res_x.append(decode_x.get(key))
+        
+        res_y = []
+        for key in decode_y.keys():
+            res_y.append(decode_y.get(key))
+
+        return (res_x, res_y)
     
