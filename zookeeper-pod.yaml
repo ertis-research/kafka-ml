@@ -11,7 +11,7 @@ spec:
       value: "1"
     - name: ZOO_SERVERS
       value: server.1=0.0.0.0:2888:3888;2181
-    image: zookeeper:latest
+    image: zookeeper:3.6.1
     name: zookeeper
     ports:
     - containerPort: 2181
