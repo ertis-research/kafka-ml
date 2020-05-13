@@ -54,7 +54,7 @@ If you have used the MINST model you can use the example `mnist_dataset_training
 If so, please execute the MISNT example for training:
 
 ````
-python mnist_dataset_training_example.py
+python examples/MINST_RAW_format/mnist_dataset_training_example.py
 ````
 
 You can use your own example using the AvroSink (for Apache Avro types) and RawSink (for simple types) sink libraries to send training and evaluation data to Kafka. Remember, you always have to configure the *deployment_id* attribute to the one generated in Kafka-ML. 
@@ -70,7 +70,7 @@ When deploying a model for inference, the parameters for the input data stream w
 Finally, test the inference deployed using the MNIST example for inference in the topics deployed:
 
 ````
-python mnist_dataset_inference_example.py
+python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 ````
 
 ## Installation and development
