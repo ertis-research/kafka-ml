@@ -1,0 +1,7 @@
+{"namespace": "label.ertis.uma.es",
+ "type": "record",
+ "name": "HCOPD",
+ "fields": [
+     {"name": "diagnosis", "type": "boolean"}
+ ]
+}

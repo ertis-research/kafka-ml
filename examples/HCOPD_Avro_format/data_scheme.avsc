@@ -1,0 +1,9 @@
+{"namespace": "data.ertis.uma.es",
+ "type": "record",
+ "name": "HCOPD",
+ "fields": [
+     {"name": "gender", "type": "float"},
+     {"name": "age", "type": "float"},
+     {"name": "smoking", "type": "float"}
+ ]
+}
