@@ -1,3 +1,7 @@
+import sys
+sys.path.append(sys.path[0] + "/../..") 
+"""To allow importing datasources"""
+
 from datasources.raw_sink import  RawSink
 import tensorflow as tf
 import logging
