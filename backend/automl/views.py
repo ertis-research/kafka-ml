@@ -69,7 +69,7 @@ def parse_kwargs_fit(kwargs_fit):
         kwargs_fit=kwargs_fit.replace(" ", "")
         for l in kwargs_fit.split(","):
             pair=l.split('=')
-            dic[pair[0]]=int(pair[1])
+            dic[pair[0]]=eval(pair[1])
     
     return json.dumps(dic)
 
