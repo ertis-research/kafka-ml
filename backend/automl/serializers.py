@@ -77,14 +77,14 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
     def validate_kwargs_fit(self, value):
         """Checks that arguments for training have the expected format"""
         import re
-        if not bool(re.match('^[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_][ ]*(,[ ]*[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_]*[ ]*)*$', value)):
+        if not bool(re.match('^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$', value)):
             raise serializers.ValidationError("Arguments for training do not have the expected format")
         return value
 
     def validate_kwargs_val(self, value):
         """Checks that arguments for training have the expected format"""
         import re
-        if not bool(re.match('^([a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_][ ]*(,[ ]*[a-z0-9-_]*[ ]*=[ ]*[a-z0-9-_]*[ ]*)*)*$', value)):
+        if not bool(re.match('^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$', value)):
             raise serializers.ValidationError("Arguments for training do not have the expected format")
         return value
 
