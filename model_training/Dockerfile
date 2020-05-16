@@ -1,5 +1,5 @@
 # pull official base image, from 2.1.0 the image is weight 
-FROM tensorflow/tensorflow:2.0.1-py3
+FROM tensorflow/tensorflow:2.2.0
 
 # set work directory
 WORKDIR /usr/src/app
