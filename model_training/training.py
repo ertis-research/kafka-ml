@@ -7,6 +7,7 @@ import tensorflow_io.kafka as kafka_io
 
 from kafka import KafkaConsumer
 
+import time
 import os
 import logging
 import sys
@@ -142,33 +143,42 @@ if __name__ == '__main__':
 
             kafka_dataset = get_train_data(bootstrap_servers, kafka_topic, result_id, batch, decoder)
             """Gets the dataset from kafka"""
+
             logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
             
             split = int((1-data['validation_rate'])*(data['total_msg']/batch))
             validation_size= (data['total_msg']/batch)-split
             logging.info("Training batch size %d and validation batch size %d", split, validation_size)
             
-            train_dataset = kafka_dataset.take(split)
+            start = time.time()
+
+            train_dataset = kafka_dataset.take(split).cache().repeat()
             """Splits dataset for training"""
 
-            validation_dataset = kafka_dataset.skip(split)
+            validation_dataset = kafka_dataset.skip(split).cache().repeat()
             """Splits dataset for validation"""
+            
+            logging.info("Splitting done, training is going to start.")
 
             model_trained = model.fit(train_dataset, **kwargs_fit)
             """Trains the model"""
 
-            logging.info("Model trainned! %s", model_trained.history)
+            end = time.time()
+            logging.info("Total training time: %s", str(end - start))
+
+            train_loss =  model_trained.history['loss'][-1]
+            """Get last value of lost"""
+
+            logging.info("Model trainned! Loss: %s",str(train_loss))
 
             if validation_size > 0:
               logging.info("Model ready to evaluation with configuration %s", str(kwargs_val))
               evaluation = model.evaluate(validation_dataset, **kwargs_val)
               """Validates the model"""
-              logging.info("Validation results: "+str(evaluation))
+              logging.info("Model evaluated!")
 
             retry = 0
             finished = False
-            train_loss =  model_trained.history['loss'][-1]
-            """Get last value of lost"""
 
             metrics_dic = {}
             train_metrics = ""
@@ -221,5 +231,6 @@ if __name__ == '__main__':
         traceback.print_exc()
         logging.error("Error with the received datasource [%s]. Waiting for new data.", str(e))
   except Exception as e:
+      traceback.print_exc()
       logging.error("Error in main [%s]. Service will be restarted.", str(e))
 
