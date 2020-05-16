@@ -1,3 +1,3 @@
-tensorflow==2.0.1
-tensorflow-io==0.10.0
+tensorflow==2.1.0
+tensorflow-io==0.12.0 # tfio.experimental.serialization.decode_avro is included in this version
 kafka-python==2.0.1 

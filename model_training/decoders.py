@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-import tensorflow_io.kafka as kafka_io
 import tensorflow_io as tfio
 from utils import *
 
