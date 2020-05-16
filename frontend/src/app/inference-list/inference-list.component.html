@@ -44,7 +44,7 @@
 
         <ng-container matColumnDef="input_config">
           <mat-header-cell *matHeaderCellDef> Input configuration</mat-header-cell>
-          <mat-cell *matCellDef="let element" title="{{element.input_config}}">{{ element.input_config}} </mat-cell>
+          <mat-cell *matCellDef="let element" title="{{element.input_config}}">{{((element.input_config | slice:0:10) + " ...")}}</mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="time">
