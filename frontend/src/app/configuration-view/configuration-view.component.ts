@@ -76,10 +76,15 @@ export class ConfigurationViewComponent implements OnInit {
   }
 
   onSubmit(configuration: JSON) {
-    
-    console.log(configuration);
+  
 
     if (this.configurationId!= undefined){
+      var ml_models=[]
+      // to refresh select when there are no changes
+      for (var id in configuration['ml_models']){
+          ml_models.push(determineId(configuration['ml_models'][id]))
+      }
+      configuration['ml_models']=ml_models;
       this.configurationService.editConfiguration(this.configurationId, configuration).subscribe(
         (data) => {},  //changed
         (err)=>{

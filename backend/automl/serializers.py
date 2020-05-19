@@ -37,7 +37,9 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         
         for model in ml_models:
             """Add new relations"""
-            instance.ml_models.add(MLModel.objects.get(pk=model['id']))
+            instance.ml_models.add(MLModel.objects.get(pk=model))
+        
+        instance.save()
         
         return instance
 
