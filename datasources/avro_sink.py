@@ -58,3 +58,12 @@ class AvroSink(KafkaMLSink):
         label_bytes = self.label_io.getvalue()
 
         self.send(data_bytes, label_bytes)
+        """Sends the avro data"""
+        
+        self.data_io.seek(0)
+        self.data_io.truncate(0)
+        """Cleans data buffer"""
+
+        self.label_io.seek(0)
+        self.label_io.truncate(0)
+        """Cleans label buffer"""

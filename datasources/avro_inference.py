@@ -41,6 +41,10 @@ class AvroInference():
         data_bytes = self.data_io.getvalue()
 
         self.__producer.send(self.topic, data_bytes)
+        
+        self.data_io.seek(0)
+        self.data_io.truncate(0)
+        """Cleans data buffer"""
 
     def close(self):
         self.__producer.flush()
