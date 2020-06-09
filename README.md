@@ -4,7 +4,7 @@ Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learn
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both experts and non-experts on ML/AI.
 
-<img src="images/pipeline.png" height="300">
+<img src="images/pipeline_.png" height="300">
 
 You can find more information about Kafka-ML and its architecture in the open-access publication below:
 > _C. Martín, P. Langendoerfer, M. Díaz and B. Rubio <br>
