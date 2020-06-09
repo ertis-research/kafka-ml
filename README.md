@@ -4,6 +4,24 @@ Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learn
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both experts and non-experts on ML/AI.
 
+You can find more information about Kafka-ML and its architecture in the open-access publication below:
+> _C. Martín, P. Langendoerfer, M. Díaz and B. Rubio <br>
+> **Kafka-ML: connecting the data stream with ML/AI frameworks** <br>
+> arXiv, June, 2020. <br> 
+> URL: [arXiv:2006.04105](https://arxiv.org/abs/2006.04105)_
+
+If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. Below you can find a BibTex reference:
+```
+@misc{martn2020kafkaml,
+    title={Kafka-ML: connecting the data stream with ML/AI frameworks},
+    author={Cristian Martín and Peter Langendoerfer and Manuel Díaz and Bartolomé Rubio},
+    year={2020},
+    eprint={2006.04105},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
+}
+```
+
 ## Table of Contents
 - [Usage](#usage)
 - [Installation and development](#Installation-and-development)
