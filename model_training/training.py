@@ -37,7 +37,7 @@ def load_environment_vars():
   boostrap_servers, result_url, result_update_url, control_topic, deployment_id, batch, kwargs_fit 
   Returns:
       boostrap_servers (str): list of boostrap server for the Kafka connection
-      result_url (str): URL for downloading the pre model
+      result_url (str): URL for downloading the untrained model
       result_id (str): Result ID of the model
       control_topic(str): Control topic
       deployment_id (int): deployment ID of the application
