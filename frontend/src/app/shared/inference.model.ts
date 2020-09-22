@@ -5,4 +5,6 @@ export class Inference {
     input_config: string;
     input_topic: string;
     output_topic: string;
+    limit: number;
+    output_upper: string;
 }

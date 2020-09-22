@@ -47,6 +47,16 @@
           <mat-cell *matCellDef="let element" title="{{element.input_config}}">{{((element.input_config | slice:0:10) + " ...")}}</mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="output_upper">
+          <mat-header-cell *matHeaderCellDef> Kafka output to upper model </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.output_upper}}">{{ element.output_upper}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="limit">
+          <mat-header-cell *matHeaderCellDef> Prediction limit </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.limit}}">{{element.limit}}</mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="time">
           <mat-header-cell *matHeaderCellDef> Time </mat-header-cell>
           <mat-cell *matCellDef="let element" title="{{element.time}}">{{ element.time}} </mat-cell>

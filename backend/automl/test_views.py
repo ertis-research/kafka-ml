@@ -57,6 +57,42 @@ class ModelViewTest(TestCase):
         resp = self.client.delete('/models/'+str(self.number_of_models))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
+    def test_create_distributed(self):
+        data={'name': 'Father model', 'code': self.code, 'distributed': True}
+        resp = self.client.post('/models/', content_type= 'application/json', data = data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        father = MLModel.objects.latest('id')
+
+        data={'name': 'Child model', 'code': self.code, 'distributed': True, 'father': father.id}
+        resp = self.client.post('/models/', content_type= 'application/json', data = data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        child = MLModel.objects.latest('id')
+
+        resp = self.client.delete('/models/'+str(father.id))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        resp = self.client.delete('/models/'+str(child.id))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_update_distributed(self):
+        data={'name': 'Father model', 'code': self.code, 'distributed': True}
+        resp = self.client.post('/models/', content_type= 'application/json', data = data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        father = MLModel.objects.latest('id')
+
+        data={'name': 'Child model', 'code': self.code, 'distributed': True, 'father': father.id}
+        resp = self.client.put('/models/'+str(self.number_of_models), content_type= 'application/json', data = data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        resp = self.client.delete('/models/'+str(father.id))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        resp = self.client.delete('/models/'+str(self.number_of_models))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
 class ConfigurationViewTest(TestCase):
 
     @classmethod
@@ -168,5 +204,7 @@ class ResultViewTest(TestCase):
         self.assertEqual(self.obj.val_metrics, results['val_metrics'])
         self.assertTrue(abs(float(self.obj.train_loss)- results['train_loss'])<= epsilon)
         self.assertTrue(abs(float(self.obj.val_loss )- results['val_loss'])<= epsilon)
+
+        file.close()
 
         os.remove(FILE_NAME)

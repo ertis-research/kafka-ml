@@ -5,6 +5,14 @@ import { ModelService } from '../services/model.service';
 import {MLModel} from "../shared/ml.model";
 import {Location} from '@angular/common';
 
+export function determineId(model: any): string {
+  var res = model;
+  if (model != null && typeof model != 'number') {
+     res = model.id;
+  }
+  return res;
+}
+
 @Component({
   selector: 'app-model-view',
   templateUrl: './model-view.component.html',
@@ -15,6 +23,8 @@ export class ModelViewComponent implements OnInit {
   model : MLModel = new MLModel();
   create: Boolean = true;
   valid: Boolean = true;
+  distributedModels : JSON[];
+  showFather: Boolean = false;
   constructor(private modelService: ModelService,
               private snackbar: MatSnackBar,
               private router: Router,
@@ -31,6 +41,7 @@ export class ModelViewComponent implements OnInit {
         this.modelService.getModel(this.modelId).subscribe(
           (data) => {
             this.model=<MLModel> data;
+            this.showFather = this.model.distributed;
           },  //changed
           (err)=>{
             this.valid = false;
@@ -40,13 +51,42 @@ export class ModelViewComponent implements OnInit {
           }
       );
     }
+    this.modelService.getDistributedModels().subscribe(
+      (data) => {
+        this.distributedModels= data;
+      }, 
+      (err)=>{
+        this.snackbar.open('Error connecting with the server', '', {
+          duration: 3000
+        });
+      }
+    );
   }
   back() {
     this._location.back();
   }
 
+  compareModels(o1: any, o2: any): boolean {
+    const a1 = determineId(o1);
+    const a2 = determineId(o2);
+    return a1 === a2;
+  }
+
+  controlFather(e: any) {
+    if (e.checked) {
+      this.showFather = true;
+    } else {
+      this.showFather = false;
+    }
+  }
+
   onSubmit(model: JSON) {
     if (this.modelId!= undefined){
+      if (isNaN(model['father'])) {
+        if (model['father'] != undefined) {
+          model['father'] = model['father']['id'];
+        }
+      }
       this.modelService.editModel(this.modelId, model).subscribe(
         (data) => {},  //changed
         (err)=>{
