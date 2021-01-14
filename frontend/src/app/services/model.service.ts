@@ -19,12 +19,27 @@ export class ModelService {
       return this.httpClient.get<JSON[]>(this.url);
     }
     
+    getDistributedModels(){
+      const url = `${this.url}${'distributed'}`
+      return this.httpClient.get<JSON[]>(url);
+    }
+
+    getFatherModels(){
+      const url = `${this.url}${'fathers'}`
+      return this.httpClient.get<JSON[]>(url);
+    }
+
     createModel(data: JSON){
       return this.httpClient.post<JSON>(this.url, data)
     }
 
     getModel(id: number){
       const url = `${this.url}${id}`
+      return this.httpClient.get(url);
+    }
+
+    getModelResultID(id: number) {
+      const url = `${this.url}${'result/'}${id}`
       return this.httpClient.get(url);
     }
 

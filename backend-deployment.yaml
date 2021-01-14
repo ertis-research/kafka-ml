@@ -28,8 +28,12 @@ spec:
           value: control
         - name: TRAINING_MODEL_IMAGE
           value: localhost:5000/model_training
+        - name: DISTRIBUTED_TRAINING_MODEL_IMAGE
+          value: localhost:5000/distributed_model_training
         - name: INFERENCE_MODEL_IMAGE
           value: localhost:5000/model_inference
+        - name: DISTRIBUTED_INFERENCE_MODEL_IMAGE
+          value: localhost:5000/distributed_model_inference
         - name: FRONTEND_URL
           value: http://localhost
         # - name: SECRET_KEY

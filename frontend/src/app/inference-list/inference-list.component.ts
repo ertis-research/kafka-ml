@@ -14,7 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 export class InferenceListComponent implements OnInit {
 
   displayedColumns = ['id',  'model_result', 'replicas', 'input_format', 'input_config', 
-  'input_topic', 'output_topic', 'time', 'status', 'manage'];
+  'input_topic', 'output_topic', 'output_upper', 'limit', 'time', 'status', 'manage'];
 
   inferences: JSON[];
   dataSource = new MatTableDataSource(this.inferences);

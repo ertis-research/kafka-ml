@@ -11,6 +11,8 @@ class MLModel(models.Model):
     description = models.CharField(max_length=100, blank=True)
     imports = models.TextField(blank=True)
     code = models.TextField()
+    distributed = models.BooleanField(default=False)
+    father = models.OneToOneField('self', null=True, default=None, related_name='child', on_delete=models.SET_NULL)
 
 
 class Configuration(models.Model):
@@ -88,6 +90,8 @@ class Inference(models.Model):
     input_topic =  models.TextField(blank=True)
     output_topic =  models.TextField(blank=True)
     time = models.DateTimeField(default=now, editable=False)
+    limit = models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
+    output_upper = models.TextField(blank=True)
 
     class Meta(object):
         ordering = ('-time', )

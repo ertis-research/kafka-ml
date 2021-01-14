@@ -19,6 +19,15 @@
         <input matInput placeholder="Description" name="description" [ngModel]="model.description">
       </mat-form-field>
     
+      <mat-checkbox name="distributed" [ngModel]="model.distributed" (change)="controlFather($event)">Distributed</mat-checkbox>
+
+      <mat-form-field *ngIf="showFather" class="full-width">
+        <mat-label>Upper model</mat-label>
+        <mat-select name="father" [ngModel]="model.father" [compareWith]="compareModels">
+          <mat-option *ngFor="let model of distributedModels" [value]="model.id">ID{{model.id}}  {{model.name}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <mat-form-field class="full-width">
     <mat-label>Imports</mat-label>
     <textarea matInput rows="4" name="imports" [ngModel]="model.imports" 

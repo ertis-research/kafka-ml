@@ -4,6 +4,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import { MLModel } from '../shared/ml.model';
 
 @Component({
   selector: 'app-model-list',
@@ -13,7 +14,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 })
 export class ModelListComponent implements OnInit {
 
-  displayedColumns = ['id', 'name', 'description', 'imports', 'code', 'view', 'delete'];
+  displayedColumns = ['id', 'name', 'description', 'imports', 'code', 'distributed', 'father', 'view', 'delete'];
   models : JSON[];
   dataSource = new MatTableDataSource(this.models);
   
@@ -75,4 +76,9 @@ export class ModelListComponent implements OnInit {
     this.dataSource._updateChangeSubscription(); // <-- Refresh the datasource
   }
 
+  getName(obj: MLModel): string {
+    if (obj) {
+      return obj.name;
+    }
+  }
 }

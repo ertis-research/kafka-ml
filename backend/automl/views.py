@@ -1,9 +1,12 @@
 import json
+from django.http import JsonResponse
 import os
 import sys
 import logging
 import copy
 import traceback
+
+import re
 
 import tensorflow as tf
 from tensorflow import keras
@@ -27,17 +30,16 @@ from automl.models import MLModel, Deployment, Configuration, TrainingResult, Da
 from kafka import KafkaProducer
 
 def format_ml_code(code):
-    """Checks if the ML code starts with the string 'model='. Otherwise, it add the string
+    """Checks if the ML code ends with the string 'model = ' in its last line. Otherwise, it adds the string.
         Args:
             code (str): ML code to check
         Returns:
             str: code formatted
     """
-    if not code.replace(" ", "").startswith('model='):
-        code+='model='
-    return code
 
-def exec_model(imports_code, model_code):
+    return code[:code.rfind('\n')+1] + 'model = ' + code[code.rfind('\n')+1:]
+
+def exec_model(imports_code, model_code, distributed):
     """Runs the ML code and returns the generated model
         Args:
             imports_code (str): Imports before the code 
@@ -49,10 +51,13 @@ def exec_model(imports_code, model_code):
     if imports_code is not None and imports_code!='':
         """Checks if there is any import to be executed before the code"""
         exec (imports_code, None, globals())
-
-    ml_code=format_ml_code(model_code)   
-    exec (ml_code, None, globals())
-    """Runs the ML code"""
+   
+    if distributed:
+        ml_code = format_ml_code(model_code)
+        exec (ml_code, None, globals())
+        """Runs the ML code"""
+    else:
+        exec (model_code, None, globals())
 
     return model
 
@@ -111,7 +116,10 @@ class ModelList(generics.ListCreateAPIView):
             logging.info("Data code received %s", data['code'])
             
             imports_code = '' if 'imports' not in data else data['imports']
-            exec_model(imports_code, data['code'])
+            if 'distributed' in data:
+                exec_model(imports_code, data['code'], data['distributed'])
+            else:
+                exec_model(imports_code, data['code'], False)
             model.summary()
             """Prints the information of the model"""
 
@@ -121,8 +129,25 @@ class ModelList(generics.ListCreateAPIView):
                 return HttpResponse(status=status.HTTP_201_CREATED)
             return HttpResponse("Information not valid", status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logging.error(str(e))
-            return HttpResponse('Model not valid', status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+class DistributedModelList(generics.ListAPIView):
+    """View to get the list of distributed models
+        
+        URL: /models/distributed
+    """
+
+    queryset = MLModel.objects.filter(distributed = True)
+    serializer_class = MLModelSerializer
+
+class FatherModelList(generics.ListAPIView):
+    """View to get the list of models which have no father
+        
+        URL: /models/fathers
+    """
+
+    queryset = MLModel.objects.filter(father = None)
+    serializer_class = MLModelSerializer
 
 class ModelID(generics.RetrieveUpdateDestroyAPIView):
     """View to get the information, update and delete a unique model. The model PK has be passed in the URL.
@@ -151,17 +176,21 @@ class ModelID(generics.RetrieveUpdateDestroyAPIView):
                     if data['code']!= model_obj.code:
                         try:
                             imports_code = '' if 'imports' not in data else data['imports']
-                            exec_model(imports_code, data['code'])
+                            if 'distributed' in data:
+                                exec_model(imports_code, data['code'], data['distributed'])
+                            else:
+                                exec_model(imports_code, data['code'], False)
                             """Execution of ML Mode"""
                         except Exception as e:
                             return HttpResponse('Model not valid: '+str(e), status=status.HTTP_400_BAD_REQUEST)
                     serializer.save()
                     return HttpResponse(status=status.HTTP_200_OK)
                 else:
-                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+                    return HttpResponse("Information not valid", status=status.HTTP_400_BAD_REQUEST)
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+            logging.error(str(e))
+            return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk, format=None):
         """Deletes a model"""
@@ -178,6 +207,21 @@ class ModelID(generics.RetrieveUpdateDestroyAPIView):
             traceback.print_exc()
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
         
+class ModelResultID(generics.RetrieveAPIView):
+    """View to get a model from its result ID
+        
+        URL: /models/result/{:id_result}
+    """
+
+    def get(self, request, pk, format=None):
+        if TrainingResult.objects.filter(pk=pk).exists():
+            result = TrainingResult.objects.get(pk=pk)
+            model = result.model
+            serializer = MLModelSerializer(model, many=False)
+            return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
+        else:
+            return HttpResponse('TrainingResult not found', status=status.HTTP_400_BAD_REQUEST)
+        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
 class ConfigurationList(generics.ListCreateAPIView):
     """View to get the list of configurations and create a new configuration
@@ -187,6 +231,34 @@ class ConfigurationList(generics.ListCreateAPIView):
     queryset = Configuration.objects.all()
     serializer_class = ConfigurationSerializer
 
+    def post(self, request, format=None):
+        """Obteins all the models from a configuration"""
+        try:
+            data = json.loads(request.body)
+            models = data['ml_models']
+            all_models = []
+            for m in models:
+                all_models.append(m)
+                obj = MLModel.objects.get(pk=m)
+                if hasattr(obj, 'child'):
+                    son = obj.child
+                    while son:
+                        all_models.append(son.id)
+                        if hasattr(son, 'child'):
+                            son = son.child
+                        else:
+                            son = None
+            data['ml_models'] = all_models
+            serializer = ConfigurationSerializer(data=data)
+            if serializer.is_valid():
+                obj = serializer.save()
+                return HttpResponse(status=status.HTTP_201_CREATED)
+            else:
+                return HttpResponse("Information not valid", status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse('Configuration not valid', status=status.HTTP_400_BAD_REQUEST)
+
 class ConfigurationID(generics.RetrieveUpdateDestroyAPIView):
     """View to get the information, update and delete a unique configuration. The configuration PK has be passed in the URL.
         
@@ -194,6 +266,38 @@ class ConfigurationID(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Configuration.objects.all()
     serializer_class = ConfigurationSerializer
+
+    def put(self, request, pk, format=None):
+        """Obteins all the models from a configuration"""
+        try:
+            if Configuration.objects.filter(pk=pk).exists():
+                data = json.loads(request.body)
+                models = data['ml_models']
+                all_models = []
+                for m in models:
+                    all_models.append(m)
+                    obj = MLModel.objects.get(pk=m)
+                    if hasattr(obj, 'child'):
+                        son = obj.child
+                        while son:
+                            all_models.append(son.id)
+                            if hasattr(son, 'child'):
+                                son = son.child
+                            else:
+                                son = None
+                data['ml_models'] = all_models
+                configuration_obj = Configuration.objects.get(pk=pk)
+                serializer = ConfigurationSerializer(configuration_obj, data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return HttpResponse(status=status.HTTP_200_OK)
+                else:
+                    return HttpResponse("Information not valid", status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
         """Deletes a configuration"""
@@ -246,41 +350,94 @@ class DeploymentList(generics.ListCreateAPIView):
                     config.load_incluster_config() # To run inside the container
                     #config.load_kube_config() # To run externally
                     api_instance = client.BatchV1Api()
-        
+                    
                     for result in TrainingResult.objects.filter(deployment=deployment):
-                        job_manifest = {
-                            'apiVersion': 'batch/v1',
-                            'kind': 'Job',
-                            'metadata': {
-                                'name': 'model-training-'+str(result.id)
-                            },
-                            'spec': {
-                                'ttlSecondsAfterFinished' : 10,
-                                'template' : {
-                                    'spec': {
-                                        'containers': [{
-                                            'image': settings.TRAINING_MODEL_IMAGE, 
-                                            'name': 'training',
-                                            'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                    {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
-                                                    {'name': 'RESULT_ID', 'value': str(result.id)},
-                                                    {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                                    {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                    {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                    {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
-                                                    {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)}
-                                                    ],
-                                        }],
-                                        'imagePullPolicy': 'Never', # TODO: Remove this when the image is in DockerHub
-                                        'restartPolicy': 'OnFailure'
+                        if not result.model.distributed:
+                            job_manifest = {
+                                'apiVersion': 'batch/v1',
+                                'kind': 'Job',
+                                'metadata': {
+                                    'name': 'model-training-'+str(result.id)
+                                },
+                                'spec': {
+                                    'ttlSecondsAfterFinished' : 10,
+                                    'template' : {
+                                        'spec': {
+                                            'containers': [{
+                                                'image': settings.TRAINING_MODEL_IMAGE, 
+                                                'name': 'training',
+                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                        {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
+                                                        {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                        {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                        {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                        {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                        {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
+                                                        {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)}
+                                                        ],
+                                            }],
+                                            'imagePullPolicy': 'Never', # TODO: Remove this when the image is in DockerHub
+                                            'restartPolicy': 'OnFailure'
+                                        }
                                     }
                                 }
                             }
-                        }
-                        resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
-                    
+                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
+                        
+                        elif result.model.distributed and result.model.father is None:
+                            """Obteins all the distributed models from a deployment and creates a job for each group of them"""
+                            result_urls = []
+                            result_ids = []
+                            s = 'http://backend:8000/results/'
+                            n = ''
+
+                            result_urls.append(s+str(result.id))
+                            result_ids.append(str(result.id))
+                            n += '-'+str(result.id)
+                            current = result
+                            while hasattr(current.model, 'child'):
+                                current = TrainingResult.objects.get(model=current.model.child, deployment=deployment)
+                                result_urls.append(s+str(current.id))
+                                result_ids.append(str(current.id))
+                                n += '-'+str(current.id)
+
+                            result_urls.reverse()
+                            result_ids.reverse()
+
+                            job_manifest = {
+                                'apiVersion': 'batch/v1',
+                                'kind': 'Job',
+                                'metadata': {
+                                    'name': 'model-distributed-training'+n
+                                },
+                                'spec': {
+                                    'ttlSecondsAfterFinished' : 10,
+                                    'template' : {
+                                        'spec': {
+                                            'containers': [{
+                                                'image': settings.DISTRIBUTED_TRAINING_MODEL_IMAGE, 
+                                                'name': 'training',
+                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                        {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                        {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                        {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                        {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                        {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                        {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
+                                                        {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)}
+                                                        ],
+                                            }],
+                                            'imagePullPolicy': 'Never', # TODO: Remove this when the image is in DockerHub
+                                            'restartPolicy': 'OnFailure'
+                                        }
+                                    }
+                                }
+                            }
+                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
+
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except Exception as e:
+                    traceback.print_exc()
                     Deployment.objects.filter(pk=deployment.pk).delete()
                     logging.error(str(e))
                     return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)     
@@ -346,7 +503,7 @@ class DeploymentResultID(generics.RetrieveDestroyAPIView):
             deployment= Deployment.objects.get(pk=pk)
             results = TrainingResult.objects.filter(deployment=deployment)
             serializer = TrainingResultSerializer(results, many=True)
-            return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
+            return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
         else:
             return HttpResponse('Deployment not found', status=status.HTTP_400_BAD_REQUEST)
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
@@ -385,10 +542,10 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
 
         try:
             result= TrainingResult.objects.get(pk=pk)
-            filename = os.path.join(settings.MEDIA_ROOT, settings.MODELS_DIR)+str(result.model.id)+'.h5'
+            filename = os.path.join(settings.MEDIA_ROOT, settings.MODELS_DIR, str(result.model.id)+'.h5')
             """Obtains the model filename"""
 
-            model = exec_model(result.model.imports, result.model.code)
+            model = exec_model(result.model.imports, result.model.code, result.model.distributed)
             """Executes the model code"""
             
             model.save(filename)
@@ -580,24 +737,52 @@ class InferenceResultID(generics.ListCreateAPIView):
         """ Checks the training result exists and returns the input format and configuration if there any in other inference or 
             datasource objects to facilitate the inference deployment.
         """
-        if TrainingResult.objects.filter(pk=pk).exists():
-            response = {
-                'input_format': '',
-                'input_config': '',
-            }
-            result = TrainingResult.objects.get(id=pk)
-            inferences = Inference.objects.filter(model_result=result)
-            if inferences.count() > 0:
-                response['input_format']=inferences[0].input_format
-                response['input_config']=inferences[0].input_config
-            else:
-                datasources = Datasource.objects.filter(deployment=str(result.deployment.id))
-                if datasources.count() > 0:
-                    response['input_format']=datasources[0].input_format
-                    response['input_config']=datasources[0].input_config # TODO change to input_config
-            return HttpResponse(json.dumps(response), status=status.HTTP_200_OK)
+        try:
+            if TrainingResult.objects.filter(pk=pk).exists():
+                response = {
+                    'input_format': '',
+                    'input_config': '',
+                }
+                result = TrainingResult.objects.get(id=pk)
+                inferences = Inference.objects.filter(model_result=result)
+                if inferences.count() > 0:
+                    response['input_format']=inferences[0].input_format
+                    response['input_config']=inferences[0].input_config
+                else:
+                    model = result.model
+                    datasources = Datasource.objects.filter(deployment=str(result.deployment.id))
 
-        return HttpResponse('Result not found', status=status.HTTP_400_BAD_REQUEST)    
+                    if datasources.count() > 0:
+                        response['input_format'] = datasources[0].input_format
+                        input_config = datasources[0].input_config
+
+                        if not hasattr(model, 'child'):
+                            response['input_config'] = input_config # TODO change to input_config
+                        else:
+                            tensorflow_model = exec_model(model.imports, model.code, model.distributed)
+                            """Loads the model to a Tensorflow model"""
+
+                            input_shape = str(tensorflow_model.input_shape)
+
+                            sub = re.search(', (.+?)\)', input_shape)
+
+                            if sub:
+                                shape = sub.group(1)
+
+                                dictionary = json.loads(input_config)
+
+                                dictionary['data_reshape'] = shape
+
+                                new_input_config = json.dumps(dictionary)
+
+                                response['input_config'] = new_input_config
+                            else:
+                                response['input_config'] = input_config
+
+                return HttpResponse(json.dumps(response), status=status.HTTP_200_OK)
+        except Exception as e:
+            traceback.print_exc()
+            return HttpResponse('Result not found', status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, pk, format=None):
         """ Expects a JSON in the request body with the information to deploy a inference.
@@ -639,46 +824,92 @@ class InferenceResultID(generics.ListCreateAPIView):
                         config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
                         api_instance = client.CoreV1Api()
-                        manifest = {
-                            'apiVersion': 'v1', 
-                            'kind': 'ReplicationController',
-                            'metadata': {
-                                'name': 'model-inference-'+str(inference.id),
-                                'labels': {
-                                    'name': 'model-inference-'+str(inference.id)
-                                }
-                            },
-                            'spec': {
-                                'replicas': inference.replicas,
-                                'selector': {
-                                # 'matchLabels': {
-                                        'app' : 'inference'+str(inference.id)
-                                    #}
+
+                        if not result.model.distributed:
+                            manifest = {
+                                'apiVersion': 'v1', 
+                                'kind': 'ReplicationController',
+                                'metadata': {
+                                    'name': 'model-inference-'+str(inference.id),
+                                    'labels': {
+                                        'name': 'model-inference-'+str(inference.id)
+                                    }
                                 },
-                                'template':{
-                                    'metadata':{
-                                        'labels': {
+                                'spec': {
+                                    'replicas': inference.replicas,
+                                    'selector': {
+                                    # 'matchLabels': {
                                             'app' : 'inference'+str(inference.id)
-                                        }
+                                        #}
                                     },
-                                    'spec':{
-                                        'containers': [{
-                                            'image': settings.INFERENCE_MODEL_IMAGE, 
-                                            'name': 'inference',
-                                            'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                    {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
-                                                    {'name': 'INPUT_FORMAT', 'value': inference.input_format},
-                                                    {'name': 'INPUT_CONFIG', 'value': inference.input_config},
-                                                    {'name': 'INPUT_TOPIC', 'value': inference.input_topic},
-                                                    {'name': 'OUTPUT_TOPIC', 'value': inference.output_topic},
-                                                    {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)}],
-                                        }],
-                                        'imagePullPolicy': 'Never' # TODO: Remove this when the image is in DockerHub
+                                    'template':{
+                                        'metadata':{
+                                            'labels': {
+                                                'app' : 'inference'+str(inference.id)
+                                            }
+                                        },
+                                        'spec':{
+                                            'containers': [{
+                                                'image': settings.INFERENCE_MODEL_IMAGE, 
+                                                'name': 'inference',
+                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                        {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
+                                                        {'name': 'INPUT_FORMAT', 'value': inference.input_format},
+                                                        {'name': 'INPUT_CONFIG', 'value': inference.input_config},
+                                                        {'name': 'INPUT_TOPIC', 'value': inference.input_topic},
+                                                        {'name': 'OUTPUT_TOPIC', 'value': inference.output_topic},
+                                                        {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)}],
+                                            }],
+                                            'imagePullPolicy': 'Never' # TODO: Remove this when the image is in DockerHub
+                                        }
                                     }
                                 }
                             }
-                        }
-                        resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+                            resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+                        else:
+                            manifest = {
+                                'apiVersion': 'v1', 
+                                'kind': 'ReplicationController',
+                                'metadata': {
+                                    'name': 'model-inference-'+str(inference.id),
+                                    'labels': {
+                                        'name': 'model-inference-'+str(inference.id)
+                                    }
+                                },
+                                'spec': {
+                                    'replicas': inference.replicas,
+                                    'selector': {
+                                    # 'matchLabels': {
+                                            'app' : 'inference'+str(inference.id)
+                                        #}
+                                    },
+                                    'template':{
+                                        'metadata':{
+                                            'labels': {
+                                                'app' : 'inference'+str(inference.id)
+                                            }
+                                        },
+                                        'spec':{
+                                            'containers': [{
+                                                'image': settings.DISTRIBUTED_INFERENCE_MODEL_IMAGE,
+                                                'name': 'inference',
+                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                        {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
+                                                        {'name': 'INPUT_FORMAT', 'value': inference.input_format},
+                                                        {'name': 'INPUT_CONFIG', 'value': inference.input_config},
+                                                        {'name': 'INPUT_TOPIC', 'value': inference.input_topic},
+                                                        {'name': 'OUTPUT_TOPIC', 'value': inference.output_topic},
+                                                        {'name': 'OUTPUT_UPPER', 'value': inference.output_upper},
+                                                        {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)},
+                                                        {'name': 'LIMIT', 'value': str(inference.limit)}],
+                                            }],
+                                            'imagePullPolicy': 'Never' # TODO: Remove this when the image is in DockerHub
+                                        }
+                                    }
+                                }
+                            }
+                            resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+
                         return HttpResponse(status=status.HTTP_200_OK)
                     except Exception as e:
                         Inference.objects.filter(pk=inference.pk).delete()

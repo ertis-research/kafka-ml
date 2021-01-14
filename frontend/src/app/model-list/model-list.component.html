@@ -40,6 +40,16 @@
           <mat-cell *matCellDef="let element" title="{{element.imports}}"> {{ element.imports | slice:0:20}} </mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="distributed">
+          <mat-header-cell *matHeaderCellDef> Distributed </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.distributed}}"> {{element.distributed}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="father">
+          <mat-header-cell *matHeaderCellDef> Upper layer </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.father}}"> {{getName(element.father)}} </mat-cell>
+        </ng-container>
+
          <ng-container matColumnDef="view">
           <mat-header-cell *matHeaderCellDef > View </mat-header-cell>
           <mat-cell *matCellDef="let element">            
