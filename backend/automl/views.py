@@ -78,6 +78,31 @@ def parse_kwargs_fit(kwargs_fit):
     
     return json.dumps(dic)
 
+def deploy( manifest, token=None, external_host=None ):
+    """ Make a deployment according to the manifest.
+        You can also provide an external host and its token
+        to deploy it there. If one of them is not provided,
+        this function will make the deployment locally.
+        
+        Parameters:
+            dict: manifest
+            str: token
+            str: external_host (e.g. "https://192.168.65.3:6443")
+
+        Return:
+            Response of Kubernetes Cluster
+    """
+    aConfiguration = client.Configuration()
+    if token is not None and \
+        external_host is not None:
+        aConfiguration.host = external_host 
+        aConfiguration.verify_ssl = False
+        aConfiguration.api_key = { "authorization": "Bearer " + token }
+    aApiClient = client.ApiClient(aConfiguration)
+    api_instance = client.CoreV1Api(aApiClient)
+    resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+    return resp
+
 class ModelList(generics.ListCreateAPIView):
     """View to get the list of models and create a new model
         
@@ -434,7 +459,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                 }
                             }
                             resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
-
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except Exception as e:
                     traceback.print_exc()
@@ -821,9 +845,8 @@ class InferenceResultID(generics.ListCreateAPIView):
                 if serializer.is_valid() and result.status == 'finished':
                     inference = serializer.save()
                     try:
-                        config.load_incluster_config() # To run inside the container
+                        # config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
-                        api_instance = client.CoreV1Api()
 
                         if not result.model.distributed:
                             manifest = {
@@ -865,7 +888,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                     }
                                 }
                             }
-                            resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+                            # resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
                         else:
                             manifest = {
                                 'apiVersion': 'v1', 
@@ -908,8 +931,12 @@ class InferenceResultID(generics.ListCreateAPIView):
                                     }
                                 }
                             }
-                            resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
-
+                            # resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+                        deploy( 
+                            manifest        = manifest, 
+                            token           = inference.token, 
+                            external_host   = inference.external_host
+                        )
                         return HttpResponse(status=status.HTTP_200_OK)
                     except Exception as e:
                         Inference.objects.filter(pk=inference.pk).delete()

@@ -27,6 +27,11 @@
           <mat-cell *matCellDef="let element" title="{{element.replicas}}">{{ element.replicas}} </mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="external_host">
+          <mat-header-cell *matHeaderCellDef>Host</mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.external_host}}">{{ element.external_host}} </mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="input_topic">
           <mat-header-cell *matHeaderCellDef> Kafka input topic </mat-header-cell>
           <mat-cell *matCellDef="let element" title="{{element.input_topic}}">{{ element.input_topic}} </mat-cell>
