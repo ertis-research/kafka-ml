@@ -99,7 +99,7 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 
 ### Requirements
 
-- [Python supported by Tensorflow 3.5–3.7](https://www.python.org/)
+- [Python 3.5-3.7, supported by Tensorflow](https://www.python.org/)
 - [Node.js](https://nodejs.org/)
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
