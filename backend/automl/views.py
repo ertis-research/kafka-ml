@@ -78,6 +78,31 @@ def parse_kwargs_fit(kwargs_fit):
     
     return json.dumps(dic)
 
+def kubernetes_config( token=None, external_host=None ):
+    """ Get Kubernetes configuration.
+        You can provide a token and the external host IP 
+        to access a external Kubernetes cluster. If one
+        of them is not provided the configuration returned
+        will be for your local machine.
+
+        Parameters:
+            str: token 
+            str: external_host (e.g. "https://192.168.65.3:6443")
+
+        Return:
+            Kubernetes API instance
+    """
+    aConfiguration = client.Configuration()
+    if token is not None and \
+        external_host is not None:
+
+        aConfiguration.host = external_host 
+        aConfiguration.verify_ssl = False
+        aConfiguration.api_key = { "authorization": "Bearer " + token }
+    aApiClient = client.ApiClient( aConfiguration )
+    api_instance = client.CoreV1Api( aApiClient )
+    return api_instance
+
 def deploy( manifest, token=None, external_host=None ):
     """ Make a deployment according to the manifest.
         You can also provide an external host and its token
@@ -92,15 +117,9 @@ def deploy( manifest, token=None, external_host=None ):
         Return:
             Response of Kubernetes Cluster
     """
-    aConfiguration = client.Configuration()
-    if token is not None and \
-        external_host is not None:
-        aConfiguration.host = external_host 
-        aConfiguration.verify_ssl = False
-        aConfiguration.api_key = { "authorization": "Bearer " + token }
-    aApiClient = client.ApiClient(aConfiguration)
-    api_instance = client.CoreV1Api(aApiClient)
-    resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+    api_instance = kubernetes_config( token=token, external_host=external_host )
+    # create_namespaced_deployment
+    resp = api_instance.create_namespaced_replication_controller( body=manifest, namespace='default' ) 
     return resp
 
 class ModelList(generics.ListCreateAPIView):
