@@ -122,6 +122,29 @@ def deploy( manifest, token=None, external_host=None ):
     resp = api_instance.create_namespaced_replication_controller( body=manifest, namespace='default' ) 
     return resp
 
+def delete_deploy( inference_id, token=None, external_host=None ):
+    """ Delete a previous deployment.
+        You can also provide an external host and its token
+        to delete a deployment there. If one of them is not provided,
+        this function will try to delete the deployment locally.
+        
+        Parameters:
+            dict: inference_id ; Deployment ID
+            str: token
+            str: external_host (e.g. "https://192.168.65.3:6443")
+
+        Return:
+            Response of Kubernetes Cluster
+    """
+    api_instance = kubernetes_config( token=token, external_host=external_host )
+    api_response = api_instance.delete_namespaced_replication_controller(
+        name='model-inference-'+str( inference_id ),
+        namespace="default",
+        body=client.V1DeleteOptions(
+            propagation_policy='Foreground',
+            grace_period_seconds=5))
+    return api_response
+
 class ModelList(generics.ListCreateAPIView):
     """View to get the list of models and create a new model
         
@@ -737,15 +760,12 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
                 inference = Inference.objects.get(pk=pk)
                 if inference.status == 'deployed':
                     try:
-                        config.load_incluster_config() # To run inside the container
+                        # config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
-                        api_instance = client.CoreV1Api()
-                        api_response = api_instance.delete_namespaced_replication_controller(
-                        name='model-inference-'+str(inference.id),
-                        namespace="default",
-                        body=client.V1DeleteOptions(
-                            propagation_policy='Foreground',
-                            grace_period_seconds=5))
+                        delete_deploy(
+                            inference_id=inference.id,
+                            token=inference.token,
+                            external_host=inference.external_host )
                     except:
                         pass
                     inference.status = 'stopped'
