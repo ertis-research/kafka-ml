@@ -92,6 +92,8 @@ class Inference(models.Model):
     time = models.DateTimeField(default=now, editable=False)
     limit = models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
     output_upper = models.TextField(blank=True)
+    token = models.TextField(blank=True, default=None, null=True)
+    external_host = models.TextField(blank=True, default=None, null=True)
 
     class Meta(object):
         ordering = ('-time', )

@@ -13,7 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class InferenceListComponent implements OnInit {
 
-  displayedColumns = ['id',  'model_result', 'replicas', 'input_format', 'input_config', 
+  displayedColumns = ['id',  'model_result', 'replicas', 'input_format', 'input_config', 'external_host',
   'input_topic', 'output_topic', 'output_upper', 'limit', 'time', 'status', 'manage'];
 
   inferences: JSON[];
