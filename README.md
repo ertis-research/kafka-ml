@@ -143,6 +143,7 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
     ```
     cd frontend
     npm install
+    npm i -g @angular/cli
     ng build -c production
     docker build --tag localhost:5000/frontend .
     docker push localhost:5000/frontend 
