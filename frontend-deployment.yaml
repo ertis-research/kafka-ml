@@ -20,7 +20,7 @@ spec:
         name: frontend
         ports:
         - containerPort: 80
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         env:
           - name: BACKEND_URL
             value: http://localhost:8000

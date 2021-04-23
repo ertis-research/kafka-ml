@@ -25,8 +25,7 @@ SECRET_KEY = 'zbtes53q%twx0#&@$c-b2^299qv1fi4v3ldv*&u9po%bbd8asu' if os.environ.
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if os.environ.get('DEBUG') is None or os.environ.get('DEBUG')== '1' else False
 
-ALLOWED_HOSTS = ['backend', 'frontend', '127.0.0.1', 'localhost', '[::1]']
-
+ALLOWED_HOSTS = ['backend', 'frontend', '127.0.0.1', 'localhost', '[::1]'] if os.environ.get('ALLOWED_HOSTS') is None else os.environ.get('ALLOWED_HOSTS').split(',')
 
 # Application definition
 

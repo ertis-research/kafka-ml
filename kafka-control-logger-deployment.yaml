@@ -20,7 +20,7 @@ spec:
       containers:
       - image: localhost:5000/kafka_control_logger
         name: kafka-control-logger
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         env:
         - name: BOOTSTRAP_SERVERS
           value: kafka-cluster:9092

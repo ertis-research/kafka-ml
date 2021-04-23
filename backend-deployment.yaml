@@ -20,7 +20,7 @@ spec:
         name: backend
         ports:
         - containerPort: 8000
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         env:
         - name: BOOTSTRAP_SERVERS
           value: kafka-cluster:9092
@@ -32,6 +32,12 @@ spec:
           value: localhost:5000/model_inference
         - name: FRONTEND_URL
           value: http://localhost
+        # - name: ALLOWED_HOSTS
+        #  value: 127.0.0.1, localhost
+        # - name: KUBE_TOKEN
+        #  value: ...
+        # - name: KUBE_HOST
+        #  value: https://...
         # - name: SECRET_KEY
         #  value: ...
         # - name: DEBUG
