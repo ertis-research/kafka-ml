@@ -104,7 +104,7 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
 
-### Steps to build and execute Kafka-ML
+### Steps to build Kafka-ML
 
 1. You may need to deploy a local register to upload your Docker images. You can deploy it in the port 5000:
     ```
@@ -149,7 +149,9 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
     docker push localhost:5000/frontend 
     ```
 
-7. Once built the images, you can deploy the system components in Kubernetes following this order:
+### Deploying Kafka-ML in a single node Kubernetes cluster (e.g., minikube, Docker desktop)
+
+Once built the images, you can deploy the system components in Kubernetes following this order:
     ```
     kubectl apply -f zookeeper-pod.yaml
     kubectl apply -f zookeeper-service.yaml
@@ -165,8 +167,66 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 
     kubectl apply -f kafka-control-logger-deployment.yaml
     ```
+Finally, you will be able to access the Kafka-ML Web UI: http://localhost/
 
-8. Finally, you will be able to access the Kafka-ML Web UI: http://localhost/
+
+### Deploying Kafka-ML in a distributed Kubernetes cluster
+
+#### Configuring the back-end
+
+The first thing to keep in mind is that the images we compiled earlier were intended for a single node cluster (localhost) and will not be able to be downloaded from a distributed Kubernetes cluster. Therefore, assuming that we are going to upload them into a registry as before and on a node with IP x.x.x.x.x, we would have to do the same for all the images as for the following backend example:
+
+    ```
+    cd backend
+    docker build --tag x.x.x.x:5000/backend .
+    docker push x.x.x.x:5000/backend 
+    ```
+Now, we have to update the location of these images (tr) in the `backend-deployment.yaml` file:
+
+```
+ containers:
+ -   - image: localhost:5000/backend
+ +   - image: x.x.x.x:5000/backend
+        
+    - name: TRAINING_MODEL_IMAGE
+-     value: localhost:5000/model_training
++     value: x.x.x.x:5000/model_training
+    - name: INFERENCE_MODEL_IMAGE
+-     value: localhost:5000/model_inference
++     value: x.x.x.x:5000/model_inference
+```
+To be able to deploy components in a Kubernetes cluster, we need to create a service account, give access to that account and generate a token:
+
+```
+$ sudo kubectl create serviceaccount k8sadmin -n kube-system
+
+$ sudo kubectl create clusterrolebinding k8sadmin --clusterrole=cluster-admin --serviceaccount=kube-system:k8sadmin
+
+$ sudo kubectl -n kube-system describe secret $(sudo kubectl -n kube-system get secret | (grep k8sadmin || echo "$_") | awk '{print $1}') | grep token: | awk '{print $2}'
+```
+
+With the obtained token in the last step, we have to change the **KUBE_TOKEN** env var  to include it, and the **KUBE_HOST** var  to include the URL of the Kubernetes master (e.g., https://IP_MASTER:6443) in the `backend-deployment.yaml` file:
+
+```
+    - name: KUBE_TOKEN
+      value: # include token here (and remove #)
+    - name: KUBE_HOST
+      value: # include kubernetes master URL here
+```
+
+Finally, to allow access to the back-end from outside Kubernetes, we can do this by assigning a node cluster IP available to the back-end service in Kubernetes. For example, given the IP y.y.y.y.y of a node in the cluster, we could include it in the `backend-service.yaml` file:
+
+```
+  type: LoadBalancer
++ externalIPs:
++ - y.y.y.y.y.y
+```
+
+Add this IP also to the  **ALLOWED_HOSTS** env var in the `backend-deployment.yaml` file:
+```
+    - name: ALLOWED_HOSTS
+      value: y.y.y.y, localhost
+````
 
 ## License
 MIT
