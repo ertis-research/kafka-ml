@@ -37,6 +37,28 @@ def format_ml_code(code):
         code+='model='
     return code
 
+def kubernetes_config( token=None, external_host=None ):
+    """ Get Kubernetes configuration.
+        You can provide a token and the external host IP 
+        to access a external Kubernetes cluster. If one
+        of them is not provided the configuration returned
+        will be for your local machine.
+        Parameters:
+            str: token 
+            str: external_host (e.g. "https://192.168.65.3:6443")
+        Return:
+            Kubernetes API instance
+    """
+    aConfiguration = client.Configuration()
+    if token is not None and \
+        external_host is not None:
+
+        aConfiguration.host = external_host 
+        aConfiguration.verify_ssl = False
+        aConfiguration.api_key = { "authorization": "Bearer " + token }
+    api_client = client.ApiClient( aConfiguration) 
+    return api_client
+
 def exec_model(imports_code, model_code):
     """Runs the ML code and returns the generated model
         Args:
@@ -243,9 +265,12 @@ class DeploymentList(generics.ListCreateAPIView):
                 deployment = serializer.save()
                 try:
                     """ KUBERNETES code goes here"""
-                    config.load_incluster_config() # To run inside the container
+                    #config.load_incluster_config() # To run inside the container
                     #config.load_kube_config() # To run externally
-                    api_instance = client.BatchV1Api()
+                    logging.info("Connection to Kubernetes %s %s", os.environ.get('KUBE_TOKEN'), os.environ.get('KUBE_HOST'))
+                    api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
+                    api_instance = client.BatchV1Api( api_client)
+                    #api_instance = client.BatchV1Api()
         
                     for result in TrainingResult.objects.filter(deployment=deployment):
                         job_manifest = {
@@ -504,9 +529,12 @@ class TrainingResultStop(generics.CreateAPIView):
                 result = TrainingResult.objects.get(pk=pk)
                 if result.status == 'deployed':
                     try:
-                        config.load_incluster_config() # To run inside the container
+                        #config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
-                        api_instance = client.BatchV1Api()
+                        #api_instance = client.BatchV1Api()
+                        api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
+                        api_instance = client.BatchV1Api( api_client)
+
                         api_response = api_instance.delete_namespaced_job(
                         name='model-training-'+str(result.id),
                         namespace="default",
@@ -537,9 +565,12 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
                 inference = Inference.objects.get(pk=pk)
                 if inference.status == 'deployed':
                     try:
-                        config.load_incluster_config() # To run inside the container
+                        #config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
-                        api_instance = client.CoreV1Api()
+                        #api_instance = client.CoreV1Api()
+                        api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
+                        api_instance = client.CoreV1Api( api_client)
+
                         api_response = api_instance.delete_namespaced_replication_controller(
                         name='model-inference-'+str(inference.id),
                         namespace="default",
@@ -636,9 +667,12 @@ class InferenceResultID(generics.ListCreateAPIView):
                 if serializer.is_valid() and result.status == 'finished':
                     inference = serializer.save()
                     try:
-                        config.load_incluster_config() # To run inside the container
+                        #config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
-                        api_instance = client.CoreV1Api()
+                        #api_instance = client.CoreV1Api()
+                        api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
+                        api_instance = client.CoreV1Api( api_client)
+
                         manifest = {
                             'apiVersion': 'v1', 
                             'kind': 'ReplicationController',
