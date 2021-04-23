@@ -152,6 +152,7 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 ### Deploying Kafka-ML in a single node Kubernetes cluster (e.g., minikube, Docker desktop)
 
 Once built the images, you can deploy the system components in Kubernetes following this order:
+
     ```
     kubectl apply -f zookeeper-pod.yaml
     kubectl apply -f zookeeper-service.yaml
