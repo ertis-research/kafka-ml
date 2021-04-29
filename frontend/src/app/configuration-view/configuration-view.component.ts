@@ -35,7 +35,7 @@ export class ConfigurationViewComponent implements OnInit {
               private location: Location) { }
 
   ngOnInit(): void {
-    this.modelService.getModels().subscribe(
+    this.modelService.getFatherModels().subscribe(
           (data) => {
             this.models= data;
           }, 

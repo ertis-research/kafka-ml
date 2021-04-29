@@ -2,15 +2,47 @@
 from rest_framework import serializers
 from automl.models import MLModel, Configuration, Deployment, TrainingResult, Datasource, Inference
 
-class MLModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MLModel
-        fields = ['id', 'code', 'name', 'description', 'imports']
-
 class SimpleModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = MLModel
         fields = ['id', 'name']
+
+class MLModelSerializer(serializers.ModelSerializer):
+    father = SimpleModelSerializer(read_only=True, required=False)
+    class Meta:
+        model = MLModel
+        fields = ['id', 'code', 'name', 'description', 'imports', 'distributed', 'father']
+
+    def update(self, instance, validated_data):
+        father = self.initial_data.get("father") if "father" in self.initial_data else None
+
+        for (key, value) in validated_data.items():
+            setattr(instance, key, value)
+        
+        if instance.distributed:
+            if father:
+                if father == instance.id:
+                    raise serializers.ValidationError("A model can not be its own father")
+                else:
+                    instance.father = MLModel.objects.get(pk=father)
+        else:
+            instance.father = None
+
+        instance.save()
+        
+        return instance
+
+    def create(self, validated_data):
+        father = self.initial_data.get("father") if "father" in self.initial_data else None
+        model = MLModel.objects.create(**validated_data)
+        if model.distributed:
+            if father:
+                model.father = MLModel.objects.get(pk=father)
+        else:
+            model.father = None
+
+        model.save()
+        return model
 
 class SimpleDeploymentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -141,7 +173,7 @@ class DeployInferenceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Inference
-        fields = ['model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic']
+        fields = ['model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'limit', 'output_upper', 'token', 'external_host', 'kafka_broker']
 
     def create(self, validated_data):
         """Creates a new inference, associated it with the result"""
@@ -157,4 +189,4 @@ class InferenceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Inference
-        fields = ['id', 'model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'time', 'status', 'status_changed']
+        fields = ['id', 'model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'time', 'status', 'status_changed', 'limit', 'output_upper', 'token', 'external_host', 'kafka_broker']

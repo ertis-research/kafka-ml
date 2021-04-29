@@ -4,6 +4,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import {Router, ActivatedRoute } from '@angular/router';
 import {Inference} from '../shared/inference.model'
 import {Location} from '@angular/common';
+import { MLModel } from '../shared/ml.model';
+import { ModelService } from '../services/model.service';
 
 @Component({
   selector: 'app-inference-view',
@@ -15,8 +17,11 @@ export class InferenceViewComponent implements OnInit {
   resultID: number;
   inference = new Inference();
   valid: boolean = false;
+  model: MLModel = new MLModel();
+  distributed: Boolean = false;
   
   constructor(private resultService: ResultService,
+  private modelService: ModelService,
   private snackbar: MatSnackBar,
   private route: ActivatedRoute,
   private router: Router,
@@ -40,7 +45,19 @@ export class InferenceViewComponent implements OnInit {
           duration: 3000
         });
       });
-    }  
+    }
+    this.modelService.getModelResultID(this.resultID).subscribe(
+      (data) => {
+        this.model=<MLModel> data;
+        this.distributed = this.model.distributed;
+      },  //changed
+      (err)=>{
+        this.valid = false;
+        this.snackbar.open('Error model not found', '', {
+          duration: 3000
+        });
+      }
+    );
   }
   back() {
     this.location.back();

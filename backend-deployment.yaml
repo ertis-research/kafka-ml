@@ -28,12 +28,14 @@ spec:
           value: control
         - name: TRAINING_MODEL_IMAGE
           value: localhost:5000/model_training
+        - name: DISTRIBUTED_TRAINING_MODEL_IMAGE
+          value: localhost:5000/distributed_model_training
         - name: INFERENCE_MODEL_IMAGE
           value: localhost:5000/model_inference
         - name: FRONTEND_URL
           value: http://localhost
-        # - name: ALLOWED_HOSTS
-        #  value: 127.0.0.1, localhost
+        - name: ALLOWED_HOSTS
+          value: 127.0.0.1,localhost,backend
         # - name: KUBE_TOKEN
         #  value: ...
         # - name: KUBE_HOST

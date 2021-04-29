@@ -11,6 +11,7 @@ from kafka import KafkaConsumer, KafkaProducer
 import traceback
 from utils import *
 from decoders import *
+import time
 
 MODEL_PATH='model.h5'
 '''Path of the trained model'''
@@ -64,10 +65,25 @@ if __name__ == '__main__':
     bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id = load_environment_vars()
     """Loads the environment information"""
     
+    output_upper = os.environ.get('OUTPUT_UPPER')
+    if output_upper is not None:
+      limit = eval(os.environ.get('LIMIT'))
+    """Loads the distributed environment information"""
+
+    if output_upper is not None and limit is not None:
+      distributed = True
+    else:
+      distributed = False
+    """Flag to work with distributed models"""
+
     input_config = json.loads(input_config)
     """Parse the configuration"""
 
-    logging.info("Received environment information (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id) ([%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
+    if distributed:
+      logging.info("Received environment information (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, output_upper, group_id, limit) ([%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
+              bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, output_upper, group_id, str(limit))
+    else:
+      logging.info("Received environment information (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id) ([%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
               bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, group_id)
     
     download_model(model_url, MODEL_PATH, RETRIES, SLEEP_BETWEEN_REQUESTS)
@@ -92,6 +108,8 @@ if __name__ == '__main__':
     decoder = DecoderFactory.get_decoder(input_format, input_config)
     """Creates the data decoder"""
 
+    start_inference = time.time()
+
     for msg in consumer:
       try:
         logging.info("Message received for prediction")
@@ -99,10 +117,13 @@ if __name__ == '__main__':
         input_decoded = decoder.decode(msg.value)
         """Decodes the message received"""
 
-        prediction = model.predict(np.array([input_decoded]))
+        if distributed:
+          prediction_to_upper, prediction_output = model.predict(np.array([input_decoded]))
+        else:
+          prediction_output = model.predict(np.array([input_decoded]))
         """Predicts the data received"""
         
-        prediction_value = prediction.tolist()[0]
+        prediction_value = prediction_output.tolist()[0]
         """Gets the prediction value"""
 
         logging.info("Prediction done: %s", str(prediction_value))
@@ -115,7 +136,10 @@ if __name__ == '__main__':
         response_to_kafka = json.dumps(response).encode()
         """Encodes the object response"""
 
-        producer.send(output_topic, response_to_kafka)
+        if distributed and max(prediction_value) < limit:
+          producer.send(output_upper, json.dumps(prediction_to_upper.tolist()).encode())
+        else:
+          producer.send(output_topic, response_to_kafka)
         """Sends the message to Kafka"""
         
         producer.flush()
@@ -126,6 +150,8 @@ if __name__ == '__main__':
         consumer.commit()
         """Commit the consumer offset after processing the message"""
 
+        end_inference = time.time()
+        logging.info("Total inference time: %s", str(end_inference - start_inference))
       except Exception as e:
         traceback.print_exc()
         logging.error("Error with the received data [%s]. Waiting for new a new prediction.", str(e))

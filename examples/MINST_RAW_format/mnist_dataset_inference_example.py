@@ -16,13 +16,15 @@ producer = KafkaProducer(bootstrap_servers=BOOTSTRAP_SERVERS)
 """Creates a producer to send the values to predict"""
 for i in range (0, ITEMS_TO_PREDICT):
   producer.send(INPUT_TOPIC, x_test[i].tobytes())
-  """ Sends the value to predict to Kafka"""
+  """Sends the value to predict to Kafka"""
 producer.flush()
 producer.close()
 
-consumer = KafkaConsumer(OUTPUT_TOPIC, bootstrap_servers=BOOTSTRAP_SERVERS, group_id="output_group")
-"""Creates a consumer to receive the predictions"""
+output_consumer = KafkaConsumer(OUTPUT_TOPIC, bootstrap_servers=BOOTSTRAP_SERVERS, group_id="output_group")
+"""Creates an output consumer to receive the predictions"""
 
-for msg in consumer:
+print('\n')
+
+print('Output consumer: ')
+for msg in output_consumer:
   print (msg.value.decode())
-
