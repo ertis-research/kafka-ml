@@ -22,8 +22,18 @@
       </mat-form-field>
 
       <mat-form-field class="full-width">
+        <mat-label>Kafka broker for input data</mat-label>
+        <input matInput placeholder="Input kafka broker (e.g. https://192.168.65.3:9094)" name="input_kafka_broker" #nameRef="ngModel" [ngModel]="inference.input_kafka_broker">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
       <mat-label>Kafka topic for input data</mat-label>
         <input matInput required placeholder="input_topic" name="input_topic" #nameRef="ngModel"  [ngModel]="inference.input_topic">
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Kafka broker for output data</mat-label>
+        <input matInput placeholder="Output kafka broker (e.g. https://192.168.65.3:9094)" name="output_kafka_broker" #nameRef="ngModel" [ngModel]="inference.output_kafka_broker">
       </mat-form-field>
 
       <mat-form-field class="full-width">
@@ -41,9 +51,9 @@
         <input matInput placeholder="Token"  name="token"  #nameRef="ngModel" [ngModel]="inference.token">
       </mat-form-field>
 
-      <mat-form-field class="full-width">
-        <mat-label>Kubernetes Cluster Kafka Broker</mat-label>
-        <input matInput placeholder="Kafka broker (e.g. https://192.168.65.3:9094)" name="kafka_broker" #nameRef="ngModel" [ngModel]="inference.kafka_broker">
+      <mat-form-field *ngIf="distributed" class="full-width">
+        <mat-label>Kafka broker for upper data</mat-label>
+        <input matInput placeholder="Upper kafka broker (e.g. https://192.168.65.3:9094)" name="upper_kafka_broker" #nameRef="ngModel" [ngModel]="inference.upper_kafka_broker">
       </mat-form-field>
 
       <mat-form-field *ngIf="distributed" class="full-width">

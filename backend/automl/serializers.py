@@ -173,7 +173,7 @@ class DeployInferenceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Inference
-        fields = ['model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'limit', 'output_upper', 'token', 'external_host', 'kafka_broker']
+        fields = ['model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'limit', 'output_upper', 'token', 'external_host', 'input_kafka_broker' , 'output_kafka_broker', 'upper_kafka_broker']
 
     def create(self, validated_data):
         """Creates a new inference, associated it with the result"""
@@ -189,4 +189,4 @@ class InferenceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Inference
-        fields = ['id', 'model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'time', 'status', 'status_changed', 'limit', 'output_upper', 'token', 'external_host', 'kafka_broker']
+        fields = ['id', 'model_result', 'replicas', 'input_format', 'input_config', 'input_topic', 'output_topic', 'time', 'status', 'status_changed', 'limit', 'output_upper', 'token', 'external_host', 'input_kafka_broker' , 'output_kafka_broker', 'upper_kafka_broker']

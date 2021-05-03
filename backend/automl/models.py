@@ -94,7 +94,9 @@ class Inference(models.Model):
     output_upper = models.TextField(blank=True)
     token = models.TextField(blank=True, default=None, null=True)
     external_host = models.TextField(blank=True, default=None, null=True)
-    kafka_broker = models.TextField(blank=True, default=None, null=True)
+    input_kafka_broker = models.TextField(blank=True, default=None, null=True)
+    output_kafka_broker = models.TextField(blank=True, default=None, null=True)
+    upper_kafka_broker = models.TextField(blank=True, default=None, null=True)
 
     class Meta(object):
         ordering = ('-time', )

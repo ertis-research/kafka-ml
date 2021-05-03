@@ -877,22 +877,30 @@ class InferenceResultID(generics.ListCreateAPIView):
                         config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
                         #api_instance = client.CoreV1Api()
+
                         if inference.external_host is not None and inference.token is not None:
                             token=inference.token
                             external_host=inference.external_host
                         else:                        
-                            
                             token=os.environ.get('KUBE_TOKEN')
                             external_host=os.environ.get('KUBE_HOST')
+
                         api_client = kubernetes_config(token=token, external_host=external_host)
                         api_instance = client.CoreV1Api( api_client)
 
-                        if inference.kafka_broker is not None:
-                            kafka_broker = inference.kafka_broker
+                        if inference.input_kafka_broker is not None:
+                            input_kafka_broker = inference.input_kafka_broker
                         else:
-                            kafka_broker = settings.BOOTSTRAP_SERVERS
+                            input_kafka_broker = settings.BOOTSTRAP_SERVERS
+
+                        if inference.output_kafka_broker is not None:
+                            output_kafka_broker = inference.output_kafka_broker
+                        else:
+                            output_kafka_broker = settings.BOOTSTRAP_SERVERS
                         
-                        logging.info("Inference deployed in host [%s] and Kafka broker [%s]", external_host, kafka_broker)
+                        logging.info("Inference deployed in host [%s]", external_host)
+                        logging.info("Input kafka broker is [%s] and output kafka broker is [%s]", input_kafka_broker, output_kafka_broker)
+
                         if not result.model.distributed:
                             manifest = {
                                 'apiVersion': 'v1', 
@@ -920,7 +928,8 @@ class InferenceResultID(generics.ListCreateAPIView):
                                             'containers': [{
                                                 'image': settings.INFERENCE_MODEL_IMAGE, 
                                                 'name': 'inference',
-                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': kafka_broker},
+                                                'env': [{'name': 'INPUT_BOOTSTRAP_SERVERS', 'value': input_kafka_broker},
+                                                        {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},
                                                         {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
                                                         {'name': 'INPUT_FORMAT', 'value': inference.input_format},
                                                         {'name': 'INPUT_CONFIG', 'value': inference.input_config},
@@ -934,6 +943,11 @@ class InferenceResultID(generics.ListCreateAPIView):
                                 }
                             }
                         else:
+                            if inference.upper_kafka_broker is not None:
+                                upper_kafka_broker = inference.upper_kafka_broker
+                            else:
+                                upper_kafka_broker = settings.BOOTSTRAP_SERVERS
+
                             manifest = {
                                 'apiVersion': 'v1', 
                                 'kind': 'ReplicationController',
@@ -960,7 +974,9 @@ class InferenceResultID(generics.ListCreateAPIView):
                                             'containers': [{
                                                 'image': settings.INFERENCE_MODEL_IMAGE,
                                                 'name': 'inference',
-                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': kafka_broker},
+                                                'env': [{'name': 'INPUT_BOOTSTRAP_SERVERS', 'value': input_kafka_broker},
+                                                        {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},
+                                                        {'name': 'UPPER_BOOTSTRAP_SERVERS', 'value': upper_kafka_broker},
                                                         {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
                                                         {'name': 'INPUT_FORMAT', 'value': inference.input_format},
                                                         {'name': 'INPUT_CONFIG', 'value': inference.input_config},

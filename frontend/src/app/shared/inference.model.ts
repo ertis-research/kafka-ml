@@ -7,7 +7,9 @@ export class Inference {
     output_topic: string;
     token: string;
     external_host: string;
-    kafka_broker: string;
+    input_kafka_broker: string;
+    output_kafka_broker: string;
+    upper_kafka_broker: string;
     limit: number;
     output_upper: string;
 }

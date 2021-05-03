@@ -34,7 +34,8 @@ def load_environment_vars():
       output_topic (str): Kafka topic for the output data
       group_id (str): Kafka group id for consuming data
   """
-  bootstrap_servers = os.environ.get('BOOTSTRAP_SERVERS')
+  input_bootstrap_servers = os.environ.get('INPUT_BOOTSTRAP_SERVERS')
+  output_bootstrap_servers = os.environ.get('OUTPUT_BOOTSTRAP_SERVERS')
   model_url = os.environ.get('MODEL_URL')
   input_format = os.environ.get('INPUT_FORMAT')
   input_config = os.environ.get('INPUT_CONFIG')
@@ -42,7 +43,7 @@ def load_environment_vars():
   output_topic = os.environ.get('OUTPUT_TOPIC')
   group_id = os.environ.get('GROUP_ID')
 
-  return (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id)
+  return (input_bootstrap_servers, output_bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id)
 
 if __name__ == '__main__':
   try:
@@ -62,15 +63,16 @@ if __name__ == '__main__':
           )
     """Configures the logging"""
 
-    bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id = load_environment_vars()
+    input_bootstrap_servers, output_bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id = load_environment_vars()
     """Loads the environment information"""
     
+    upper_bootstrap_servers = os.environ.get('UPPER_BOOTSTRAP_SERVERS')
     output_upper = os.environ.get('OUTPUT_UPPER')
-    if output_upper is not None:
+    if upper_bootstrap_servers is not None and output_upper is not None:
       limit = eval(os.environ.get('LIMIT'))
     """Loads the distributed environment information"""
 
-    if output_upper is not None and limit is not None:
+    if upper_bootstrap_servers is not None and output_upper is not None and limit is not None:
       distributed = True
     else:
       distributed = False
@@ -80,11 +82,11 @@ if __name__ == '__main__':
     """Parse the configuration"""
 
     if distributed:
-      logging.info("Received environment information (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, output_upper, group_id, limit) ([%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
-              bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, output_upper, group_id, str(limit))
+      logging.info("Received environment information (input_bootstrap_servers, output_bootstrap_servers, upper_bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, output_upper, group_id, limit) ([%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
+              input_bootstrap_servers, output_bootstrap_servers, upper_bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, output_upper, group_id, str(limit))
     else:
-      logging.info("Received environment information (bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id) ([%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
-              bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, group_id)
+      logging.info("Received environment information (input_bootstrap_servers, output_bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id) ([%s], [%s], [%s], [%s], [%s], [%s], [%s], [%s])", 
+              input_bootstrap_servers, output_bootstrap_servers, model_url, input_format, str(input_config), input_topic, output_topic, group_id)
     
     download_model(model_url, MODEL_PATH, RETRIES, SLEEP_BETWEEN_REQUESTS)
     """Downloads the model from the URL received and saves in the filesystem"""
@@ -95,15 +97,21 @@ if __name__ == '__main__':
     model.summary()
     """Prints the model information"""
 
-    consumer = KafkaConsumer(input_topic, bootstrap_servers=bootstrap_servers, group_id=group_id, enable_auto_commit=False)
+    consumer = KafkaConsumer(input_topic, bootstrap_servers=input_bootstrap_servers, group_id=group_id, enable_auto_commit=False)
     """Starts a Kafka consumer to receive the information to predict"""
     
     logging.info("Started Kafka consumer in [%s] topic", input_topic)
 
-    producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
-    """Starts a Kafka producer to send the predictions"""
+    output_producer = KafkaProducer(bootstrap_servers=output_bootstrap_servers)
+    """Starts a Kafka producer to send the predictions to the output"""
     
     logging.info("Started Kafka producer in [%s] topic", output_topic)
+
+    if distributed:
+      upper_producer = KafkaProducer(bootstrap_servers=upper_bootstrap_servers)
+      """Starts a Kafka producer to send the predictions to upper model"""
+    
+      logging.info("Started Kafka producer in [%s] topic", output_upper)
 
     decoder = DecoderFactory.get_decoder(input_format, input_config)
     """Creates the data decoder"""
@@ -137,13 +145,14 @@ if __name__ == '__main__':
         """Encodes the object response"""
 
         if distributed and max(prediction_value) < limit:
-          producer.send(output_upper, json.dumps(prediction_to_upper.tolist()).encode())
+          upper_producer.send(output_upper, json.dumps(prediction_to_upper.tolist()).encode())
+          upper_producer.flush()
+          """Flush the message to be sent now"""
         else:
-          producer.send(output_topic, response_to_kafka)
+          output_producer.send(output_topic, response_to_kafka)
+          output_producer.flush()
+          """Flush the message to be sent now"""
         """Sends the message to Kafka"""
-        
-        producer.flush()
-        """Flush the message to be sent now"""
 
         logging.info("Prediction sent to Kafka")
         
