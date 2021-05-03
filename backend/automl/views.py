@@ -877,14 +877,22 @@ class InferenceResultID(generics.ListCreateAPIView):
                         config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
                         #api_instance = client.CoreV1Api()
-                        api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
+                        if inference.external_host is not None and inference.token is not None:
+                            token=inference.token
+                            external_host=inference.external_host
+                        else:                        
+                            
+                            token=os.environ.get('KUBE_TOKEN')
+                            external_host=os.environ.get('KUBE_HOST')
+                        api_client = kubernetes_config(token=token, external_host=external_host)
                         api_instance = client.CoreV1Api( api_client)
 
                         if inference.kafka_broker is not None:
                             kafka_broker = inference.kafka_broker
                         else:
                             kafka_broker = settings.BOOTSTRAP_SERVERS
-
+                        
+                        logging.info("Inference deployed in host [%s] and Kafka broker [%s]", external_host, kafka_broker)
                         if not result.model.distributed:
                             manifest = {
                                 'apiVersion': 'v1', 
