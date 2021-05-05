@@ -415,7 +415,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                                 'image': settings.TRAINING_MODEL_IMAGE, 
                                                 'name': 'training',
                                                 'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                        {'name': 'RESULT_URL', 'value': 'http://backend:8000/results/'+str(result.id)},
+                                                        {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
                                                         {'name': 'RESULT_ID', 'value': str(result.id)},
                                                         {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                         {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
@@ -436,7 +436,7 @@ class DeploymentList(generics.ListCreateAPIView):
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
                             result_urls = []
                             result_ids = []
-                            s = 'http://backend:8000/results/'
+                            s = str(os.environ.get('BACKEND_URL'))+'/results/'
                             n = ''
 
                             result_urls.append(s+str(result.id))
@@ -937,7 +937,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                 'name': 'inference',
                                                 'env': [{'name': 'INPUT_BOOTSTRAP_SERVERS', 'value': input_kafka_broker},
                                                         {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},
-                                                        {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
+                                                        {'name': 'MODEL_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/model/'+str(result.id)},
                                                         {'name': 'INPUT_FORMAT', 'value': inference.input_format},
                                                         {'name': 'INPUT_CONFIG', 'value': inference.input_config},
                                                         {'name': 'INPUT_TOPIC', 'value': inference.input_topic},
@@ -984,7 +984,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                 'env': [{'name': 'INPUT_BOOTSTRAP_SERVERS', 'value': input_kafka_broker},
                                                         {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},
                                                         {'name': 'UPPER_BOOTSTRAP_SERVERS', 'value': upper_kafka_broker},
-                                                        {'name': 'MODEL_URL', 'value': 'http://backend:8000/results/model/'+str(result.id)},
+                                                        {'name': 'MODEL_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/model/'+str(result.id)},
                                                         {'name': 'INPUT_FORMAT', 'value': inference.input_format},
                                                         {'name': 'INPUT_CONFIG', 'value': inference.input_config},
                                                         {'name': 'INPUT_TOPIC', 'value': inference.input_topic},

@@ -34,6 +34,8 @@ spec:
           value: localhost:5000/model_inference
         - name: FRONTEND_URL
           value: http://localhost
+        - name: BACKEND_URL
+          value: http://backend:8000
         - name: ALLOWED_HOSTS
           value: 127.0.0.1,localhost,backend
         # - name: KUBE_TOKEN
