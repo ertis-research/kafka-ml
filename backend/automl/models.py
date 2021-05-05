@@ -12,7 +12,7 @@ class MLModel(models.Model):
     imports = models.TextField(blank=True)
     code = models.TextField()
     distributed = models.BooleanField(default=False)
-    father = models.OneToOneField('self', null=True, default=None, related_name='child', on_delete=models.SET_NULL)
+    father = models.OneToOneField('self', null=True, blank=True, default=None, related_name='child', on_delete=models.SET_NULL)
 
 
 class Configuration(models.Model):
