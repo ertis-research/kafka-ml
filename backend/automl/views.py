@@ -756,7 +756,7 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
                         config.load_incluster_config() # To run inside the container
                         #config.load_kube_config() # To run externally
                         #api_instance = client.CoreV1Api()
-                        if inference.external_host is not None and inference.token is not None:
+                        if not is_blank(inference.external_host) and not is_blank(inference.token):
                             token=inference.token
                             external_host=inference.external_host
                         else:
@@ -1007,6 +1007,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                     }
                                 }
                             }
+                        inference.save()
                         resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
                         return HttpResponse(status=status.HTTP_200_OK)
                     except Exception as e:
