@@ -38,6 +38,15 @@ def format_ml_code(code):
     """
     return code[:code.rfind('\n')+1] + 'model = ' + code[code.rfind('\n')+1:]
 
+def is_blank(attribute):
+    """Checks if the attribute is an empty string or None.
+        Args:
+            attribute (str): Attribute to check
+        Returns:
+            boolean: whether attribute is blank or not
+    """
+    return attribute is None or attribute == ''
+
 def kubernetes_config( token=None, external_host=None ):
     """ Get Kubernetes configuration.
         You can provide a token and the external host IP 
@@ -885,7 +894,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                         #config.load_kube_config() # To run externally
                         #api_instance = client.CoreV1Api()
 
-                        if inference.external_host is not None and inference.token is not None:
+                        if not is_blank(inference.external_host) and not is_blank(inference.token):
                             token=inference.token
                             external_host=inference.external_host
                         else:                        
@@ -895,12 +904,12 @@ class InferenceResultID(generics.ListCreateAPIView):
                         api_client = kubernetes_config(token=token, external_host=external_host)
                         api_instance = client.CoreV1Api( api_client)
 
-                        if inference.input_kafka_broker is not None:
+                        if not is_blank(inference.input_kafka_broker):
                             input_kafka_broker = inference.input_kafka_broker
                         else:
                             input_kafka_broker = settings.BOOTSTRAP_SERVERS
 
-                        if inference.output_kafka_broker is not None:
+                        if not is_blank(inference.output_kafka_broker):
                             output_kafka_broker = inference.output_kafka_broker
                         else:
                             output_kafka_broker = settings.BOOTSTRAP_SERVERS
@@ -950,7 +959,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                 }
                             }
                         else:
-                            if inference.upper_kafka_broker is not None:
+                            if not is_blank(inference.upper_kafka_broker):
                                 upper_kafka_broker = inference.upper_kafka_broker
                             else:
                                 upper_kafka_broker = settings.BOOTSTRAP_SERVERS
