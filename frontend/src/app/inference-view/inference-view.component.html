@@ -58,12 +58,12 @@
 
       <mat-form-field *ngIf="distributed" class="full-width">
         <mat-label>Kafka output topic for upper model</mat-label>
-          <input matInput required placeholder="ouput_upper"  name="output_upper"  #nameRef="ngModel" [ngModel]="inference.output_upper">
+          <input matInput placeholder="ouput_upper"  name="output_upper"  #nameRef="ngModel" [ngModel]="inference.output_upper">
         </mat-form-field>
 
       <mat-form-field *ngIf="distributed" class="full-width">
         <mat-label>Prediction limit</mat-label>
-        <input matInput required placeholder="limit" name="limit" #nameRef="ngModel" [ngModel]="inference.limit">
+        <input matInput placeholder="limit" name="limit" #nameRef="ngModel" [ngModel]="inference.limit">
       </mat-form-field>
 
       <div class="row-buttons">
