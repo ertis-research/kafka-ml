@@ -13,8 +13,6 @@ vgg16 = RawSink(boostrap_servers='localhost:9094', topic='automl', deployment_id
         data_type='uint8', label_type='uint8', data_reshape='32 32 3')
 
 (x_train, y_train ), ( x_test, y_test ) = tf.keras.datasets.cifar10.load_data()
-y_train = tf.keras.utils.to_categorical( y_train )
-y_test = tf.keras.utils.to_categorical( y_test )
 
 print("train: ", (x_train.shape, y_train.shape))
 

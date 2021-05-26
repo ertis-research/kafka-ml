@@ -53,6 +53,8 @@ def string_to_tensorflow_type(out_type):
         return tf.half
     elif out_type == 'float':
         return tf.float
+    elif out_type == 'float32':
+        return tf.float32
     elif out_type == 'double':
         return tf.double
     elif out_type == 'int64':

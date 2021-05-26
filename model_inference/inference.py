@@ -116,10 +116,10 @@ if __name__ == '__main__':
     decoder = DecoderFactory.get_decoder(input_format, input_config)
     """Creates the data decoder"""
 
-    start_inference = time.time()
-
     for msg in consumer:
       try:
+        start_inference = time.time()
+
         logging.info("Message received for prediction")
 
         input_decoded = decoder.decode(msg.value)
@@ -145,7 +145,7 @@ if __name__ == '__main__':
         """Encodes the object response"""
 
         if distributed and max(prediction_value) < limit:
-          upper_producer.send(output_upper, json.dumps(prediction_to_upper.tolist()).encode())
+          upper_producer.send(output_upper, prediction_to_upper.tobytes())
           upper_producer.flush()
           """Flush the message to be sent now"""
         else:
