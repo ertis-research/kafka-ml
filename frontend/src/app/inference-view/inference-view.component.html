@@ -41,6 +41,16 @@
         <input matInput required placeholder="ouput_topic"  name="output_topic"  #nameRef="ngModel" [ngModel]="inference.output_topic">
       </mat-form-field>
 
+      <mat-form-field *ngIf="distributed" class="full-width">
+        <mat-label>Kafka broker for upper data</mat-label>
+        <input matInput placeholder="Upper kafka broker (e.g. https://192.168.65.3:9094)" name="upper_kafka_broker" #nameRef="ngModel" [ngModel]="inference.upper_kafka_broker">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="distributed" class="full-width">
+        <mat-label>Kafka output topic for upper model</mat-label>
+        <input matInput required placeholder="ouput_upper"  name="output_upper"  #nameRef="ngModel" [ngModel]="inference.output_upper">
+      </mat-form-field>
+
       <mat-form-field class="full-width">
       <mat-label>Kubernetes Cluster Host</mat-label>
         <input matInput placeholder="External Host (e.g. https://192.168.65.3:6443)"  name="external_host"  #nameRef="ngModel" [ngModel]="inference.external_host">
@@ -52,18 +62,8 @@
       </mat-form-field>
 
       <mat-form-field *ngIf="distributed" class="full-width">
-        <mat-label>Kafka broker for upper data</mat-label>
-        <input matInput placeholder="Upper kafka broker (e.g. https://192.168.65.3:9094)" name="upper_kafka_broker" #nameRef="ngModel" [ngModel]="inference.upper_kafka_broker">
-      </mat-form-field>
-
-      <mat-form-field *ngIf="distributed" class="full-width">
-        <mat-label>Kafka output topic for upper model</mat-label>
-          <input matInput placeholder="ouput_upper"  name="output_upper"  #nameRef="ngModel" [ngModel]="inference.output_upper">
-        </mat-form-field>
-
-      <mat-form-field *ngIf="distributed" class="full-width">
         <mat-label>Prediction limit</mat-label>
-        <input matInput placeholder="limit" name="limit" #nameRef="ngModel" [ngModel]="inference.limit">
+        <input matInput required placeholder="limit" name="limit" #nameRef="ngModel" [ngModel]="inference.limit">
       </mat-form-field>
 
       <div class="row-buttons">

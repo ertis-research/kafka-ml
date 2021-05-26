@@ -49,7 +49,11 @@ export class InferenceViewComponent implements OnInit {
     this.modelService.getModelResultID(this.resultID).subscribe(
       (data) => {
         this.model=<MLModel> data;
-        this.distributed = this.model.distributed;
+        if(this.model.distributed && this.model.father != null) {
+          this.distributed = true;
+        } else {
+          this.distributed = false;
+        }
       },  //changed
       (err)=>{
         this.valid = false;
