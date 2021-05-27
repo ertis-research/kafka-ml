@@ -847,7 +847,16 @@ class InferenceResultID(generics.ListCreateAPIView):
                                 response['input_config'] = new_input_config
                             else:
                                 response['input_config'] = input_config
-
+                            
+                            if hasattr(model, 'child'):
+                                if new_input_config is None:
+                                    dic = json.loads(input_config)
+                                else:
+                                    dic = json.loads(new_input_config)
+                                    
+                                dic['data_type'] = 'float32'
+                                aux_input_config = json.dumps(dic)
+                                response['input_config'] = aux_input_config
                 return HttpResponse(json.dumps(response), status=status.HTTP_200_OK)
         except Exception as e:
             traceback.print_exc()

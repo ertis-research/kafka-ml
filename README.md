@@ -27,14 +27,22 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 ```
 
 ## Table of Contents
+- [Changelog](#changelog)
 - [Usage](#usage)
+    - [Single models](#Single-models)
+    - [Distributed models](#Distributed-models)
 - [Installation and development](#Installation-and-development)
     - [Requirements](#requirements) 
     - [Steps to build and execute Kafka-ML](#Steps-to-build-and-execute-Kafka-ML)
 - [License](#license)
 
+## Changelog
+- [29/4/2021] Integration of distributed models.
+
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
+
+### Single models
 
 Create a model with just a TF/Keras model source code and some imports/functions if needed. Maybe this model for the MINST dataset is a simple way to start:
 
@@ -57,7 +65,7 @@ Create a configuration. A configuration is a set of models that can be grouped f
 
 <img src="images/create-configuration.png" width="500">
 
-Deploy a configuration of models in Kubernetes for training 
+Deploy a configuration of models in Kubernetes for training.
 
 <img src="images/deploy-configuration.png" width="500">
 
@@ -69,7 +77,7 @@ Once the configuration is deployed, you will see one training result per model i
 
 ![](./images/training-results.png)
 
-Now, it is time to ingest the model(s) with your data stream for training and maybe evaluation
+Now, it is time to ingest the model(s) with your data stream for training and maybe evaluation.
 
 If you have used the MINST model you can use the example `mnist_dataset_training_example.py`. You only need to configure the *deployment_id* attribute to the one generated in Kafka-ML, maybe it is still 1. This is the way to match data streams with configurations and models during training. You may need to install the Python libraries listed in datasources/requirements.txt.
 
@@ -88,6 +96,76 @@ Once sent the data stream, and deployed and trained the models, you will see the
 When deploying a model for inference, the parameters for the input data stream will be automatically configured based on previous data streams received, you might also change this. Mostly you will have to configure the number of replicas you want to deploy for inference and the Kafka topics for input data (values to predict) and output data (predictions).
 
 <img src="images/deploy-inference.png" width="500">
+
+Finally, test the inference deployed using the MNIST example for inference in the topics deployed:
+
+````
+python examples/MINST_RAW_format/mnist_dataset_inference_example.py
+````
+
+### Distributed models
+
+Create a distributed model with just a TF/Keras model source code and some imports/functions if needed. Maybe this distributed model consisting of three sub-models for the MINST dataset is a simple way to start:
+
+```
+edge_input = keras.Input(shape=(28,28,1), name='input_img')
+x = layers.Conv2D(28, kernel_size=(3,3), name='conv2d')(edge_input)
+x = layers.MaxPooling2D(pool_size=(2,2), name='maxpooling')(x)
+x = layers.Flatten(name='flatten')(x)
+output_to_fog = layers.Dense(64, activation=tf.nn.relu, name='output_to_fog')(x)
+edge_output = layers.Dense(10, activation=tf.nn.softmax, name='edge_output')(output_to_fog)
+edge_model = keras.Model(inputs=[edge_input], outputs=[output_to_fog, edge_output], name='edge_model')
+
+fog_input = keras.Input(shape=64, name='fog_input')
+output_to_cloud = layers.Dense(64, activation=tf.nn.relu, name='output_to_cloud')(fog_input)
+fog_output = layers.Dense(10, activation=tf.nn.softmax, name='fog_output')(output_to_cloud)
+fog_model = keras.Model(inputs=[fog_input], outputs=[output_to_cloud, fog_output], name='fog_model')
+
+cloud_input = keras.Input(shape=64, name='cloud_input')
+x = layers.Dense(64, activation=tf.nn.relu, name='relu1')(cloud_input)
+x = layers.Dense(128, activation=tf.nn.relu, name='relu2')(x)
+x = layers.Dropout(0.2)(x)
+cloud_output = layers.Dense(10, activation=tf.nn.softmax, name='cloud_output')(x)
+cloud_model = keras.Model(inputs=cloud_input, outputs=[cloud_output], name='cloud_model')
+````
+
+Insert the ML code of each sub-model into the Kafka-ML UI separately. You will have to specify the hierarchical relationships between the sub-models through the "Upper model" field of the form (before you will have to check the distributed box). In the example case proposed it has to be defined the following relationships: the upper model of the Edge sub-model is the Fog and the upper model of the Fog sub-model is the Cloud (Cloud sub-model is placed at the top of the distributed chain so it does not have any upper model).
+
+<img src="images/create-distributed-model.png" width="500">
+
+Create a configuration. Kafka-ML will only show those sub-models which are on the top of the distributed chain. Choosing one of them will add its corresponding full distributed model to the configuration.
+
+<img src="images/create-distributed-configuration.png" width="500">
+
+Deploy the configuration of distributed sub-models in Kubernetes for training.
+
+<img src="images/deploy-distributed-configuration.png" width="500">
+
+Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0* in the stream data received).
+
+<img src="images/configure-distributed-deployment.png" width="500">
+
+Once the configuration is deployed, you will see one training result per sub-model in the configuration. Full distributed model is now ready to be trained and receive stream data.
+
+![](./images/distributed-training-results.png)
+
+Now, it is time to ingest the distributed model with your data stream for training and maybe evaluation.
+
+If you have used the MINST distributed model you can use the example `mnist_dataset_training_example.py`. You only need to configure the *deployment_id* attribute to the one generated in Kafka-ML, maybe it is still 1. This is the way to match data streams with configurations and models during training. You may need to install the Python libraries listed in datasources/requirements.txt.
+
+If so, please execute the MISNT example for training:
+
+````
+python examples/MINST_RAW_format/mnist_dataset_training_example.py
+````
+
+Once sent the data stream, and deployed and trained the full distributed model, you will see the sub-models metrics and results in Kafka-ML. You can download now the trained sub-models, or just continue the ML pipeline to deploy a model for inference.
+
+![](./images/distributed-training-metrics.png)
+
+When deploying a sub-model for inference, the parameters for the input data stream will be automatically configured based on previous data streams received, you might also change this. Mostly you will have to configure the number of replicas you want to deploy for inference and the Kafka topics for input data (values to predict) and output data (predictions). Lastly, in case you are deploying a sub-model for inference which is not the last one in the distributed chain, you will also have to specify one more topic for upper data (partial predictions) and a limit number (between 0 and 1). These two fields work as follows: on the one hand, if your deployed inference gets lower predictions values than the limit it will send partial predictions to its upper model using the upper data topic in order to continue the data processing there; on the other hand, if your deployed inference gets higher predictions values than the limit it will send these final results to the output topic.
+
+<img src="images/distributed-deploy-inference.png" width="500">
 
 Finally, test the inference deployed using the MNIST example for inference in the topics deployed:
 
