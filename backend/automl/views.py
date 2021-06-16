@@ -840,7 +840,7 @@ class InferenceResultID(generics.ListCreateAPIView):
 
                                 dictionary = json.loads(input_config)
 
-                                dictionary['data_reshape'] = shape
+                                dictionary['data_reshape'] = shape.replace(',','')
 
                                 new_input_config = json.dumps(dictionary)
 
@@ -848,15 +848,14 @@ class InferenceResultID(generics.ListCreateAPIView):
                             else:
                                 response['input_config'] = input_config
                             
-                            if hasattr(model, 'child'):
-                                if new_input_config is None:
-                                    dic = json.loads(input_config)
-                                else:
-                                    dic = json.loads(new_input_config)
+                            if new_input_config is None:
+                                dic = json.loads(input_config)
+                            else:
+                                dic = json.loads(new_input_config)
                                     
-                                dic['data_type'] = 'float32'
-                                aux_input_config = json.dumps(dic)
-                                response['input_config'] = aux_input_config
+                            dic['data_type'] = 'float32'
+                            aux_input_config = json.dumps(dic)
+                            response['input_config'] = aux_input_config
                 return HttpResponse(json.dumps(response), status=status.HTTP_200_OK)
         except Exception as e:
             traceback.print_exc()
