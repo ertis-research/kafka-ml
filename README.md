@@ -9,20 +9,23 @@ ML models can be easily defined in the Web UI with no need for external librarie
 </p>
 
 You can find more information about Kafka-ML and its architecture in the open-access publication below:
-> _C. Martín, P. Langendoerfer, M. Díaz and B. Rubio <br>
+> _C. Martín, P. Langendoerfer, P. Zarrin, M. Díaz and B. Rubio <br>
 > **Kafka-ML: connecting the data stream with ML/AI frameworks** <br>
-> arXiv, June, 2020. <br> 
-> URL: [arXiv:2006.04105](https://arxiv.org/abs/2006.04105)_
+> Future Generation Computer Systems, 2022, vol. 126, p. 15-33 <br> 
+> [10.1016/j.future.2021.07.037](https://www.sciencedirect.com/science/article/pii/S0167739X21002995)_
 
 If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. Below you can find a BibTex reference:
 ```
-@misc{martn2020kafkaml,
-    title={Kafka-ML: connecting the data stream with ML/AI frameworks},
-    author={Cristian Martín and Peter Langendoerfer and Manuel Díaz and Bartolomé Rubio},
-    year={2020},
-    eprint={2006.04105},
-    archivePrefix={arXiv},
-    primaryClass={cs.LG}
+@article{martin2022kafka,
+  title={Kafka-ML: connecting the data stream with ML/AI frameworks},
+  author={Mart{\'\i}n, Cristian and Langendoerfer, Peter and Zarrin, Pouya Soltani and D{\'\i}az, Manuel and Rubio, Bartolom{\'e}},
+  journal={Future Generation Computer Systems},
+  volume={126},
+  pages={15--33},
+  year={2022},
+  publisher={Elsevier}
+}
+
 }
 ```
 
@@ -34,6 +37,7 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 - [Installation and development](#Installation-and-development)
     - [Requirements](#requirements) 
     - [Steps to build and execute Kafka-ML](#Steps-to-build-and-execute-Kafka-ML)
+- [Publications](#publications)
 - [License](#license)
 
 ## Changelog
@@ -306,6 +310,11 @@ Add this IP also to the  **ALLOWED_HOSTS** env var in the `backend-deployment.ya
     - name: ALLOWED_HOSTS
       value: y.y.y.y, localhost
 ````
+## Publications
+1. Carnero, A., Martín, C., Torres, D. R., Garrido, D., Díaz, M., & Rubio, B. (2021). [Managing and Deploying Distributed and Deep Neural Models through Kafka-ML in the Cloud-to-Things Continuum](https://ieeexplore.ieee.org/abstract/document/9529202). IEEE Access, 9, 125478-125495.
 
+2. Martín, C., Langendoerfer, P., Zarrin, P. S., Díaz, M., & Rubio, B. (2022). [Kafka-ML: connecting the data stream with ML/AI frameworks](https://www.sciencedirect.com/science/article/pii/S0167739X21002995). Future Generation Computer Systems, 126, 15-33.
+
+3. Torres, D. R., Martín, C., Rubio, B., & Díaz, M. (2021). [An open source framework based on Kafka-ML for DDNN inference over the Cloud-to-Things continuum](https://www.sciencedirect.com/science/article/pii/S138376212100151X). Journal of Systems Architecture, 102214.
 ## License
 MIT
