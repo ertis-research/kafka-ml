@@ -25,8 +25,6 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
   year={2022},
   publisher={Elsevier}
 }
-
-}
 ```
 
 ## Table of Contents
