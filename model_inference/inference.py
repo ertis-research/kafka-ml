@@ -126,9 +126,9 @@ if __name__ == '__main__':
         """Decodes the message received"""
 
         if distributed:
-          prediction_to_upper, prediction_output = model.predict(np.array([input_decoded]))
+          prediction_to_upper, prediction_output = model.predict(input_decoded)
         else:
-          prediction_output = model.predict(np.array([input_decoded]))
+          prediction_output = model.predict(input_decoded)
         """Predicts the data received"""
         
         prediction_value = prediction_output.tolist()[0]

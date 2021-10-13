@@ -20,12 +20,12 @@ class RawDecoder:
         ARGS:
             configuration (dic): configuration properties
         Attributes:
-            datatype(tensorflowtype): tensorflow type
+            datatype(numpytype): numpy type
             reshape: reshape of the data
 
     """
     def __init__(self, configuration):
-        self.datatype = string_to_tensorflow_type(configuration['data_type'])
+        self.datatype = string_to_numpy_type(configuration['data_type'])
         self.reshape = configuration['data_reshape']
         if self.reshape is not None:
             self.reshape = np.fromstring(self.reshape, dtype=int, sep=' ')
