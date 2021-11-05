@@ -39,7 +39,8 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 - [License](#license)
 
 ## Changelog
-- [29/4/2021] Integration of distributed models.
+- [29/04/2021] Integration of distributed models.
+- [05/11/2021] Automation of data types and reshapes for the training module.
 
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
@@ -198,12 +199,14 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
     docker push localhost:5000/backend 
     ```
 
-3. Build the model_training component and push the image into the local register:
+3. Build the model_training components and push the images into the local register:
     ```
     cd model_training
     docker build --tag localhost:5000/model_training .
     docker push localhost:5000/model_training 
-    ```
+    docker build -f Dockerfile_distributed --tag localhost:5000/distributed_model_training .
+    docker push localhost:5000/distributed_model_training 
+	```
 
 4. Build the kafka_control_logger component and push the image into the local register:
     ```

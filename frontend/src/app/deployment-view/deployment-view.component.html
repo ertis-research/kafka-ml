@@ -13,7 +13,7 @@
 
       <mat-form-field class="full-width">
       <mat-label>Training configuration</mat-label>
-        <input matInput required placeholder="epochs=5, steps_per_epoch=1000" pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$" name="kwargs_fit" [ngModel]="deployment.kwargs_fit">
+        <input matInput required placeholder="epochs=5" pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$" name="kwargs_fit" [ngModel]="deployment.kwargs_fit">
       </mat-form-field>
 
       <mat-form-field class="full-width">

@@ -37,13 +37,14 @@ def string_to_tensorflow_type(out_type):
   Returns:
     Tensorflow DType: Tensorflow DType of the intput
   """
-
   if out_type == 'half':
     return tf.half
-  elif out_type == 'float':
-    return tf.float
+  elif out_type == 'float16':
+    return tf.float16
   elif out_type == 'float32':
     return tf.float32
+  elif out_type == 'float64':
+    return tf.float64
   elif out_type == 'double':
     return tf.double
   elif out_type == 'int64':
@@ -54,10 +55,14 @@ def string_to_tensorflow_type(out_type):
     return tf.int16 
   elif out_type == 'int8':
     return tf.int8
+  elif out_type == 'uint64':
+    return tf.uint64
+  elif out_type == 'uint32':
+    return tf.uint32
   elif out_type == 'uint16':
     return tf.uint16 
   elif out_type == 'uint8':
-    return tf.uint8 
+    return tf.uint8
   elif out_type == 'string':
     return tf.string
   elif out_type == 'bool':

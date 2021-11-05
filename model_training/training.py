@@ -160,7 +160,7 @@ if __name__ == '__main__':
             
             logging.info("Splitting done, training is going to start.")
 
-            model_trained = model.fit(train_dataset, **kwargs_fit)
+            model_trained = model.fit(train_dataset, steps_per_epoch=split, **kwargs_fit)
             """Trains the model"""
 
             end = time.time()

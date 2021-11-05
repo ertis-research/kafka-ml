@@ -200,7 +200,7 @@ if __name__ == "__main__":
                         model.compile(optimizer='adam', loss=weights, metrics=['accuracy'], loss_weights=learning_rates)
                         """Compiles the global model"""
 
-                        model_trained = model.fit(train_dataset, **kwargs_fit)
+                        model_trained = model.fit(train_dataset, steps_per_epoch=split, **kwargs_fit)
                         """Trains the model"""
 
                         logging.info("Model trained history: %s", str(model_trained.history))
