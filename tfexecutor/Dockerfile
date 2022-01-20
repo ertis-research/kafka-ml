@@ -1,5 +1,5 @@
-# pull official base image, from 2.1.0 the image is weight 
-FROM tensorflow/tensorflow:2.7.0-gpu
+# pull official base image
+FROM tensorflow/tensorflow:2.7.0
 
 # set work directory
 WORKDIR /usr/src/app
@@ -16,5 +16,7 @@ RUN pip install -r requirements.txt
 # copy project
 COPY . /usr/src/app/
 
-RUN chmod +x ./start_distributed.sh
-CMD ["./start_distributed.sh"]
+EXPOSE 8001
+
+RUN chmod +x ./start.sh
+CMD ["./start.sh"]

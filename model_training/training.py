@@ -91,6 +91,10 @@ if __name__ == '__main__':
           )
     """Configures the logging"""
 
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+
     bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val  = load_environment_vars()
     """Loads the environment information"""
 

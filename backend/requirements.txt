@@ -1,8 +1,7 @@
-tensorflow==2.2.0 # 2.1.0 for Raspberry
 django==3.0.7
 djangorestframework==3.11.0
 django-cors-headers==3.2.1
 django-model-utils==4.0.0
 kubernetes==11.0.0
 gunicorn==20.0.4 
-kafka-python==2.0.1
+kafka-python==2.0.2

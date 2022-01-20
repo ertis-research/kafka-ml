@@ -1,6 +1,5 @@
 # pull official base image
-# FROM tensorflow/tensorflow:2.0.1-py3
-FROM tensorflow/tensorflow:2.2.0
+FROM python:3.8.6
 # FROM python:3.7.7-slim-stretch # for Raspberry
 
 # set work directory

@@ -12,4 +12,5 @@ export class Inference {
     upper_kafka_broker: string;
     limit: number;
     output_upper: string;
+    gpumem: number;
 }

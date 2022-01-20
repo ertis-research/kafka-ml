@@ -66,6 +66,12 @@
         <input matInput required placeholder="limit" name="limit" #nameRef="ngModel" [ngModel]="inference.limit">
       </mat-form-field>
 
+      <mat-form-field>
+        <mat-label>GPU Memory usage estimation (Kubernetes Scheduler)</mat-label>
+        <input matInput required type="number" placeholder="0" name="gpumem" [ngModel]="inference.gpumem">
+      </mat-form-field>
+  
+
       <div class="row-buttons">
         <span class="spacer"></span>
         <a (click)="back()" class="form-btn" mat-button>Go Back</a>

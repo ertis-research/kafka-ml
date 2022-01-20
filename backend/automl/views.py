@@ -5,11 +5,8 @@ import sys
 import logging
 import copy
 import traceback
-
+import requests
 import re
-
-import tensorflow as tf
-from tensorflow import keras
 
 from django.http import HttpResponse
 from django.views import View
@@ -28,15 +25,6 @@ from automl.serializers import InferenceSerializer
 from automl.models import MLModel, Deployment, Configuration, TrainingResult, Datasource, Inference
 
 from kafka import KafkaProducer
-
-def format_ml_code(code):
-    """Checks if the ML code ends with the string 'model = ' in its last line. Otherwise, it adds the string.
-        Args:
-            code (str): ML code to check
-        Returns:
-            str: code formatted
-    """
-    return code[:code.rfind('\n')+1] + 'model = ' + code[code.rfind('\n')+1:]
 
 def is_blank(attribute):
     """Checks if the attribute is an empty string or None.
@@ -68,28 +56,6 @@ def kubernetes_config( token=None, external_host=None ):
         aConfiguration.api_key = { "authorization": "Bearer " + token }
     api_client = client.ApiClient( aConfiguration) 
     return api_client
-
-def exec_model(imports_code, model_code, distributed):
-    """Runs the ML code and returns the generated model
-        Args:
-            imports_code (str): Imports before the code 
-            model_code (str): ML code to run
-        Returns:
-            model: generated model from the code
-    """
-
-    if imports_code is not None and imports_code!='':
-        """Checks if there is any import to be executed before the code"""
-        exec (imports_code, None, globals())
-   
-    if distributed:
-        ml_code = format_ml_code(model_code)
-        exec (ml_code, None, globals())
-        """Runs the ML code"""
-    else:
-        exec (model_code, None, globals())
-
-    return model
 
 def parse_kwargs_fit(kwargs_fit):
     """Converts kwargs_fit to a dictionary string
@@ -171,16 +137,17 @@ class ModelList(generics.ListCreateAPIView):
             
             imports_code = '' if 'imports' not in data else data['imports']
             if 'distributed' in data:
-                exec_model(imports_code, data['code'], data['distributed'])
-            else:
-                exec_model(imports_code, data['code'], False)
-            model.summary()
+                data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": data['distributed'], "request_type": "check"}
+                resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+            else:             
+                data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": False, "request_type": "check"}
+                resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
             """Prints the information of the model"""
-
-            serializer = MLModelSerializer(data=data)
-            if serializer.is_valid():
-                obj=serializer.save()
-                return HttpResponse(status=status.HTTP_201_CREATED)
+            if resp.status_code is 200:
+                serializer = MLModelSerializer(data=data)
+                if serializer.is_valid():
+                    obj=serializer.save()
+                    return HttpResponse(status=status.HTTP_201_CREATED)
             return HttpResponse("Information not valid", status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
@@ -228,15 +195,16 @@ class ModelID(generics.RetrieveUpdateDestroyAPIView):
                 serializer = MLModelSerializer(model_obj, data=data)
                 if serializer.is_valid():
                     if data['code']!= model_obj.code:
-                        try:
-                            imports_code = '' if 'imports' not in data else data['imports']
-                            if 'distributed' in data:
-                                exec_model(imports_code, data['code'], data['distributed'])
-                            else:
-                                exec_model(imports_code, data['code'], False)
-                            """Execution of ML Mode"""
-                        except Exception as e:
-                            return HttpResponse('Model not valid: '+str(e), status=status.HTTP_400_BAD_REQUEST)
+                        imports_code = '' if 'imports' not in data else data['imports']
+                        if 'distributed' in data:
+                            data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": data['distributed'], "request_type": "check"}
+                            resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+                        else:             
+                            data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": False, "request_type": "check"}
+                            resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+                        """Prints the information of the model"""
+                        if resp.status_code is not 200:
+                            return HttpResponse('Model not valid.', status=status.HTTP_400_BAD_REQUEST)
                     serializer.save()
                     return HttpResponse(status=status.HTTP_200_OK)
                 else:
@@ -396,19 +364,32 @@ class DeploymentList(generics.ListCreateAPIView):
         """
         try:
             data = json.loads(request.body)
+            gpu_mem_to_allocate = data['gpumem']
+            data.pop('gpumem')
             serializer = DeployDeploymentSerializer(data=data)
             if serializer.is_valid():
                 deployment = serializer.save()
                 try:
                     """ KUBERNETES code goes here"""
                     config.load_incluster_config() # To run inside the container
-                    #config.load_kube_config() # To run externally
+                    # config.load_kube_config() # To run externally
                     logging.info("Connection to Kubernetes %s %s", os.environ.get('KUBE_TOKEN'), os.environ.get('KUBE_HOST'))
                     api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
-                    api_instance = client.BatchV1Api( api_client)
+                    api_instance = client.BatchV1Api(api_client)
                     #api_instance = client.BatchV1Api()
-        
+
+                    
                     for result in TrainingResult.objects.filter(deployment=deployment):
+
+                        kwargs_fit = parse_kwargs_fit(deployment.kwargs_fit)
+                        kwargs_val = parse_kwargs_fit(deployment.kwargs_val)
+                        data_to_send = {"batch": deployment.batch, "kwargs_fit": kwargs_fit, "kwargs_val": kwargs_val}
+                        resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"check_deploy_config/", data=json.dumps(data_to_send))
+
+                        if resp.status_code is not 200:
+                            raise ValueError('Some arguments are not valid.')
+
+
                         if not result.model.distributed:
                             job_manifest = {
                                 'apiVersion': 'batch/v1',
@@ -429,9 +410,12 @@ class DeploymentList(generics.ListCreateAPIView):
                                                         {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                         {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
                                                         {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                        {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
-                                                        {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)}
+                                                        {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                        {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
+                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
                                             }],
                                             'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
                                             'restartPolicy': 'OnFailure'
@@ -481,8 +465,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                         {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
                                                         {'name': 'BATCH', 'value': str(deployment.batch)},
                                                         {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
-                                                        {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)}
+                                                        {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)},
+                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
+                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
                                             }],
                                             'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
                                             'restartPolicy': 'OnFailure'
@@ -598,26 +585,18 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
 
         try:
             result= TrainingResult.objects.get(pk=pk)
-            filename = os.path.join(settings.MEDIA_ROOT, settings.MODELS_DIR, str(result.model.id)+'.h5')
             """Obtains the model filename"""
-
-            model = exec_model(result.model.imports, result.model.code, result.model.distributed)
-            """Executes the model code"""
             
-            model.save(filename)
+            data_to_send = {"imports_code": result.model.imports, "model_code": result.model.code, "distributed": result.model.distributed, "request_type": "load_model"}
+            resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
             """Saves the model temporally"""
 
-            with open(filename, 'rb') as f:
-                file_data = f.read()
-                f.close()
-                response = HttpResponse(file_data, content_type='application/model')
-                response['Content-Disposition'] = 'attachment; filename="model.h5"'
-                result.status = TrainingResult.STATUS.deployed
-                result.save()
-                if os.path.exists(filename):
-                    os.remove(filename)
-                    """Removes the temporally file created"""
-                return response
+            response = HttpResponse(resp.content, content_type='application/model')
+            response['Content-Disposition'] = 'attachment; filename="model.h5"'
+            result.status = TrainingResult.STATUS.deployed
+            result.save()
+
+            return response
         except Exception as e:
             logging.error(str(e))
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
@@ -828,10 +807,11 @@ class InferenceResultID(generics.ListCreateAPIView):
                         if not hasattr(model, 'child'):
                             response['input_config'] = input_config # TODO change to input_config
                         else:
-                            tensorflow_model = exec_model(model.imports, model.code, model.distributed)
-                            """Loads the model to a Tensorflow model"""
 
-                            input_shape = str(tensorflow_model.input_shape)
+                            data_to_send = {"imports_code": model.imports, "model_code": model.code, "distributed": model.distributed, "request_type": "input_shape"}
+                            resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+
+                            input_shape = resp.content.decode("utf-8")
 
                             sub = re.search(', (.+?)\)', input_shape)
 
@@ -892,6 +872,8 @@ class InferenceResultID(generics.ListCreateAPIView):
         if TrainingResult.objects.filter(pk=pk).exists():
             try:
                 data = json.loads(request.body)
+                gpu_mem_to_allocate = data['gpumem']
+                data.pop('gpumem')
                 result = TrainingResult.objects.get(id=pk)
                 serializer = DeployInferenceSerializer(data = data)
                 
@@ -959,7 +941,11 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         {'name': 'INPUT_CONFIG', 'value': inference.input_config},
                                                         {'name': 'INPUT_TOPIC', 'value': inference.input_topic},
                                                         {'name': 'OUTPUT_TOPIC', 'value': inference.output_topic},
-                                                        {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)}],
+                                                        {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)},
+                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
+                                                        ],
+                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
                                             }],
                                             'imagePullPolicy': 'IfNotPresent' # TODO: Remove this when the image is in DockerHub
                                         }
@@ -1008,7 +994,11 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         {'name': 'OUTPUT_TOPIC', 'value': inference.output_topic},
                                                         {'name': 'OUTPUT_UPPER', 'value': inference.output_upper},
                                                         {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)},
-                                                        {'name': 'LIMIT', 'value': str(inference.limit)}],
+                                                        {'name': 'LIMIT', 'value': str(inference.limit)},
+                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
+                                                        ],
+                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
                                             }],
                                             'imagePullPolicy': 'IfNotPresent' # TODO: Remove this when the image is in DockerHub
                                         }

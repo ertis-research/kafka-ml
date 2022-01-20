@@ -86,6 +86,10 @@ if __name__ == "__main__":
             )
         """Configures the logging"""
 
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+
         start_consuming_data = time.time()
 
         bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, N = load_environment_vars()

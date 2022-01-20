@@ -4,4 +4,5 @@ export class Deployment {
     kwargs_fit: string;
     kwargs_val: string;
     configuration: number;
+    gpumem: number;
 }

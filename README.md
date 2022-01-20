@@ -34,6 +34,7 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
     - [Distributed models](#Distributed-models)
 - [Installation and development](#Installation-and-development)
     - [Requirements](#requirements) 
+    - [GPU configuration](#GPU-configuration)
     - [Steps to build and execute Kafka-ML](#Steps-to-build-and-execute-Kafka-ML)
 - [Publications](#publications)
 - [License](#license)
@@ -41,6 +42,7 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 ## Changelog
 - [29/04/2021] Integration of distributed models.
 - [05/11/2021] Automation of data types and reshapes for the training module.
+- [20/01/2022] Added GPU support. ML Code has been taken out of backend.
 
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
@@ -185,6 +187,81 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
 
+### GPU configuration
+
+The following steps are required in order to use GPU acceleration in Kafka-ML and Kubernetes. These steps are required to be performed in all the Kubernetes nodes.
+
+1. GPU Driver installation
+```
+# SSH into the worker machine with GPU
+$ ssh USERNAME@EXTERNAL_IP
+
+# Verify ubuntu driver 
+$ sudo apt install ubuntu-drivers-common
+$ ubuntu-drivers devices
+
+# Install the recommended driver
+$ sudo ubuntu-drivers autoinstall
+
+# Reboot the machine 
+$ sudo reboot
+
+# After the reboot, test if the driver is installed correctly
+$ nvidia-smi
+```
+
+2. Nvidia Docker installation
+```
+# SSH into the worker machine with GPU
+$ ssh USERNAME@EXTERNAL_IP
+
+# Add the package repositories
+$ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+$ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+$ sudo apt-get update && sudo apt-get install -y nvidia-docker2
+$ sudo systemctl restart docker
+```
+
+3. Modify the following file
+```
+# SSH into the worker machine with GPU
+$ ssh USERNAME@EXTERNAL_IP
+$ sudo tee /etc/docker/daemon.json <<EOF
+{
+    "default-runtime": "nvidia",
+    "runtimes": {
+        "nvidia": {
+            "path": "/usr/bin/nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    }
+}
+EOF
+$ sudo pkill -SIGHUP docker
+$ sudo reboot
+```
+
+4. Kubernetes GPU Sharing extension installation
+```
+# From your local machine that has access to the Kubernetes API
+$ curl -O https://raw.githubusercontent.com/AliyunContainerService/gpushare-scheduler-extender/master/config/gpushare-schd-extender.yaml
+$ kubectl create -f gpushare-schd-extender.yaml
+
+$ wget https://raw.githubusercontent.com/AliyunContainerService/gpushare-device-plugin/master/device-plugin-rbac.yaml
+$ kubectl create -f device-plugin-rbac.yaml
+
+$ wget https://raw.githubusercontent.com/AliyunContainerService/gpushare-device-plugin/master/device-plugin-ds.yaml
+# update the local file so the first line is 'apiVersion: apps/v1'
+$ kubectl create -f device-plugin-ds.yaml
+
+# From your local machine that has access to the Kubernetes API
+$ kubectl label node worker-gpu-0 gpushare=true
+```
+
+Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documentation](https://blog.ml6.eu/a-guide-to-gpu-sharing-on-top-of-kubernetes-6097935ababf).
+
 ### Steps to build Kafka-ML
 
 1. You may need to deploy a local register to upload your Docker images. You can deploy it in the port 5000:
@@ -199,7 +276,14 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
     docker push localhost:5000/backend 
     ```
 
-3. Build the model_training components and push the images into the local register:
+3. Build the TensorFlow Code Executor and push the image into the local register:
+    ```
+    cd tfexecutor
+    docker build --tag localhost:5000/tfexecutor .
+    docker push localhost:5000/tfexecutor 
+    ```
+
+4. Build the model_training components and push the images into the local register:
     ```
     cd model_training
     docker build --tag localhost:5000/model_training .
@@ -208,21 +292,21 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
     docker push localhost:5000/distributed_model_training 
 	```
 
-4. Build the kafka_control_logger component and push the image into the local register:
+5. Build the kafka_control_logger component and push the image into the local register:
     ```
     cd kafka_control_logger
     docker build --tag localhost:5000/kafka_control_logger .
     docker push localhost:5000/kafka_control_logger 
     ```
 
-5. Build the model_inference component and push the image into the local register:
+6. Build the model_inference component and push the image into the local register:
     ```
     cd model_inference
     docker build --tag localhost:5000/model_inference .
     docker push localhost:5000/model_inference 
     ```
 
-6. Install the libraries and execute the frontend:
+7. Install the libraries and execute the frontend:
     ```
     cd frontend
     npm install
@@ -247,6 +331,9 @@ Once built the images, you can deploy the system components in Kubernetes follow
 
     kubectl apply -f frontend-deployment.yaml
     kubectl apply -f frontend-service.yaml
+
+    kubectl apply -f tf-executor-deployment.yaml
+    kubectl apply -f tf-executor-service.yaml
 
     kubectl apply -f kafka-control-logger-deployment.yaml
     
