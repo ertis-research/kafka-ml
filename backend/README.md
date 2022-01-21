@@ -40,6 +40,7 @@ config.load_kube_config() # To run externally
 - **TRAINING_MODEL_IMAGE**: name of the Docker training image to be deployed in Kubernetes
 - **INFERENCE_MODEL_IMAGE**: name of the Docker inference image to be deployed in Kubernetes
 - **FRONTEND_URL**: URL and port of the frontend to be added in the whitelist (e.g, http://localhost in the port 80)
+- **TFEXECUTOR_URL**: URL and port of the TensorFlow Executor Service
 - **SECRET_KEY**: used in Django for security
 - **DEBUG**: to enable (1) or disable (0) debug
 

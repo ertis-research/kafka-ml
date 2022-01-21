@@ -37,7 +37,7 @@ spec:
         - name: BACKEND_URL
           value: http://backend:8000
         - name: TFEXECUTOR_URL
-          value: http://192.168.48.206:8001/exec_tf/
+          value: http://tfexecutor:8001/
         - name: ALLOWED_HOSTS
           value: 127.0.0.1,localhost,backend
         # - name: KUBE_TOKEN
