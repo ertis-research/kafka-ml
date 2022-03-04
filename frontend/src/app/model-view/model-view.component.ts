@@ -25,6 +25,8 @@ export class ModelViewComponent implements OnInit {
   valid: Boolean = true;
   distributedModels : JSON[];
   showFather: Boolean = false;
+  framework: string = "";
+  placeholder: string = "";
   constructor(private modelService: ModelService,
               private snackbar: MatSnackBar,
               private router: Router,
@@ -64,6 +66,63 @@ export class ModelViewComponent implements OnInit {
   }
   back() {
     this._location.back();
+  }
+
+  tfClick(){
+    this.framework = "tf";
+  }
+
+  pthClick(){
+    this.showFather = false;
+    this.framework = "pth"
+  }
+
+  getPlaceholder(): string {
+    var txt = ""
+    if (this.framework == "tf"){
+      txt =`model = tf.keras.models.Sequential([
+        tf.keras.layers.Flatten(input_shape=(28, 28)), 
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(10, activation='softmax')
+      ])
+model.compile(optimizer=tf.keras.optimizers.Adam(0.001),
+      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+      metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+    `;
+    }else if(this.framework == "pth"){
+      txt = `class NeuralNetwork(nn.Module):
+      def __init__(self):
+          super(NeuralNetwork, self).__init__()
+          self.flatten = nn.Flatten()
+          self.linear_relu_stack = nn.Sequential(
+              nn.Linear(28*28, 128),
+              nn.ReLU(),
+              nn.Linear(128, 10),
+              nn.Softmax()
+          )
+
+      def forward(self, x):
+          x = self.flatten(x)
+          logits = self.linear_relu_stack(x)
+          return logits
+
+      def loss_fn(self):
+          return nn.CrossEntropyLoss()
+
+      def optimizer(self):
+          return torch.optim.SGD(model.parameters(), lr=1e-3)
+
+      def metrics(self):
+          val_metrics = {
+              "accuracy": Accuracy(),
+              "loss": Loss(self.loss_fn())
+           }
+          return val_metrics
+
+model = NeuralNetwork()
+`;
+    }
+    return txt;
   }
 
   compareModels(o1: any, o2: any): boolean {

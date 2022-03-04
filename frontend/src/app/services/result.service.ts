@@ -31,7 +31,8 @@ export class ResultService {
 
     getTrainedModel(id: number){
       const url = `${this.url}model/${id}`
-      return this.httpClient.get(url, {responseType: "blob"});
+      return this.httpClient.get(url, {responseType: "blob", observe: 'response'});
+      //return this.httpClient.get(url, {responseType: "blob"});
     }
 
     getInferenceInfo(id: number){

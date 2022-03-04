@@ -1,0 +1,6 @@
+-f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.11.1+cu113
+torchinfo==1.6.3
+pytorch-ignite==0.4.7
+Flask==2.0.2
+gunicorn==20.0.4 

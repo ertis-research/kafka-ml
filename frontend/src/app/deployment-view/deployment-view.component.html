@@ -1,39 +1,58 @@
 <div class="container">
   <mat-card>
-  <mat-card-title>
-    Deploy configuration {{configuration.name}}
+    <mat-card-title>
+      Deploy configuration {{configuration.name}}
     </mat-card-title>
-    
+
     <form class="create-deployment-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
-      
-     <mat-form-field class="full-width">
+
+      <mat-form-field class="full-width" *ngIf="detectedFrameworks.length > 0">
         <mat-label>Batch size for training</mat-label>
-        <input  matInput required type="number" placeholder="10" name="batch" id="batch"  #nameRef="ngModel" [ngModel]="deployment.batch">
+        <input matInput required type="number" placeholder="10" name="batch" id="batch" #nameRef="ngModel"
+          [ngModel]="deployment.batch">
       </mat-form-field>
 
-      <mat-form-field class="full-width">
-      <mat-label>Training configuration</mat-label>
-        <input matInput required placeholder="epochs=5" pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$" name="kwargs_fit" [ngModel]="deployment.kwargs_fit">
+      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('tf')">
+        <mat-label>TensorFlow Training configuration</mat-label>
+        <input matInput required placeholder="epochs=5"
+          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+          name="tf_kwargs_fit" [ngModel]="deployment.tf_kwargs_fit">
       </mat-form-field>
 
-      <mat-form-field class="full-width">
-      <mat-label>Validation configuration</mat-label>
-        <input matInput placeholder="steps=5" value="" pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$" name="kwargs_val" [ngModel]="deployment.kwargs_val">
+      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('tf')">
+        <mat-label>TensorFlow Validation configuration</mat-label>
+        <input matInput placeholder="steps=5" value=""
+          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+          name="tf_kwargs_val" [ngModel]="deployment.tf_kwargs_val">
       </mat-form-field>
 
-      <mat-form-field>
-      <mat-label>GPU Memory usage estimation (Kubernetes Scheduler)</mat-label>
+      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('pth')">
+        <mat-label>PyTorch Training configuration</mat-label>
+        <input matInput required placeholder="max_epochs=5"
+          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+          name="pth_kwargs_fit" [ngModel]="deployment.pth_kwargs_fit">
+      </mat-form-field>
+
+      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('pth')">
+        <mat-label>PyTorch Validation configuration</mat-label>
+        <input matInput placeholder="shuffle=True" value=""
+          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+          name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="detectedFrameworks.length > 0">
+        <mat-label>GPU Memory usage estimation (Kubernetes Scheduler)</mat-label>
         <input matInput required type="number" placeholder="0" name="gpumem" [ngModel]="deployment.gpumem">
       </mat-form-field>
 
       <div class="row-buttons">
         <span class="spacer"></span>
         <a (click)="back()" class="form-btn" mat-button>Go Back</a>
-        <button type="submit" class="form-btn" *ngIf="valid" [disabled]="form.invalid" mat-raised-button color="accent">
-            Deploy
+        <button type="submit" class="form-btn" *ngIf="valid" [disabled]="form.invalid || detectedFrameworks.length == 0" mat-raised-button color="accent">
+          Deploy
         </button>
       </div>
-      
-    </form>    
+
+    </form>
   </mat-card>
 </div>

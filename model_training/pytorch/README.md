@@ -1,10 +1,9 @@
 # Model training
 
-This module contains the training task that will be executed when a training Job is launched in Kafka-ML through Kubernetes. Once deployed, this task waits until a received control message contains the `deployment_id` configured. Once received the control message and the corresponding data stream, the downloaded model from the Back-end will be trained, and the trained model and training and optionally validation results will be sent again to the Back-end.
+This module contains the training task that will be executed when a PyTorch training Job is launched in Kafka-ML through Kubernetes. Once deployed, this task waits until a received control message contains the `deployment_id` configured. Once received the control message and the corresponding data stream, the downloaded PyTorch model from the Back-end will be trained, and the trained model and training and optionally validation results will be sent again to the Back-end.
 
 A brief introduction of its files:
 - File `training.py` main file of this module that will be executed when executed the training Job.
-- File `decoders.py` decoders (RAW, Avro) used to decode data streams.
 - File `config.py` to configure debug.
 - File `utils.py` common functions used by other files.
 

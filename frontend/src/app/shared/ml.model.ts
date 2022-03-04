@@ -11,4 +11,5 @@ export class MLModel {
   code: string;
   distributed: boolean;
   father: SimpleModel;
+  framework: string;
 }

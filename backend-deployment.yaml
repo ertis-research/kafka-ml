@@ -26,18 +26,24 @@ spec:
           value: kafka-cluster:9092
         - name: CONTROL_TOPIC
           value: control
-        - name: TRAINING_MODEL_IMAGE
-          value: localhost:5000/model_training
+        - name: TENSORFLOW_TRAINING_MODEL_IMAGE
+          value: localhost:5000/tensorflow_model_training
         - name: DISTRIBUTED_TRAINING_MODEL_IMAGE
           value: localhost:5000/distributed_model_training
-        - name: INFERENCE_MODEL_IMAGE
-          value: localhost:5000/model_inference
+        - name: TENSORFLOW_INFERENCE_MODEL_IMAGE
+          value: localhost:5000/tensorflow_model_inference
+        - name: PYTORCH_TRAINING_MODEL_IMAGE
+          value: localhost:5000/pytorch_model_training
+        - name: PYTORCH_INFERENCE_MODEL_IMAGE
+          value: localhost:5000/pytorch_model_inference
         - name: FRONTEND_URL
           value: http://localhost
         - name: BACKEND_URL
           value: http://backend:8000
         - name: TFEXECUTOR_URL
           value: http://tfexecutor:8001/
+        - name: PTHEXECUTOR_URL
+          value: http://pthexecutor:8002/
         - name: ALLOWED_HOSTS
           value: 127.0.0.1,localhost,backend
         # - name: KUBE_TOKEN

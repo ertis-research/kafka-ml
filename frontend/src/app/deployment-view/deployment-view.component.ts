@@ -24,6 +24,7 @@ export class DeploymentViewComponent implements OnInit {
   configuration: Configuration = new Configuration();
   configurationID: number;
   valid: boolean = false;
+  detectedFrameworks: string[] = [];
   ngOnInit(): void {  
     if (this.route.snapshot.paramMap.has('id')){
       this.configurationID = Number(this.route.snapshot.paramMap.get('id'));
@@ -31,6 +32,11 @@ export class DeploymentViewComponent implements OnInit {
         (data) => {
           this.configuration= <Configuration> data;
           this.valid = true;
+          this.configurationService.getFrameworksUsedInConfiguration(this.configurationID).subscribe(
+            (data) => {
+              this.detectedFrameworks = <string[]> data
+            }
+          )
         }, 
         (err)=>{
           this.snackbar.open('Configuration not found', '', {
@@ -41,7 +47,12 @@ export class DeploymentViewComponent implements OnInit {
   }
   onSubmit(deployment: Deployment) {
     deployment.configuration=this.configurationID;
-    deployment.kwargs_val = deployment.kwargs_val  || "";
+    
+    deployment.tf_kwargs_fit = deployment.tf_kwargs_fit  || "";
+    deployment.tf_kwargs_val = deployment.tf_kwargs_val  || "";
+    deployment.pth_kwargs_fit = deployment.pth_kwargs_fit  || "";
+
+    deployment.pth_kwargs_val = deployment.pth_kwargs_val  || "";
     this.deploymentService.deploy(deployment).subscribe(
       () => {
         this.router.navigateByUrl('/deployments');

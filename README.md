@@ -35,7 +35,7 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 - [Installation and development](#Installation-and-development)
     - [Requirements](#requirements) 
     - [GPU configuration](#GPU-configuration)
-    - [Steps to build and execute Kafka-ML](#Steps-to-build-and-execute-Kafka-ML)
+    - [Steps to build Kafka-ML](#Steps-to-build-Kafka-ML)
 - [Publications](#publications)
 - [License](#license)
 
@@ -43,6 +43,7 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 - [29/04/2021] Integration of distributed models.
 - [05/11/2021] Automation of data types and reshapes for the training module.
 - [20/01/2022] Added GPU support. ML Code has been taken out of backend.
+- [04/03/2022] Added PyTorch ML Framework support!
 
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
@@ -276,20 +277,31 @@ Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documenta
     docker push localhost:5000/backend 
     ```
 
-3. Build the TensorFlow Code Executor and push the image into the local register:
+3.1. Build the TensorFlow Code Executor and push the image into the local register:
     ```
     cd tfexecutor
     docker build --tag localhost:5000/tfexecutor .
     docker push localhost:5000/tfexecutor 
     ```
 
+3.2. Build the PyTorch Code Executor and push the image into the local register:
+    ```
+    cd pthexecutor
+    docker build --tag localhost:5000/pthexecutor .
+    docker push localhost:5000/pthexecutor 
+    ```
+
 4. Build the model_training components and push the images into the local register:
     ```
-    cd model_training
-    docker build --tag localhost:5000/model_training .
-    docker push localhost:5000/model_training 
+    cd model_training/tensorflow
+    docker build --tag localhost:5000/tensorflow_model_training .
+    docker push localhost:5000/tensorflow_model_training 
     docker build -f Dockerfile_distributed --tag localhost:5000/distributed_model_training .
-    docker push localhost:5000/distributed_model_training 
+    docker push localhost:5000/distributed_model_training
+
+    cd ../pytorch
+    docker build --tag localhost:5000/pytorch_model_training .
+    docker push localhost:5000/pytorch_model_training
 	```
 
 5. Build the kafka_control_logger component and push the image into the local register:
@@ -301,9 +313,13 @@ Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documenta
 
 6. Build the model_inference component and push the image into the local register:
     ```
-    cd model_inference
-    docker build --tag localhost:5000/model_inference .
-    docker push localhost:5000/model_inference 
+    cd model_inference/tensorflow
+    docker build --tag localhost:5000/tensorflow_model_inference .
+    docker push localhost:5000/tensorflow_model_inference
+
+    cd ../pytorch
+    docker build --tag localhost:5000/pytorch_model_inference .
+    docker push localhost:5000/pytorch_model_inference
     ```
 
 7. Install the libraries and execute the frontend:
@@ -334,6 +350,9 @@ Once built the images, you can deploy the system components in Kubernetes follow
 
     kubectl apply -f tf-executor-deployment.yaml
     kubectl apply -f tf-executor-service.yaml
+    
+    kubectl apply -f pth-executor-deployment.yaml
+    kubectl apply -f pth-executor-service.yaml
 
     kubectl apply -f kafka-control-logger-deployment.yaml
     

@@ -34,8 +34,10 @@
           </div> 
           <h3 class="h3-content">Configuration: </h3> <a mat-raised-button title="View/Edit Configuration {{deployment.configuration.name}}" routerLink="/configuration/{{deployment.configuration.id}}/">{{deployment.configuration.name}}</a> <br>
           <h3 class="h3-content">Batch size: </h3><p>{{deployment.batch}} </p><br>
-          <h3 class="h3-content">Training arguments: </h3> <p> {{deployment.kwargs_fit}} </p> <br>
-          <h3 class="h3-content">Validation arguments: </h3> <p> {{deployment.kwargs_val}} </p> <br>
+          <h3 *ngIf="deployment.tf_kwargs_fit != ''" class="h3-content">TF Training arguments: </h3> <p> {{deployment.tf_kwargs_fit}} </p> <br *ngIf="deployment.tf_kwargs_fit != ''">
+          <h3 *ngIf="deployment.tf_kwargs_val != ''" class="h3-content">TF Validation arguments: </h3> <p> {{deployment.tf_kwargs_val}} </p> <br *ngIf="deployment.tf_kwargs_val != ''">
+          <h3 *ngIf="deployment.pth_kwargs_fit != ''" class="h3-content">PTH Training arguments: </h3> <p> {{deployment.pth_kwargs_fit}} </p> <br *ngIf="deployment.pth_kwargs_fit != ''">
+          <h3 *ngIf="deployment.pth_kwargs_val != ''" class="h3-content">PTH Validation arguments: </h3> <p> {{deployment.pth_kwargs_val}} </p> <br *ngIf="deployment.pth_kwargs_val != ''">
         </mat-card-content>
       </mat-card>
       </mat-grid-tile>

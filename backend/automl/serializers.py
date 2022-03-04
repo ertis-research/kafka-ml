@@ -11,7 +11,7 @@ class MLModelSerializer(serializers.ModelSerializer):
     father = SimpleModelSerializer(read_only=True, required=False)
     class Meta:
         model = MLModel
-        fields = ['id', 'code', 'name', 'description', 'imports', 'distributed', 'father']
+        fields = ['id', 'code', 'name', 'description', 'imports', 'distributed', 'father', 'framework']
 
     def update(self, instance, validated_data):
         father = self.initial_data.get("father") if "father" in self.initial_data else None
@@ -99,7 +99,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deployment
-        fields = ['batch', 'kwargs_fit', 'kwargs_val', 'configuration']
+        fields = ['batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'configuration']
     
     def validate_batch(self, value):
         """Checks that batch size is greater than 0"""
@@ -138,7 +138,7 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'batch', 'kwargs_fit', 'kwargs_val', 'time']
+        fields = ['id', 'configuration', 'results', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'time']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""

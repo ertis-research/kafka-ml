@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: pthexecutor
+  name: pthexecutor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-pthexecutor
+  template:
+    metadata:
+      labels:
+        name: pod-pthexecutor
+      name: pthexecutor
+    spec:
+      containers:
+      - name: pthexecutor
+        image: localhost:5000/pthexecutor
+        ports:
+        - containerPort: 8002
+        imagePullPolicy: IfNotPresent
+        

@@ -104,11 +104,17 @@ export class ResultListComponent implements OnInit {
   getTrainedModel(id: number) {
     this.resultService.getTrainedModel(id).subscribe(
       (data) => {
-        const blob = new Blob([data]);
+        const blob = new Blob([data.body], {type: data.headers.get('Content-Type')});
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
+        
         link.href = url;
-        link.download = 'model-result' + id + '.h5';
+        if (data.headers.get('ML-Framework') == "tf"){
+          link.download = 'model-result' + id + '.h5';
+        }else if (data.headers.get('ML-Framework') == "pth"){
+          link.download = 'model-result' + id + '.pth';
+        }        
+        
         link.click();
       },
       (err) => {

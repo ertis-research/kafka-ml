@@ -38,4 +38,11 @@ export class ConfigurationService {
       return this.httpClient.put<JSON>(url, data);
     }
 
+    frameworksConfigUrl = this.baseUrl + '/frameworksInConfiguration/';
+
+    getFrameworksUsedInConfiguration(id: number){
+      const url = `${this.frameworksConfigUrl}${id}`
+      return this.httpClient.get(url);
+    }
+
 }

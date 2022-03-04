@@ -48,8 +48,8 @@ def kubernetes_config( token=None, external_host=None ):
             Kubernetes API client
     """
     aConfiguration = client.Configuration()
-    if token is not None and \
-        external_host is not None:
+    if token != None and \
+        external_host != None:
 
         aConfiguration.host = external_host 
         aConfiguration.verify_ssl = False
@@ -66,7 +66,7 @@ def parse_kwargs_fit(kwargs_fit):
             str: kwargs_fit formatted as string JSON
     """
     dic = {}
-    if kwargs_fit is not None and kwargs_fit is not '':
+    if kwargs_fit != None and kwargs_fit != '':
         kwargs_fit=kwargs_fit.replace(" ", "")
         for l in kwargs_fit.split(","):
             pair=l.split('=')
@@ -134,16 +134,21 @@ class ModelList(generics.ListCreateAPIView):
         try:
             data = json.loads(request.body)
             logging.info("Data code received %s", data['code'])
-            
+
             imports_code = '' if 'imports' not in data else data['imports']
+
             if 'distributed' in data:
                 data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": data['distributed'], "request_type": "check"}
-                resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
             else:             
                 data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": False, "request_type": "check"}
+                                     
+            if data['framework'] == "pth":
+                resp = requests.post(settings.PYTORCH_EXECUTOR_URL+"exec_pth/",data=json.dumps(data_to_send))
+            else:   
                 resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+
             """Prints the information of the model"""
-            if resp.status_code is 200:
+            if resp.status_code == 200:
                 serializer = MLModelSerializer(data=data)
                 if serializer.is_valid():
                     obj=serializer.save()
@@ -194,16 +199,21 @@ class ModelID(generics.RetrieveUpdateDestroyAPIView):
                 model_obj = MLModel.objects.get(pk=pk)
                 serializer = MLModelSerializer(model_obj, data=data)
                 if serializer.is_valid():
-                    if data['code']!= model_obj.code:
+                    if data['code'] != model_obj.code or data['framework'] != model_obj.framework:
                         imports_code = '' if 'imports' not in data else data['imports']
+                        
                         if 'distributed' in data:
                             data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": data['distributed'], "request_type": "check"}
-                            resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
-                        else:             
+                        else:
                             data_to_send = {"imports_code": imports_code, "model_code": data['code'], "distributed": False, "request_type": "check"}
+                            
+                        if data['framework'] == "pth":
+                            resp = requests.post(settings.PYTORCH_EXECUTOR_URL+"exec_pth/",data=json.dumps(data_to_send))
+                        else:   
                             resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+
                         """Prints the information of the model"""
-                        if resp.status_code is not 200:
+                        if resp.status_code != 200:
                             return HttpResponse('Model not valid.', status=status.HTTP_400_BAD_REQUEST)
                     serializer.save()
                     return HttpResponse(status=status.HTTP_200_OK)
@@ -336,6 +346,27 @@ class ConfigurationID(generics.RetrieveUpdateDestroyAPIView):
             traceback.print_exc()
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
+class ConfigurationUsedFrameworks(generics.GenericAPIView):
+    """View to get the frameworks used in a configuration.
+        
+        URL: /frameworksInConfiguration/{:configuration_pk}
+    """
+    def get(self, request, pk, format=None):
+        """Get the framework used in the differents model of a configuration"""
+        try:
+            if Configuration.objects.filter(pk=pk).exists():
+                obj = Configuration.objects.get(pk=pk)
+                frameworks_used = set()
+
+                for x in obj.ml_models.all():
+                    frameworks_used.add(x.framework)
+
+                return HttpResponse(json.dumps(list(frameworks_used)), status=status.HTTP_200_OK)
+            return HttpResponse('Configuration does not exists', status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
+
 class DeploymentList(generics.ListCreateAPIView):
     """View to get the list of deployments and create a new deployment in Kubernetes
         
@@ -364,11 +395,37 @@ class DeploymentList(generics.ListCreateAPIView):
         """
         try:
             data = json.loads(request.body)
+
+            # GPU Memory allocation
             gpu_mem_to_allocate = data['gpumem']
             data.pop('gpumem')
+            
+            # tf_kwargs verification
+            tf_kwargs_fit_empty, tf_kwargs_val_empty = False, False
+            if data['tf_kwargs_fit'] != '':
+                tf_kwargs_fit_empty = False
+                if data['tf_kwargs_val'] == '':
+                    tf_kwargs_val_empty = True
+                    data.pop('tf_kwargs_val') 
+            else:
+                data.pop('tf_kwargs_fit') 
+                data.pop('tf_kwargs_val')
+                tf_kwargs_fit_empty, tf_kwargs_val_empty = True, True
+
+            # pth_kwargs verification
+            pth_kwargs_fit_empty, pth_kwargs_val_empty = False, False
+            if data['pth_kwargs_fit'] != '':
+                pth_kwargs_fit_empty = False
+                if data['pth_kwargs_val'] == '':
+                    pth_kwargs_val_empty = True
+                    data.pop('pth_kwargs_val') 
+            else:
+                data.pop('pth_kwargs_fit') 
+                data.pop('pth_kwargs_val')
+                pth_kwargs_fit_empty, pth_kwargs_val_empty = True, True
+
             serializer = DeployDeploymentSerializer(data=data)
             if serializer.is_valid():
-                deployment = serializer.save()
                 try:
                     """ KUBERNETES code goes here"""
                     config.load_incluster_config() # To run inside the container
@@ -377,19 +434,39 @@ class DeploymentList(generics.ListCreateAPIView):
                     api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
                     api_instance = client.BatchV1Api(api_client)
                     #api_instance = client.BatchV1Api()
-
                     
-                    for result in TrainingResult.objects.filter(deployment=deployment):
+                    if not tf_kwargs_fit_empty:    
+                        # TensorFlow Verification
+                        tf_kwargs_fit  = parse_kwargs_fit(data['tf_kwargs_fit'])
+                        tf_kwargs_val  = parse_kwargs_fit(data['tf_kwargs_val']) if not tf_kwargs_val_empty else json.dumps({})
 
-                        kwargs_fit = parse_kwargs_fit(deployment.kwargs_fit)
-                        kwargs_val = parse_kwargs_fit(deployment.kwargs_val)
-                        data_to_send = {"batch": deployment.batch, "kwargs_fit": kwargs_fit, "kwargs_val": kwargs_val}
-                        resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"check_deploy_config/", data=json.dumps(data_to_send))
+                        data_to_send = {"batch": data['batch'], "kwargs_fit": tf_kwargs_fit, "kwargs_val": tf_kwargs_val}                        
+                        tf_resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"check_deploy_config/", data=json.dumps(data_to_send))
+                        if tf_resp.status_code != 200:
+                            raise ValueError('Some TensorFlow arguments are not valid.')
 
-                        if resp.status_code is not 200:
-                            raise ValueError('Some arguments are not valid.')
+                    if not pth_kwargs_fit_empty:
+                        # PyTorch Verification
+                        pth_kwargs_fit = parse_kwargs_fit(data['pth_kwargs_fit'])
+                        pth_kwargs_val = parse_kwargs_fit(data['pth_kwargs_val']) if not pth_kwargs_val_empty else json.dumps({})
 
+                        data_to_send = {"batch": data['batch'], "kwargs_fit": pth_kwargs_fit, "kwargs_val": pth_kwargs_val}
+                        pth_resp = requests.post(settings.PYTORCH_EXECUTOR_URL+"check_deploy_config/"   , data=json.dumps(data_to_send))
+                        if pth_resp.status_code != 200:
+                            raise ValueError('Some PyTorch arguments are not valid.')
+                                        
+                    deployment = serializer.save()
 
+                    for result in TrainingResult.objects.filter(deployment=deployment):       
+                        if result.model.framework == "tf":
+                            image = settings.TENSORFLOW_TRAINING_MODEL_IMAGE
+                            kwargs_fit = tf_kwargs_fit
+                            kwargs_val = tf_kwargs_val
+                        elif result.model.framework == "pth":
+                            image = settings.PYTORCH_TRAINING_MODEL_IMAGE
+                            kwargs_fit = pth_kwargs_fit
+                            kwargs_val = pth_kwargs_val
+                        
                         if not result.model.distributed:
                             job_manifest = {
                                 'apiVersion': 'batch/v1',
@@ -402,7 +479,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                     'template' : {
                                         'spec': {
                                             'containers': [{
-                                                'image': settings.TRAINING_MODEL_IMAGE, 
+                                                'image': image, 
                                                 'name': 'training',
                                                 'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
                                                         {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
@@ -415,7 +492,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                                         {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
                                                 'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
                                             }],
                                             'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
                                             'restartPolicy': 'OnFailure'
@@ -425,7 +501,7 @@ class DeploymentList(generics.ListCreateAPIView):
                             }
                             resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
                         
-                        elif result.model.distributed and result.model.father is None:
+                        elif result.model.distributed and result.model.father == None:
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
                             result_urls = []
                             result_ids = []
@@ -464,21 +540,24 @@ class DeploymentList(generics.ListCreateAPIView):
                                                         {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                         {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
                                                         {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                        {'name': 'KWARGS_FIT', 'value': parse_kwargs_fit(deployment.kwargs_fit)},
-                                                        {'name': 'KWARGS_VAL', 'value': parse_kwargs_fit(deployment.kwargs_val)},
+                                                        {'name': 'KWARGS_FIT', 'value': tf_kwargs_fit},
+                                                        {'name': 'KWARGS_VAL', 'value': tf_kwargs_val},
                                                         {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
                                                 'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
                                             }],
                                             'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
                                             'restartPolicy': 'OnFailure'
                                         }
                                     }
                                 }
-                            }
+                            }                                
                             resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
                     return HttpResponse(status=status.HTTP_201_CREATED)
+                except ValueError as ve:
+                    traceback.print_exc()
+                    logging.error(str(ve))
+                    return HttpResponse(str(ve), status=status.HTTP_400_BAD_REQUEST)    
                 except Exception as e:
                     traceback.print_exc()
                     Deployment.objects.filter(pk=deployment.pk).delete()
@@ -560,14 +639,25 @@ class DownloadTrainedModel(generics.RetrieveAPIView):
     def get(self, request, pk, format=None):
         try:
             result= TrainingResult.objects.get(pk=pk)  
-            filename = path = os.path.join(settings.MEDIA_ROOT, result.trained_model.name)
+            filename = os.path.join(settings.MEDIA_ROOT, result.trained_model.name)
             """Obtains the trained model filename"""
 
             with open(filename, 'rb') as f:
                 file_data = f.read()
+                file_ext = None
+                if result.model.framework == "tf":
+                    file_ext = "h5"
+                elif result.model.framework == "pth":
+                    file_ext = "pth"
                 response = HttpResponse(file_data, content_type='application/force-download')
-                response['Content-Disposition'] = 'attachment; filename="model.h5"'
+
+                response['Content-Disposition'] = f'attachment; filename="model.{file_ext}"'
+                response['Access-Control-Expose-Headers'] = "ML-Framework"
+                response['ML-Framework'] = result.model.framework
+
                 return response
+
+
         except Exception as e:
             logging.error(str(e))
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
@@ -587,14 +677,19 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
             result= TrainingResult.objects.get(pk=pk)
             """Obtains the model filename"""
             
-            data_to_send = {"imports_code": result.model.imports, "model_code": result.model.code, "distributed": result.model.distributed, "request_type": "load_model"}
-            resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
-            """Saves the model temporally"""
+            if result.model.framework == "tf":
+                data_to_send = {"imports_code": result.model.imports, "model_code": result.model.code, "distributed": result.model.distributed, "request_type": "load_model"}
+                resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"exec_tf/",data=json.dumps(data_to_send))
+                """Saves the model temporally"""
 
-            response = HttpResponse(resp.content, content_type='application/model')
-            response['Content-Disposition'] = 'attachment; filename="model.h5"'
-            result.status = TrainingResult.STATUS.deployed
-            result.save()
+                response = HttpResponse(resp.content, content_type='application/model')
+                response['Content-Disposition'] = 'attachment; filename="model.h5"'
+            elif result.model.framework == "pth":
+                response = HttpResponse(result.model.code)
+
+            if result.status !=  TrainingResult.STATUS.finished:
+                result.status = TrainingResult.STATUS.deployed
+                result.save()
 
             return response
         except Exception as e:
@@ -641,11 +736,20 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                 trained_model = request.FILES['trained_model']
                 fs = FileSystemStorage()
                 path = os.path.join(settings.MEDIA_ROOT, settings.TRAINED_MODELS_DIR)
-                if os.path.exists(path+str(obj.id)+'.h5'):
-                    os.remove(path+str(obj.id)+'.h5')
-                
-                filename = fs.save(path+str(obj.id)+'.h5', trained_model)
-                obj.trained_model.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.h5')
+                if obj.model.framework == "tf":
+                    if os.path.exists(path+str(obj.id)+'.h5'):
+                        os.remove(path+str(obj.id)+'.h5')
+                    
+                    filename = fs.save(path+str(obj.id)+'.h5', trained_model)
+                    obj.trained_model.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.h5')
+                elif obj.model.framework == "pth":
+                    if os.path.exists(path+str(obj.id)+'.pth'):
+                        os.remove(path+str(obj.id)+'.pth')
+                    
+                    filename = fs.save(path+str(obj.id)+'.pth', trained_model)
+                    obj.trained_model.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.pth')
+
+
                 obj.status = TrainingResult.STATUS.finished
                 obj.save()
                 return HttpResponse(status=status.HTTP_200_OK)
@@ -828,7 +932,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                             else:
                                 response['input_config'] = input_config
                             
-                            if new_input_config is None:
+                            if new_input_config == None:
                                 dic = json.loads(input_config)
                             else:
                                 dic = json.loads(new_input_config)
@@ -907,6 +1011,11 @@ class InferenceResultID(generics.ListCreateAPIView):
                         logging.info("Inference deployed in host [%s]", external_host)
                         logging.info("Input kafka broker is [%s] and output kafka broker is [%s]", input_kafka_broker, output_kafka_broker)
 
+                        if result.model.framework == "tf":
+                            image = settings.TENSORFLOW_INFERENCE_MODEL_IMAGE
+                        elif result.model.framework == "pth":
+                            image = settings.PYTORCH_INFERENCE_MODEL_IMAGE
+                                                
                         if not result.model.distributed:
                             manifest = {
                                 'apiVersion': 'v1', 
@@ -932,10 +1041,11 @@ class InferenceResultID(generics.ListCreateAPIView):
                                         },
                                         'spec':{
                                             'containers': [{
-                                                'image': settings.INFERENCE_MODEL_IMAGE, 
+                                                'image': image, 
                                                 'name': 'inference',
                                                 'env': [{'name': 'INPUT_BOOTSTRAP_SERVERS', 'value': input_kafka_broker},
-                                                        {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},
+                                                        {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},                      
+                                                        {'name': 'MODEL_ARCH_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
                                                         {'name': 'MODEL_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/model/'+str(result.id)},
                                                         {'name': 'INPUT_FORMAT', 'value': inference.input_format},
                                                         {'name': 'INPUT_CONFIG', 'value': inference.input_config},
@@ -982,7 +1092,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                         },
                                         'spec':{
                                             'containers': [{
-                                                'image': settings.INFERENCE_MODEL_IMAGE,
+                                                'image': settings.TENSORFLOW_INFERENCE_MODEL_IMAGE,
                                                 'name': 'inference',
                                                 'env': [{'name': 'INPUT_BOOTSTRAP_SERVERS', 'value': input_kafka_broker},
                                                         {'name': 'OUTPUT_BOOTSTRAP_SERVERS', 'value': output_kafka_broker},

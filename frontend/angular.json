@@ -123,5 +123,8 @@
       }
     }
   },
-  "defaultProject": "autofront"
+  "defaultProject": "autofront",
+  "cli": {
+    "analytics": false
+  }
 }

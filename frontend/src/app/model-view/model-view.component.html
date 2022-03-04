@@ -1,63 +1,66 @@
 <div class="container">
   <mat-card>
-  <mat-card-title>
-  <div *ngIf="create">Create Model</div>
-  <div *ngIf="!create">Edit Model {{model.id}}</div>
+    <mat-card-title>
+      <div *ngIf="create">Create Model</div>
+      <div *ngIf="!create">Edit Model {{model.id}}</div>
     </mat-card-title>
-    
+
     <form class="create-model-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
 
       <mat-form-field class="full-width">
-        <input matInput autofocus required placeholder="Name" id="name"  #nameRef="ngModel" name="name" [ngModel]="model.name">
+        <input matInput autofocus required placeholder="Name" id="name" #nameRef="ngModel" name="name"
+          [ngModel]="model.name">
       </mat-form-field>
-      
+
       <p class="text-danger">
-		<span *ngIf="nameRef.invalid && (nameRef.dirty || nameRef.touched)">This field is required</span>&nbsp;
-	  </p>
+        <span *ngIf="nameRef.invalid && (nameRef.dirty || nameRef.touched)">This field is required</span>&nbsp;
+      </p>
 
       <mat-form-field class="full-width">
         <input matInput placeholder="Description" name="description" [ngModel]="model.description">
       </mat-form-field>
-    
-      <mat-checkbox name="distributed" [ngModel]="model.distributed" (change)="controlFather($event)">Distributed</mat-checkbox>
 
-      <mat-form-field *ngIf="showFather" class="full-width">
+      
+      <mat-label>Select ML Framework: </mat-label>
+      <mat-radio-group matInput required name="framework" [ngModel]="model.framework" >
+        <mat-radio-button value="tf"  (change)="tfClick()">Tensorflow</mat-radio-button>
+        <mat-radio-button value="pth" (change)="pthClick()">PyTorch (Ignite)</mat-radio-button>
+      </mat-radio-group>
+
+      <b></b>
+      <b></b>
+
+      <mat-checkbox name="distributed" *ngIf="framework == 'tf'" [ngModel]="model.distributed" (change)="controlFather($event)">Distributed
+      </mat-checkbox>
+      
+
+      <mat-form-field *ngIf="showFather && framework == 'tf'" class="full-width">
         <mat-label>Upper model</mat-label>
         <mat-select name="father" [ngModel]="model.father" [compareWith]="compareModels">
-          <mat-option *ngFor="let model of distributedModels" [value]="model.id">ID{{model.id}}  {{model.name}}</mat-option>
+          <mat-option *ngFor="let model of distributedModels" [value]="model.id">ID{{model.id}} {{model.name}}
+          </mat-option>
         </mat-select>
       </mat-form-field>
 
       <mat-form-field class="full-width">
-    <mat-label>Imports</mat-label>
-    <textarea matInput rows="4" name="imports" [ngModel]="model.imports" 
-    placeholder="import ..."></textarea>
+        <mat-label>Imports</mat-label>
+        <textarea matInput rows="4" name="imports" [ngModel]="model.imports" placeholder="import ..."></textarea>
       </mat-form-field>
-    
-     <mat-form-field class="full-width">
-    <mat-label>Code</mat-label>
-    <textarea matInput required #codeRef="ngModel" rows="15" name="code" [ngModel]="model.code" 
-    placeholder=
-  "model = tf.keras.models.Sequential([ 
-    keras.layers.Dense(512, activation='relu', input_shape=(784,)), 
-    keras.layers.Dropout(0.2), 
-    keras.layers.Dense(10)
-  ])
-model.compile(optimizer='adam',
-    loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True), 
-    metrics=['accuracy'])
-  "
-    ></textarea>
-  </mat-form-field>
-      
+
+      <mat-form-field class="full-width">
+        <mat-label>Code</mat-label>
+        <textarea matInput required #codeRef="ngModel" rows="15" name="code" [ngModel]="model.code" placeholder="{{getPlaceholder()}}"></textarea>
+      </mat-form-field>
+
+
       <div class="row-buttons">
         <span class="spacer"></span>
         <a (click)="back()" class="form-btn" mat-button>Go Back</a>
         <button type="submit" *ngIf="valid" class="form-btn" [disabled]="form.invalid" mat-raised-button color="accent">
           <div *ngIf="create">Create</div>
           <div *ngIf="!create">Edit</div>
-    </button>
+        </button>
       </div>
-    </form>    
+    </form>
   </mat-card>
 </div>

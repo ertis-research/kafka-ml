@@ -13,6 +13,7 @@ class MLModel(models.Model):
     code = models.TextField()
     distributed = models.BooleanField(default=False)
     father = models.OneToOneField('self', null=True, blank=True, default=None, related_name='child', on_delete=models.SET_NULL)
+    framework = models.TextField()
 
 
 class Configuration(models.Model):
@@ -31,8 +32,10 @@ class Deployment(models.Model):
     """Deployment of a configuration of models for training"""
 
     batch = models.IntegerField(default=1)
-    kwargs_fit = models.CharField(max_length=100, blank=True)
-    kwargs_val = models.CharField(max_length=100, blank=True)
+    tf_kwargs_fit = models.CharField(max_length=100, blank=True)
+    tf_kwargs_val = models.CharField(max_length=100, blank=True)
+    pth_kwargs_fit = models.CharField(max_length=100, blank=True)
+    pth_kwargs_val = models.CharField(max_length=100, blank=True)
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
     time = models.DateTimeField(default=now, editable=False)
 
