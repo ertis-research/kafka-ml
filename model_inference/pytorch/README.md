@@ -15,7 +15,8 @@ Once installed, you have to set each one of the environment vars below to execut
 ## Environments vars received
 
 - **BOOTSTRAP_SERVERS**: list of brokers for the connection to Apache Kafka
-- **MODEL_URL**: URL for downloading the trained model from the Back-end.
+- **MODEL_ARCH_URL**: URL for downloading the model architecture from the Back-end.
+- **MODEL_URL**: URL for downloading the model's trained weights from the Back-end.
 - **INPUT_FORMAT**: input format used for decoding.
 - **INPUT_CONFIG**: input format configuration used for decoding.
 - **INPUT_TOPIC**: Kafka input topic to received data streams.

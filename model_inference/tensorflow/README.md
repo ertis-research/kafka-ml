@@ -1,6 +1,6 @@
 # Model inference
 
-This module contains the inference task that will be executed when a inference Job is launched in Kafka-ML through Kubernetes. Once deployed, this task waits for data in the input topic configured and send the predictions to the output topic configured.
+This module contains the inference task that will be executed when a TensorFlow inference Job is launched in Kafka-ML through Kubernetes. Once deployed, this task waits for data in the input topic configured and send the predictions to the output topic configured.
 
 A brief introduction of its files:
 - File `inference.py` main file of this module that will be executed when executed the inference Job.
@@ -17,6 +17,7 @@ Once installed, you have to set each one of the environment vars below to execut
 
 - **BOOTSTRAP_SERVERS**: list of brokers for the connection to Apache Kafka
 - **MODEL_URL**: URL for downloading the trained model from the Back-end.
+- **MODEL_ARCH_URL**: Unused in TensorFlow.
 - **INPUT_FORMAT**: input format used for decoding.
 - **INPUT_CONFIG**: input format configuration used for decoding.
 - **INPUT_TOPIC**: Kafka input topic to received data streams.

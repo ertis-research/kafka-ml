@@ -1,6 +1,6 @@
 # Kafka-ML: connecting the data stream with ML/AI frameworks
 
-Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras machine learning (ML) models on Kubernetes. The pipeline allows the design, training, and inference of ML models. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT.  
+Kafka-ML is a framework to manage the pipeline of Tensorflow/Keras and PyTorch (Ignite) machine learning (ML) models on Kubernetes. The pipeline allows the design, training, and inference of ML models. The training and inference datasets for the ML models can be fed through Apache Kafka, thus they can be directly connected to data streams like the ones provided by the IoT.  
 
 ML models can be easily defined in the Web UI with no need for external libraries and executions, providing an accessible tool for both experts and non-experts on ML/AI.
 
@@ -53,19 +53,61 @@ To follow this tutorial, please deploy Kafka-ML as indicated below in [Installat
 Create a model with just a TF/Keras model source code and some imports/functions if needed. Maybe this model for the MINST dataset is a simple way to start:
 
 ```
-model = tf.keras.Sequential([
-    tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(128, activation=tf.nn.relu),
-    tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Flatten(input_shape=(28, 28)),
+  tf.keras.layers.Dense(128, activation='relu'),
+  tf.keras.layers.Dense(10, activation='softmax')
 ])
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(0.001),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
+)
 ````
+
+Something similar should be done in case you wish to use PyTorch:
+```
+class NeuralNetwork(nn.Module):
+    def __init__(self):
+        super(NeuralNetwork, self).__init__()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(28*28, 128),
+            nn.ReLU(),
+            nn.Linear(128, 10),
+            nn.Softmax()
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_relu_stack(x)
+        return logits
+
+    def loss_fn(self):
+        return nn.CrossEntropyLoss()
+
+    def optimizer(self):
+        return torch.optim.Adam(model.parameters(), lr=0.001)
+
+    def metrics(self):
+        val_metrics = {
+            "accuracy": Accuracy(),
+            "loss": Loss(self.loss_fn())
+         }
+        return val_metrics
+
+model = NeuralNetwork()
+```
+
+Note that functions 'loss_fn', 'optimizer', and 'metrics' must necessarily be defined.
 
 Insert the ML code into the Kafka-ML UI.
 
-<img src="images/create-model.png" width="500">
+<img src="images/create-model-tensorflow.png" width="500">
+
+<br/>
+
+<img src="images/create-model-pytorch.png" width="500">
 
 Create a configuration. A configuration is a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel. A configuration can also contain a single ML model.
 
@@ -183,7 +225,7 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 
 ### Requirements
 
-- [Python supported by Tensorflow 3.5–3.7](https://www.python.org/)
+- [Python supported by Tensorflow 3.5–3.7 and PyTorch 1.10](https://www.python.org/)
 - [Node.js](https://nodejs.org/)
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
@@ -279,14 +321,14 @@ Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documenta
 
 3.1. Build the TensorFlow Code Executor and push the image into the local register:
     ```
-    cd tfexecutor
+    cd mlcode_executor/tfexecutor
     docker build --tag localhost:5000/tfexecutor .
     docker push localhost:5000/tfexecutor 
     ```
 
 3.2. Build the PyTorch Code Executor and push the image into the local register:
     ```
-    cd pthexecutor
+    cd mlcode_executor/pthexecutor
     docker build --tag localhost:5000/pthexecutor .
     docker push localhost:5000/pthexecutor 
     ```
