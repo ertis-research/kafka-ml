@@ -26,6 +26,7 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
   publisher={Elsevier}
 }
 ```
+Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Future Generation Computer Systems](https://www.sciencedirect.com/journal/future-generation-computer-systems/about/editors-choice)! :blush: :book: :rocket:
 
 ## Table of Contents
 - [Changelog](#changelog)
