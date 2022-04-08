@@ -21,7 +21,7 @@
 
       <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('tf')">
         <mat-label>TensorFlow Validation configuration</mat-label>
-        <input matInput placeholder="steps=5" value=""
+        <input matInput placeholder="" value=""
           pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
           name="tf_kwargs_val" [ngModel]="deployment.tf_kwargs_val">
       </mat-form-field>
@@ -35,7 +35,7 @@
 
       <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('pth')">
         <mat-label>PyTorch Validation configuration</mat-label>
-        <input matInput placeholder="shuffle=True" value=""
+        <input matInput placeholder="" value=""
           pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
           name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
       </mat-form-field>
@@ -45,6 +45,10 @@
         <input matInput required type="number" placeholder="0" name="gpumem" [ngModel]="deployment.gpumem">
       </mat-form-field>
 
+      <br>
+      
+      <mat-slide-toggle *ngIf="detectedFrameworks.length > 0" name="conf_mat_settings" [ngModel]="deployment.conf_mat_settings" value="false">Create confusion matrix at end (if test set is specified)</mat-slide-toggle>
+      
       <div class="row-buttons">
         <span class="spacer"></span>
         <a (click)="back()" class="form-btn" mat-button>Go Back</a>

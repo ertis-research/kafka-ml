@@ -99,7 +99,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deployment
-        fields = ['batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'configuration']
+        fields = ['batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'configuration']
     
     def validate_batch(self, value):
         """Checks that batch size is greater than 0"""
@@ -138,7 +138,7 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'time']
+        fields = ['id', 'configuration', 'results', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'time']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""
@@ -147,11 +147,9 @@ class RoundingDecimalField(serializers.DecimalField):
         return value
 
 class SimpleResultSerializer(serializers.ModelSerializer):
-    val_loss = RoundingDecimalField(max_digits=15, decimal_places=10)
-    train_loss = RoundingDecimalField(max_digits=15, decimal_places=10)
     class Meta:
         model = TrainingResult
-        fields = ['id', 'train_loss', 'train_metrics', 'val_loss', 'val_metrics']
+        fields = ['id', 'train_metrics', 'val_metrics', 'test_metrics', 'confusion_matrix', 'training_time']
 
 class TrainingResultSerializer(serializers.ModelSerializer):
     deployment = SimpleDeploymentSerializer()
@@ -160,13 +158,13 @@ class TrainingResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainingResult
         fields = ['id', 'status', 'status_changed', 'deployment', 
-                'model', 'train_loss','train_metrics','val_loss','val_metrics']
+                'model', 'train_metrics', 'val_metrics', 'test_metrics', 'confusion_matrix', 'training_time']
 
 class DatasourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Datasource
         fields = ['input_format', 'deployment', 'input_config',
-        'description', 'topic', 'validation_rate', 'total_msg', 'time']
+        'description', 'topic', 'validation_rate', 'test_rate', 'total_msg', 'time']
 
 class DeployInferenceSerializer(serializers.ModelSerializer):
     model_result = serializers.PrimaryKeyRelatedField(read_only=True)

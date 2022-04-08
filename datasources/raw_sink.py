@@ -13,7 +13,8 @@ class RawSink(KafkaMLSink):
                 Defaults '' for no dimension.
             label_reshape (str): Reshape of the label data. Example: '28 28' for a matrix of 28x28. 
                 Defaults '' for no dimension.
-            validation_rate (float): rate of the training data for evaluation. Defaults 0.3
+            validation_rate (float): rate of the training data for validation. Defaults 0
+            test_rate (float): rate of the training data for test. Defaults 0
             control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
                 Defaults to control
             group_id (str): Group ID of the Kafka consumer. Defaults to sink
@@ -30,11 +31,11 @@ class RawSink(KafkaMLSink):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         data_type=None, label_type=None, description='', data_reshape=None, label_reshape=None, 
-        validation_rate=0, control_topic='control', group_id='sink'):
+        validation_rate=0, test_rate=0, control_topic='control', group_id='sink'):
         
         input_format='RAW'
         super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
-            validation_rate, control_topic, group_id)
+            validation_rate, test_rate, control_topic, group_id)
         
         self.data_type = data_type
         self.label_type = label_type

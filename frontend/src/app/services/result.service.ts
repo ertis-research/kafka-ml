@@ -35,8 +35,18 @@ export class ResultService {
       //return this.httpClient.get(url, {responseType: "blob"});
     }
 
+    getConfusionMatrix(id: number){
+      const url = `${this.url}confusion_matrix/${id}`
+      return this.httpClient.get(url, {responseType: "blob"});
+    }
+
     getInferenceInfo(id: number){
       const url = `${this.url}inference/${id}`
+      return this.httpClient.get(url);
+    }
+
+    getChartInfo(id: number){
+      const url = `${this.url}chart/${id}`
       return this.httpClient.get(url);
     }
 

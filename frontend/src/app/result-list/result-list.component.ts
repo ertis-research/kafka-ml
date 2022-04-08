@@ -12,7 +12,7 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class ResultListComponent implements OnInit {
 
-  displayedColumns = ['id' ,'model', 'train_loss', 'train_metrics', 'val_loss', 'val_metrics', 'status', 'status_changed', 'inference', 'manage', 'download'];
+  displayedColumns = ['id' ,'model', 'train_metrics', 'val_metrics', 'test_metrics', 'training_time', 'status', 'status_changed', 'chart', 'inference', 'manage', 'download'];
 
   results: JSON[];
   dataSource = new MatTableDataSource(this.results);
@@ -69,6 +69,24 @@ export class ResultListComponent implements OnInit {
   applyFilter(value: string) {
     value = value.trim().toLowerCase();
     this.dataSource.filter = value;
+  }
+
+  metricsToHTML(str: string){
+    return str.replace("\n", "<br>");
+  }
+
+  getLastMetric(metrics: JSON){
+    if (metrics == null || metrics == undefined){
+      return ""
+    }
+    let metric_types = Object.keys(metrics)
+    let res = ""
+    metric_types.forEach(function (value) {
+      let val = Math.round((metrics[value][metrics[value].length-1] + Number.EPSILON) * 100000) / 100000
+      res += value + ": "+ val + "\n"
+    }); 
+    res = res.slice(0,-1)
+    return res
   }
 
   confirmDeletion(id: number) {

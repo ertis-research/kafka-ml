@@ -489,6 +489,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                                         {'name': 'BATCH', 'value': str(deployment.batch)},
                                                         {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                         {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                        {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                         {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
                                                 'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
@@ -731,11 +732,22 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                 if serializer.is_valid():
                     serializer.save()
                 else:
-                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+                    logging.info("Cannot save training result")
+                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)                
 
                 trained_model = request.FILES['trained_model']
+                confussion_matrix = request.FILES['confussion_matrix'] if obj.deployment.conf_mat_settings and obj.test_metrics != {} else None
+                
                 fs = FileSystemStorage()
                 path = os.path.join(settings.MEDIA_ROOT, settings.TRAINED_MODELS_DIR)
+                
+                if confussion_matrix != None:
+                    if os.path.exists(path+str(obj.id)+'.png'):
+                        os.remove(path+str(obj.id)+'.png')
+
+                    filename = fs.save(path+str(obj.id)+'.png', confussion_matrix)
+                    obj.confusion_mat_img.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.png')
+
                 if obj.model.framework == "tf":
                     if os.path.exists(path+str(obj.id)+'.h5'):
                         os.remove(path+str(obj.id)+'.h5')
@@ -820,6 +832,66 @@ class TrainingResultStop(generics.CreateAPIView):
             return HttpResponse("Result not found or not running", status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             traceback.print_exc()
+            return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+class TrainingResultGetMetrics(generics.GenericAPIView):
+    def get(self, request, pk, format=None):
+        """Get the metrics information from a training result"""
+        try:
+            if TrainingResult.objects.filter(pk=pk).exists():
+                obj = TrainingResult.objects.get(pk=pk)
+
+                existsValid = False
+                if obj.val_metrics != {}:
+                    existsValid = True
+
+                res = []
+
+                for metric in obj.train_metrics.keys():
+                    met_train = {"name": metric, "series": []}
+                    if existsValid:
+                        met_val = {"name": f"{metric}_val", "series": []}
+
+                    for n_epoch in range(len(obj.train_metrics[metric])):
+                        epoch_train_met = {"value": obj.train_metrics[metric][n_epoch], "name": n_epoch+1}
+                        met_train["series"].append(epoch_train_met)
+                        
+                        if existsValid:
+                            epoch_valid_met = {"value": obj.val_metrics[metric][n_epoch], "name": n_epoch+1}
+                            met_val["series"].append(epoch_valid_met)    
+                    res.append(met_train)
+
+                    if existsValid:
+                        res.append(met_val)
+
+                    response = json.dumps({'metrics':res, 'conf_mat':obj.confusion_matrix})
+
+                return HttpResponse(response, status=status.HTTP_200_OK)
+            return HttpResponse('Training result does not exists', status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
+
+class DownloadConfussionMatrix(generics.RetrieveAPIView):
+    """View to get the confusion matrix of a result.
+        
+        URL: GET /results/confusion_matrix/{:id_result} to get the confusion matrix of a result
+    """
+    def get(self, request, pk, format=None):
+        try:
+            result= TrainingResult.objects.get(pk=pk)  
+            filename = os.path.join(settings.MEDIA_ROOT, result.confusion_mat_img.name)
+            """Obtains the confusion matrix filename"""
+
+            with open(filename, 'rb') as f:
+                file_data = f.read()
+                response = HttpResponse(file_data, content_type='application/image')
+
+                response['Content-Disposition'] = 'attachment; filename="confusion_mat.png'
+                return response
+
+        except Exception as e:
+            logging.error(str(e))
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
@@ -1153,6 +1225,7 @@ class DatasourceToKafka(generics.CreateAPIView):
                 data_reshape (str): Reshape of the data. Optional
                 label_reshape (str): Reshape of the label. Optional
                 validation_rate (float): Validation rate.
+                test_rate (float): Test rate.
                 total_msg (int): Total messages sent
                 description (str): Description of the dataset
                 time (str): Timemestamp when the dataset was sent
@@ -1167,6 +1240,7 @@ class DatasourceToKafka(generics.CreateAPIView):
                   'data_reshape' : '28 28',
                   'label_reshape' : '',
                   'validation_rate' : 0.1,
+                  'test_rate' : 0.1,
                   'total_msg': 70000
                   'description': 'Mnist dataset',
                   'time': '2020-04-03T00:00:00Z',

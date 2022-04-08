@@ -48,6 +48,19 @@ kubectl apply -f pth-executor-service.yaml
 
 docker run -d -p 5000:5000 --restart=always --name registry registry:2 & ::It will throw an error if you already have a registry
 
+:zookeeper
+
+kubectl delete pod zookeeper
+kubectl apply -f zookeeper-pod.yaml
+
+if NOT %action%==0 goto end  
+
+:kafka
+kubectl delete pod kafka-pod
+kubectl apply -f kafka-pod.yaml
+
+if NOT %action%==0 goto end  
+
 :backend
 :: Backend
 kubectl get jobs --no-headers=true | awk "/model-training/{print $1}" | xargs kubectl delete jobs
@@ -128,13 +141,6 @@ cd ../..
 
 if NOT %action%==0 goto end  
 
-:kafka
-kubectl delete pod kafka-pod
-kubectl apply -f kafka-pod.yaml
-
-if NOT %action%==0 goto end  
-
-
 :kafka_control_logger
 :: Kafka Control Logger
 kubectl delete deploy kafka-control-logger
@@ -147,11 +153,5 @@ cd ..
 kubectl apply -f kafka-control-logger-deployment.yaml
 if NOT %action%==0 goto end  
 
-:zookeeper
-
-kubectl delete pod zookeeper
-kubectl apply -f zookeeper-pod.yaml
-
-if NOT %action%==0 goto end  
 
 :end

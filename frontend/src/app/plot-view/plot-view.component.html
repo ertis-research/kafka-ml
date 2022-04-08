@@ -1,0 +1,35 @@
+<div class="container">
+    <div class="header">
+        <h1>Training result {{resultID}} Metrics charts</h1>
+    </div>
+
+    <mat-form-field>
+        <mat-label>Select Metrics</mat-label>
+        <mat-select [formControl]="metricListControl" (selectionChange)="onFormChange()" name="select_metrics" multiple>
+            <mat-option *ngFor="let metric of available_metrics" [value]="metric">{{metric}}</mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    <ngx-charts-line-chart *ngIf="data_shown.length!=0" (window:resize)="onResize($event)" [view]="view" [scheme]="colorScheme" [legend]="true"
+        [showXAxisLabel]="true" [showYAxisLabel]="false" [xAxis]="true" [yAxis]="true" [xAxisLabel]="'Epochs'"
+        [yAxisLabel]="'Value'" [timeline]="true" [autoScale]="true" [results]="data_shown"></ngx-charts-line-chart>
+
+    <br><br>
+
+    <button mat-raised-button alt="Download Metrics in JSON Format" (click)="exportJSON(metrics_retrieved)">
+        Download Metrics in JSON Format
+        <mat-icon>file_download</mat-icon>
+    </button>
+
+    <div *ngIf="this.conf_matrix_retrieved != null">
+        <br><br><br><br>
+        <img class="img_container" [src]='image' alt="Confusion Matrix Image" />
+
+        <br><br>
+        <button mat-raised-button alt="Download Confusion Matrix in JSON Format"
+            (click)="exportJSON(conf_matrix_retrieved)">
+            Download Confusion Matrix in JSON Format
+            <mat-icon>file_download</mat-icon>
+        </button>
+    </div>
+</div>

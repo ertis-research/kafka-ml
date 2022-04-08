@@ -46,6 +46,8 @@ import { DatasourceListComponent } from './datasource-list/datasource-list.compo
 import { DatasourceDialogComponent } from './datasource-dialog/datasource-dialog.component';
 import { InferenceViewComponent } from './inference-view/inference-view.component';
 import { InferenceListComponent } from './inference-list/inference-list.component';
+import { PlotViewComponent } from './plot-view/plot-view.component';
+import { NgxChartsModule } from '@swimlane/ngx-charts';
 
 @NgModule({
   declarations: [
@@ -66,6 +68,7 @@ import { InferenceListComponent } from './inference-list/inference-list.componen
     DatasourceDialogComponent,
     InferenceViewComponent,
     InferenceListComponent,
+    PlotViewComponent,
 
   ],
   imports: [
@@ -97,6 +100,7 @@ import { InferenceListComponent } from './inference-list/inference-list.componen
     MatMenuModule,
     LayoutModule,
     MatSortModule,
+    NgxChartsModule,
   ],
   providers: [{
     provide: MatDialogRef,

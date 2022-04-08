@@ -36,6 +36,7 @@ class Deployment(models.Model):
     tf_kwargs_val = models.CharField(max_length=100, blank=True)
     pth_kwargs_fit = models.CharField(max_length=100, blank=True)
     pth_kwargs_val = models.CharField(max_length=100, blank=True)
+    conf_mat_settings = models.BooleanField()
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
     time = models.DateTimeField(default=now, editable=False)
 
@@ -51,11 +52,13 @@ class TrainingResult(models.Model):
     status_changed = MonitorField(monitor='status')
     deployment = models.ForeignKey(Deployment, default=None, related_name='results', on_delete=models.CASCADE)
     model = models.ForeignKey(MLModel, related_name='trained', on_delete=models.CASCADE)
-    train_loss =  models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
-    train_metrics =  models.TextField(blank=True)
-    val_loss = models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
-    val_metrics =  models.TextField(blank=True)
-    trained_model = models.FileField(upload_to=settings.TRAINED_MODELS_DIR, blank=True)
+    train_metrics =  models.JSONField(blank=True, null=True)
+    val_metrics   =  models.JSONField(blank=True, null=True)
+    test_metrics  =  models.JSONField(blank=True, null=True)
+    confusion_matrix =  models.JSONField(blank=True, null=True)
+    training_time =  models.DecimalField(max_digits=14, decimal_places=4, blank=True, null=True)
+    trained_model =  models.FileField(upload_to=settings.TRAINED_MODELS_DIR, blank=True)
+    confusion_mat_img =  models.FileField(upload_to=settings.TRAINED_MODELS_DIR, blank=True, null=True)
 
     class Meta(object):
         ordering = ('-status_changed', )
@@ -73,6 +76,7 @@ class Datasource(models.Model):
     topic = models.TextField()
     total_msg= models.IntegerField()
     validation_rate = models.DecimalField(max_digits=7, decimal_places=6)
+    test_rate = models.DecimalField(max_digits=7, decimal_places=6)
     time = models.DateTimeField()
 
     class Meta(object):

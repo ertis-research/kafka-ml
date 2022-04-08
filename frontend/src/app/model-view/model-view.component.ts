@@ -110,7 +110,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(0.001),
           return nn.CrossEntropyLoss()
 
       def optimizer(self):
-          return torch.optim.SGD(model.parameters(), lr=1e-3)
+          return torch.optim.Adam(model.parameters(), lr=1e-3)
 
       def metrics(self):
           val_metrics = {

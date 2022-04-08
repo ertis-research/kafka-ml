@@ -21,6 +21,7 @@
     "@angular/platform-browser": "~9.1.0-next.3",
     "@angular/platform-browser-dynamic": "~9.1.0-next.3",
     "@angular/router": "~9.1.0-next.3",
+    "@swimlane/ngx-charts": "^18.0.1",
     "core-js-compat": "^3.20.2",
     "material-design-icons": "^3.0.1",
     "rxjs": "~6.5.4",

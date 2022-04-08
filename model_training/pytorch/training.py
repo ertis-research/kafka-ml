@@ -15,6 +15,10 @@ from ignite.contrib.handlers import TensorboardLogger, global_step_from_engine
 
 from kafka import KafkaConsumer
 
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import time
 import os
 import logging
@@ -32,8 +36,11 @@ path.append('.')
 from TrainingKafkaDataset import TrainingKafkaDataset
 
 
-TRAINED_MODEL_PATH='trained_model.pt'
+TRAINED_MODEL_PATH = 'trained_model.pt'
 '''Path of the trained model'''
+
+CONFUSSION_MODEL_IMAGE = 'confusion_matrix.png'
+'''Path of the confussion matrix image'''
 
 RETRIES = 10
 '''Number of retries for requests'''
@@ -62,8 +69,9 @@ def load_environment_vars():
   batch = int(os.environ.get('BATCH'))
   kwargs_fit = json.loads(os.environ.get('KWARGS_FIT').replace("'", '"'))
   kwargs_val = json.loads(os.environ.get('KWARGS_VAL').replace("'", '"'))
+  confussion_matrix = json.loads(os.environ.get('CONF_MAT_CONFIG').replace("'", '"'))
 
-  return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val)
+  return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, confussion_matrix)
 
 def get_train_data(boostrap_servers, kafka_topic, group, transform):
   """Obtains the data and labels for training from Kafka
@@ -85,7 +93,7 @@ def get_train_data(boostrap_servers, kafka_topic, group, transform):
 def split_fit_params(fn_kwargs_fit: dict):
   fit_dataloader_list = ["shuffle", "sampler", "batch_sampler", "num_workers", "collate_fn", "pin_memory", "drop_last", "timeout",
                          "worker_init_fn", "multiprocessing_context", "generator", "prefetch_factor", "persistent_workers"]  
-  trainer_list = ["non_blocking", "prepare_batch", "output_transform", "deterministic", "amp_mode", "scaler", "gradient_accumulation_steps"]
+  trainer_list = ["non_blocking", "prepare_batch", "deterministic", "amp_mode", "scaler", "gradient_accumulation_steps"] # "output_transform"
   fit_run_list = ["max_epochs", "epoch_length"]
 
   fit_dataloader_kwargs, trainer_kwargs, fit_run_kwargs = dict(), dict(), dict()
@@ -103,7 +111,7 @@ def split_fit_params(fn_kwargs_fit: dict):
 def split_val_params(fn_kwargs_val: dict):
   val_dataloader_list = ["shuffle", "sampler", "batch_sampler", "num_workers", "collate_fn", "pin_memory", "drop_last", "timeout",
                          "worker_init_fn", "multiprocessing_context", "generator", "prefetch_factor", "persistent_workers"]  
-  validator_list = ["non_blocking", "prepare_batch", "output_transform", "amp_mode"]
+  validator_list = ["non_blocking", "prepare_batch", "amp_mode"] # "output_transform"
   val_run_list = ["max_epochs", "epoch_length"]
 
   val_dataloader_kwargs, validator_kwargs, val_run_kwargs = dict(), dict(), dict()
@@ -117,6 +125,13 @@ def split_val_params(fn_kwargs_val: dict):
       val_run_kwargs[args]=fn_kwargs_val[args]  
   
   return val_dataloader_kwargs, validator_kwargs, val_run_kwargs
+
+def custom_output_transform(x, y, y_pred, loss):
+    return {
+        "y": y,
+        "y_pred": y_pred,
+        "criterion_kwargs": {}
+    }
 
 if __name__ == '__main__':
   try:
@@ -136,7 +151,7 @@ if __name__ == '__main__':
           )
     """Configures the logging"""
 
-    bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val  = load_environment_vars()
+    bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, confussion_matrix  = load_environment_vars()
     """Loads the environment information"""
 
     logging.info("Received environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val) ([%s], [%s], [%s], [%s], [%d], [%d], [%s], [%s])", 
@@ -186,12 +201,14 @@ if __name__ == '__main__':
 
             logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
             
-            training_size = int((1-data['validation_rate'])*(data['total_msg']))
-            validation_size= (data['total_msg'])-training_size
-            logging.info("Training batch size %d and validation batch size %d", training_size, validation_size)
+            training_size = int((1-(data['validation_rate']+data['test_rate']))*(data['total_msg']))
+            validation_size= int( data['validation_rate'] * data['total_msg'] )
+            test_size= int( data['test_rate'] * data['total_msg'] )
+
+            logging.info("Training subdataset size %d, validation subdataset size %d, and test subdataset size, %d", training_size, validation_size, test_size)
             
             start = time.time()
-            train_dataset, validation_dataset = torch.utils.data.random_split(kafka_dataset, [training_size, validation_size])
+            train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(kafka_dataset, [training_size, validation_size, test_size])
             """Splits dataset for training and validation"""
             
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -203,70 +220,115 @@ if __name__ == '__main__':
             fit_dataloader_kwargs, trainer_kwargs, fit_run_kwargs   = split_fit_params(kwargs_fit)
             val_dataloader_kwargs, validator_kwargs, val_run_kwargs = split_val_params(kwargs_val)
             
-            train_dataloader = DataLoader(train_dataset, batch_size=batch, **fit_dataloader_kwargs) # si eso poder psar args extra en el dataloader
-            test_dataloader  = DataLoader(validation_dataset, batch_size=batch, **val_dataloader_kwargs)
-            
-            trainer = create_supervised_trainer(model, model.optimizer(), model.loss_fn(), device, **trainer_kwargs)                    
-            train_evaluator = create_supervised_evaluator(model, metrics=model.metrics(), device=device, **validator_kwargs)  
-            
-            @trainer.on(Events.EPOCH_COMPLETED)
-            def log_training_results(trainer):
-                train_evaluator.run(train_dataloader, **val_run_kwargs)
-                metrics = train_evaluator.state.metrics
-                print(f"Training Results - Epoch[{trainer.state.epoch}] Avg sel. metrics: {metrics}")              
-                
-            trainer.run(train_dataloader, **fit_run_kwargs)
-          
-            train_evaluator.run(train_dataloader, **val_run_kwargs)
-            train_mtrs = train_evaluator.state.metrics
-            print(train_mtrs)
-
-            end = time.time()
-            logging.info("Total training time: %s", str(end - start))            
-            logging.info("Model trainned! Loss: %s",str(train_mtrs['loss']))
+            train_dataloader = DataLoader(train_dataset, batch_size=batch, **fit_dataloader_kwargs)
 
             if validation_size > 0:
-              logging.info("Model ready to evaluation with configuration %s", str(kwargs_val))
+              val_dataloader   = DataLoader(validation_dataset, batch_size=batch, **val_dataloader_kwargs)
 
-              val_evaluator = create_supervised_evaluator(model, metrics=model.metrics(), device=device, **validator_kwargs)
-              val_evaluator.run(test_dataloader, **val_run_kwargs)
-
-              val_mtrs = val_evaluator.state.metrics
-              print(val_mtrs)
-
-              """Validates the model"""
-              logging.info("Model evaluated!")
-
-            retry = 0
-            finished = False
+            if test_size > 0:
+              test_dataloader  = DataLoader(test_dataset, batch_size=batch, **val_dataloader_kwargs)
             
-            metrics_dic = {}
-            train_metrics = ""
-            for key in train_mtrs.keys():
-              if key!='loss':
-                metrics_dic[key] = train_mtrs[key]
-                train_metrics += key+": "+str(round(train_mtrs[key],10))+"\n"
-            """Get all metrics except the loss"""
+            epoch_training_metrics   = {}
+            epoch_validation_metrics = {}
+            test_metrics = {}
 
+            trainer = create_supervised_trainer(model, model.optimizer(), model.loss_fn(), device, output_transform=custom_output_transform,  **trainer_kwargs) 
+
+            if validation_size > 0:                   
+              evaluator = create_supervised_evaluator(model, metrics=model.metrics(), device=device, **validator_kwargs)  
+
+            for name, metric in model.metrics().items():
+              metric.attach(trainer, name)
+
+            def save_metrics(engine_metrics_items, epochs_metric_dict):
+              for k, v in engine_metrics_items:
+                try:
+                  epochs_metric_dict[k].append(v)
+                except:
+                  epochs_metric_dict[k] = [v]
+
+            @trainer.on(Events.EPOCH_COMPLETED)
+            def get_training_metrics(engine):    
+              save_metrics(engine.state.metrics.copy().items(), epoch_training_metrics)
+              if validation_size > 0: evaluator.run(val_dataloader)        
+
+            if validation_size > 0:        
+              @evaluator.on(Events.COMPLETED)
+              def get_evaluation_metrics(engine):    
+                save_metrics(engine.state.metrics.copy().items(), epoch_validation_metrics)
+            
+            
+            trainer.run(train_dataloader, **fit_run_kwargs)     
+
+            end = time.time()
+
+            if test_size > 0:
+              tester = create_supervised_evaluator(model, metrics=model.metrics(), device=device, **validator_kwargs)
+
+              @tester.on(Events.COMPLETED)
+              def get_evaluation_metrics(engine):    
+                save_metrics(engine.state.metrics.copy().items(), test_metrics)                
+              
+              tester.run(test_dataloader)  
+      
+            logging.info("Total training time: %s", str(end - start))            
+            logging.info("Model trained! Loss: %s",str(epoch_training_metrics['loss']))
+
+            cf_generated = False
+            cf_matrix = None
+            if confussion_matrix and test_size > 0:
+              try:
+                logging.info("Trying to generate confussion matrix")
+
+                model.eval()
+                with torch.no_grad():
+                  y_pred = []
+                  y_true = []
+                  for data, target in test_dataloader:
+                    data, target = data.to(device), target.to(device)
+                    output = model(data)
+                    y_pred.append(output.argmax(dim=1).cpu())
+                    y_true.append(target.cpu())
+                  y_pred = torch.cat(y_pred)
+                  y_true = torch.cat(y_true)
+                    
+                  cf_matrix = confusion_matrix(y_true, y_pred)
+                  logging.info("Confussion matrix generated")
+                
+                
+                sns.set(rc = {'figure.figsize':(10,8)})
+                
+                lab = np.around(cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis], decimals=4)
+                ax = sns.heatmap(lab, annot=True, fmt='.2%', cmap="Blues")
+
+                ax.set_title('Confusion Matrix\n')
+                ax.set_xlabel('\nPredicted Values\n')
+                ax.set_ylabel('Real values') 
+
+                plt.savefig(CONFUSSION_MODEL_IMAGE, dpi=200, transparent=True)
+
+                cf_generated = True
+                logging.info("Generated confussion matrix successfully")
+              except:
+                 logging.info("Could not generate confussion matrix")
+
+
+            retry, finished = 0, False
             while not finished and retry < RETRIES:
               try:
                 torch.save(model.state_dict(), TRAINED_MODEL_PATH)
                 """Saves the trained model in the filesystem"""            
-                    
-                files = {'trained_model': open(TRAINED_MODEL_PATH, 'rb')}
+                
+                files = {'trained_model': open(TRAINED_MODEL_PATH, 'rb'),
+                        'confussion_matrix': open(CONFUSSION_MODEL_IMAGE, 'rb') if cf_generated else None}
 
                 results = {
-                        'train_loss': round(train_mtrs['loss'],10),
-                        'train_metrics':  train_metrics,
-                }
-                if validation_size > 0:
-                  """if validation has been defined"""
-                  results['val_loss'] = round(val_mtrs['loss'], 10) # Loss is in the first element
-                  results['val_metrics'] =''
-                  index = 1
-                  for key in val_mtrs.keys():
-                    if key!='loss':
-                      results['val_metrics']+=key+": "+str(round(val_mtrs[key], 10))+"\n"
+                        'train_metrics':  epoch_training_metrics,
+                        'val_metrics':  epoch_validation_metrics,
+                        'test_metrics':  test_metrics,
+                        'training_time': round(end - start, 4),
+                        'confusion_matrix': cf_matrix.tolist() if cf_generated else None
+                }              
 
                 data = {'data' : json.dumps(results)}
 

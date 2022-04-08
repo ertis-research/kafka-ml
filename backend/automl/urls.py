@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from automl.views import ModelList, ModelID, DeploymentList, TrainingResultID, ConfigurationList, ConfigurationID, DatasourceToKafka, ConfigurationUsedFrameworks
-from automl.views import DeploymentsConfigurationID, TrainingResultList, DeploymentResultID, DownloadTrainedModel, DatasourceList
+from automl.views import DeploymentsConfigurationID, TrainingResultList, DeploymentResultID, DownloadTrainedModel, DatasourceList, TrainingResultGetMetrics, DownloadConfussionMatrix
 from automl.views import InferenceResultID, InferenceList, InferenceStopDelete, TrainingResultStop, DistributedModelList, FatherModelList, ModelResultID
 
 urlpatterns = [
@@ -25,4 +25,6 @@ urlpatterns = [
     path('results/stop/<int:pk>', TrainingResultStop.as_view()),
     path('results/inference/<int:pk>', InferenceResultID.as_view()),
     path('results/model/<int:pk>', DownloadTrainedModel.as_view()),
+    path('results/confusion_matrix/<int:pk>', DownloadConfussionMatrix.as_view()),
+    path('results/chart/<int:pk>', TrainingResultGetMetrics.as_view()),
 ]

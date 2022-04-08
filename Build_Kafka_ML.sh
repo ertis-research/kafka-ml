@@ -32,11 +32,25 @@ then
     docker run -d -p 5000:5000 --restart=always --name registry registry:2 & # It will throw an error if you already have a registry
 fi
 
+if [ $input -eq 0 ] || [ $input -eq 9 ]
+then
+    # Zookeeper
+    kubectl delete pod zookeeper
+    kubectl apply -f zookeeper-pod.yaml
+fi
+
+if [ $input -eq 0 ] || [ $input -eq 7 ]
+then
+    # Kafka
+    kubectl delete pod kafka-pod
+    kubectl apply -f kafka-pod.yaml
+fi
+
 if [ $input -eq 0 ] || [ $input -eq 1 ]
 then
     # Backend
     kubectl get jobs --no-headers=true | awk "/model-training/{print $1}" | xargs kubectl delete jobs
-    
+
     kubectl delete deploy backend
 
     cd backend
@@ -115,13 +129,6 @@ then
     cd ../..
 fi
 
-if [ $input -eq 0 ] || [ $input -eq 7 ]
-then
-    # Kafka
-    kubectl delete pod kafka-pod
-    kubectl apply -f kafka-pod.yaml
-fi
-
 if [ $input -eq 0 ] || [ $input -eq 8 ]
 then
     # Kafka Control Logger
@@ -133,11 +140,4 @@ then
     cd ..
 
     kubectl apply -f kafka-control-logger-deployment.yaml
-fi
-
-if [ $input -eq 0 ] || [ $input -eq 9 ]
-then
-    # Zookeeper
-    kubectl delete pod zookeeper
-    kubectl apply -f zookeeper-pod.yaml
 fi

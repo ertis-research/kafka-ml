@@ -45,6 +45,7 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [05/11/2021] Automation of data types and reshapes for the training module.
 - [20/01/2022] Added GPU support. ML Code has been taken out of backend.
 - [04/03/2022] Added PyTorch ML Framework support!
+- [08/04/2022] Added support for learning curves visualization, confusion matrix generation and small changes on metrics visualization. Now datasets can be splitted into training, validation and test.
 
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
@@ -104,23 +105,23 @@ Note that functions 'loss_fn', 'optimizer', and 'metrics' must necessarily be de
 
 Insert the ML code into the Kafka-ML UI.
 
-<img src="images/create-model-tensorflow.png" width="500">
+<img src="images/create-model-tensorflow.svg" width="500">
 
 <br/>
 
-<img src="images/create-model-pytorch.png" width="500">
+<img src="images/create-model-pytorch.svg" width="500">
 
 Create a configuration. A configuration is a set of models that can be grouped for training. This can be useful when you want to evaluate and compare the metrics (e.g, loss and accuracy) of a set of models or just to define a group of them that can be trained with the same data stream in parallel. A configuration can also contain a single ML model.
 
-<img src="images/create-configuration.png" width="500">
+<img src="images/create-configuration.svg" width="500">
 
 Deploy a configuration of models in Kubernetes for training.
 
 <img src="images/deploy-configuration.png" width="500">
 
-Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0* in the stream data received).
+Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
 
-<img src="images/configure-deployment.png" width="500">
+<img src="images/configure-deployment.svg" width="500">
 
 Once the configuration is deployed, you will see one training result per model in the configuration. Models are now ready to be trained and receive stream data.
 
@@ -140,11 +141,17 @@ You can use your own example using the AvroSink (for Apache Avro types) and RawS
 
 Once sent the data stream, and deployed and trained the models, you will see the models metrics and results in Kafka-ML. You can download now the trained models, or just continue the ML pipeline to deploy a model for inference.
 
-![](./images/training-metrics.png)
+![](./images/training-metrics.svg)
+
+If you wish to visualise the generated confusion matrix (in case it has been indicated) or to visualise some training and validation metrics (if any) per epoch, you can access for each training result to the following view. 
+
+![](./images/plot-view.svg)
+
+In addition, from this view you can access to this data in a more generic way in JSON, allowing you to generate new plots and other information for your reports.
 
 When deploying a model for inference, the parameters for the input data stream will be automatically configured based on previous data streams received, you might also change this. Mostly you will have to configure the number of replicas you want to deploy for inference and the Kafka topics for input data (values to predict) and output data (predictions).
 
-<img src="images/deploy-inference.png" width="500">
+<img src="images/deploy-inference.svg" width="500">
 
 Finally, test the inference deployed using the MNIST example for inference in the topics deployed:
 
@@ -190,7 +197,7 @@ Deploy the configuration of distributed sub-models in Kubernetes for training.
 
 <img src="images/deploy-distributed-configuration.png" width="500">
 
-Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0* in the stream data received).
+Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
 
 <img src="images/configure-distributed-deployment.png" width="500">
 

@@ -1,21 +1,21 @@
 
-  .mat-form-field {
-    font-size: 14px;
-    width: 80%;
-  }
+.mat-form-field {
+  font-size: 14px;
+  width: 80%;
+}
 
-  .mat-column-inference   {
-    flex: 0 0 60px !important;
-    white-space: unset !important;
-  }
+.mat-column-inference, .mat-column-chart   {
+  flex: 0 0 60px !important;
+  white-space: unset !important;
+}
 
-  .mat-column-manage,  .mat-column-download, .mat-column-status {
-    flex: 0 0 50px !important;
-    white-space: unset !important;
-  }
+.mat-column-manage,  .mat-column-download, .mat-column-status {
+  flex: 0 0 50px !important;
+  white-space: unset !important;
+}
 
-  .created{
-    color: grey;
+.created{
+  color: grey;
     
 }
 

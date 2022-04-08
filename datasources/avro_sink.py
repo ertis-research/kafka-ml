@@ -13,7 +13,8 @@ class AvroSink(KafkaMLSink):
             deployment_id (str): Deployment ID for sending the training
             data_scheme_filename (str): Filename of the AVRO scheme for training data
             label_scheme_filename (str): Filename of the AVRO scheme for label data
-            validation_rate (float): rate of the training data for evaluation. Defaults 0.3
+            validation_rate (float): rate of the training data for evaluation. Defaults 0
+            test_rate (float): rate of the training data for test. Defaults 0
             control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
                 Defaults to control
             group_id (str): Group ID of the Kafka consumer. Defaults to sink
@@ -21,11 +22,11 @@ class AvroSink(KafkaMLSink):
     """
 
     def __init__(self, boostrap_servers, topic, deployment_id, 
-        data_scheme_filename, label_scheme_filename, description='', validation_rate=0, control_topic='control', group_id='sink'):
+        data_scheme_filename, label_scheme_filename, description='', validation_rate=0, test_rate=0, control_topic='control', group_id='sink'):
         
         input_format='AVRO'
         super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
-            validation_rate, control_topic, group_id)
+            validation_rate, test_rate, control_topic, group_id)
         
         self.data_scheme_filename = data_scheme_filename
 

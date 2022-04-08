@@ -7,6 +7,10 @@ import tensorflow_io.kafka as kafka_io
 
 from kafka import KafkaConsumer
 
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import time
 import os
 import logging
@@ -25,6 +29,9 @@ PRE_MODEL_PATH='pre_model.h5'
 
 TRAINED_MODEL_PATH='trained_model.h5'
 '''Path of the trained model'''
+
+CONFUSSION_MODEL_IMAGE = 'confusion_matrix.png'
+'''Path of the confussion matrix image'''
 
 RETRIES = 10
 '''Number of retries for requests'''
@@ -53,10 +60,11 @@ def load_environment_vars():
   batch = int(os.environ.get('BATCH'))
   kwargs_fit = json.loads(os.environ.get('KWARGS_FIT').replace("'", '"'))
   kwargs_val = json.loads(os.environ.get('KWARGS_VAL').replace("'", '"'))
+  confussion_matrix = json.loads(os.environ.get('CONF_MAT_CONFIG').replace("'", '"'))
 
-  return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val)
+  return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, confussion_matrix)
 
-def get_train_data(boostrap_servers, kafka_topic, group, batch, decoder):
+def get_train_data(boostrap_servers, kafka_topic, group, decoder):
   """Obtains the data and labels for training from Kafka
 
     Args:
@@ -69,7 +77,7 @@ def get_train_data(boostrap_servers, kafka_topic, group, batch, decoder):
       train_kafka: training data and labels from Kafka
   """
   logging.info("Starts receiving training data from Kafka servers [%s] with topics [%s]", boostrap_servers,  kafka_topic)
-  train_data = kafka_io.KafkaDataset([kafka_topic], servers=boostrap_servers, group=group, eof=True, message_key=True).map(lambda x, y: decoder.decode(x, y)).batch(batch)                                  
+  train_data = kafka_io.KafkaDataset([kafka_topic], servers=boostrap_servers, group=group, eof=True, message_key=True).map(lambda x, y: decoder.decode(x, y))                                 
   
   return train_data
 
@@ -95,7 +103,7 @@ if __name__ == '__main__':
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
 
-    bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val  = load_environment_vars()
+    bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, confussion_matrix  = load_environment_vars()
     """Loads the environment information"""
 
     logging.info("Received environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val) ([%s], [%s], [%s], [%s], [%d], [%d], [%s], [%s])", 
@@ -145,72 +153,127 @@ if __name__ == '__main__':
             decoder = DecoderFactory.get_decoder(data['input_format'], data['input_config'])
             """Gets the decoder from the information received"""
 
-            kafka_dataset = get_train_data(bootstrap_servers, kafka_topic, result_id, batch, decoder)
+            kafka_dataset = get_train_data(bootstrap_servers, kafka_topic, result_id, decoder)
             """Gets the dataset from kafka"""
 
             logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
-            
-            split = int((1-data['validation_rate'])*(data['total_msg']/batch))
-            validation_size= (data['total_msg']/batch)-split
-            logging.info("Training batch size %d and validation batch size %d", split, validation_size)
+                        
+            training_size = int((1-(data['validation_rate']+data['test_rate']))*(data['total_msg']))
+            validation_size= int( data['validation_rate'] * data['total_msg'])
+            test_size= int( data['test_rate'] * data['total_msg'])
+
+            logging.info("Training batch size %d, validation batch size %d and test batch size %d", training_size, validation_size, test_size)
             
             start = time.time()
 
-            train_dataset = kafka_dataset.take(split).cache().repeat()
+            train_dataset = kafka_dataset.take(training_size).batch(batch)
             """Splits dataset for training"""
 
-            validation_dataset = kafka_dataset.skip(split).cache().repeat()
-            """Splits dataset for validation"""
+            test_dataset = kafka_dataset.skip(training_size)
+
+            if validation_size > 0 and test_size > 0:
+              """If validation and test size are greater than 0, then split the dataset for validation and test"""
+              validation_dataset = test_dataset.skip(test_size).batch(batch)
+              test_dataset = test_dataset.take(test_size).batch(batch)
+            elif validation_size > 0:
+              """If only validation size is greater than 0, then split the dataset for validation"""
+              validation_dataset = test_dataset.batch(batch)
+              test_dataset = None
+            elif test_size > 0:
+              """If only test size is greater than 0, then split the dataset for test"""
+              validation_dataset = None
+              test_dataset = test_dataset.batch(batch)
+            else:
+              """If no validation or test size is greater than 0, then split the dataset for training"""
+              validation_dataset = None
+              test_dataset = None
             
             logging.info("Splitting done, training is going to start.")
 
-            model_trained = model.fit(train_dataset, steps_per_epoch=split, **kwargs_fit)
+            model_trained = model.fit(train_dataset, validation_data=validation_dataset, **kwargs_fit)
             """Trains the model"""
 
             end = time.time()
             logging.info("Total training time: %s", str(end - start))
+            logging.info("Model trained! Loss: %s",str(model_trained.history['loss'][-1]))
 
-            train_loss =  model_trained.history['loss'][-1]
-            """Get last value of lost"""
+            epoch_training_metrics   = {}
+            epoch_validation_metrics = {}
+            test_metrics = {}
 
-            logging.info("Model trainned! Loss: %s",str(train_loss))
+            for k, v in model_trained.history.items():
+              if not k.startswith("val_"):
+                  try:
+                      epoch_training_metrics[k].append(v)
+                  except:
+                      epoch_training_metrics[k] = v
+              else:
+                  try:
+                      epoch_validation_metrics[k[4:]].append(v)
+                  except:
+                      epoch_validation_metrics[k[4:]] = v
 
-            if validation_size > 0:
-              logging.info("Model ready to evaluation with configuration %s", str(kwargs_val))
-              evaluation = model.evaluate(validation_dataset, **kwargs_val)
+            if test_size > 0:
+              logging.info("Model ready to test with configuration %s", str(kwargs_val))
+              evaluation = model.evaluate(test_dataset, **kwargs_val)
               """Validates the model"""
-              logging.info("Model evaluated!")
+              logging.info("Model tested!")
+            
+              for k, i in zip(epoch_training_metrics.keys(), range(len(epoch_training_metrics.keys()))):
+                test_metrics[k] = [evaluation[i]]
 
-            retry = 0
-            finished = False
 
-            metrics_dic = {}
-            train_metrics = ""
-            for key in model_trained.history.keys():
-              if key!='loss':
-                metrics_dic[key] = model_trained.history[key][-1]
-                train_metrics += key+": "+str(round(model_trained.history[key][-1],10))+"\n"
-            """Get all metrics except the loss"""
+            cf_generated = False
+            cf_matrix = None
+            if confussion_matrix and test_size > 0:
+              try:
+                logging.info("Trying to generate confussion matrix")
 
+                evaluation = model.predict(test_dataset, **kwargs_val)
+                '''Predicts test data on the trained model'''
+
+                evaluation = np.argmax(evaluation, axis=1)                
+                '''arg max for each sub list'''
+                  
+                y_true = np.concatenate([y for _, y in test_dataset], axis=0)
+
+                cf_matrix = confusion_matrix(y_true, evaluation)
+                '''Generates the confussion matrix'''
+
+                logging.info("Confussion matrix generated")
+
+                sns.set(rc = {'figure.figsize':(10,8)})
+                
+                lab = np.around(cf_matrix.astype('float') / cf_matrix.sum(axis=1)[:, np.newaxis], decimals=4)
+                ax = sns.heatmap(lab, annot=True, fmt='.2%', cmap="Blues")
+
+                ax.set_title('Confusion Matrix\n')
+                ax.set_xlabel('\nPredicted Values\n')
+                ax.set_ylabel('Real values') 
+
+                plt.savefig(CONFUSSION_MODEL_IMAGE, dpi=200, transparent=True)
+
+                cf_generated = True
+                logging.info("Generated confussion matrix successfully")
+              except:
+                 logging.info("Could not generate confussion matrix")
+           
+            retry, finished = 0, False
             while not finished and retry < RETRIES:
               try:
                 model.save(TRAINED_MODEL_PATH)
                 """Saves the trained model in the filesystem"""
                 
-                files = {'trained_model': open(TRAINED_MODEL_PATH, 'rb')}
+                files = {'trained_model': open(TRAINED_MODEL_PATH, 'rb'),
+                        'confussion_matrix': open(CONFUSSION_MODEL_IMAGE, 'rb') if cf_generated else None}              
 
                 results = {
-                        'train_loss': round(train_loss,10),
-                        'train_metrics':  train_metrics,
+                        'train_metrics':  epoch_training_metrics,
+                        'val_metrics':  epoch_validation_metrics,
+                        'test_metrics':  test_metrics,
+                        'training_time': round(end - start, 4),
+                        'confusion_matrix': cf_matrix.tolist() if cf_generated else None
                 }
-                if validation_size > 0:
-                  """if validation has been defined"""
-                  results['val_loss'] = float(evaluation[0]) # Loss is in the first element
-                  results['val_metrics'] =''
-                  index = 1
-                  for key in metrics_dic:
-                    results['val_metrics']+=key+": "+str(round(evaluation[index], 10))+"\n"
-                    index += 1
 
                 data = {'data' : json.dumps(results)}
                 logging.info("Sending result data to backend")

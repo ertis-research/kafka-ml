@@ -43,6 +43,11 @@
           <mat-cell *matCellDef="let element" title="{{element.validation_rate}}">{{ element.validation_rate}} </mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="test_rate">
+          <mat-header-cell *matHeaderCellDef> Test rate </mat-header-cell>
+          <mat-cell *matCellDef="let element" title="{{element.test_rate}}">{{element.test_rate}} </mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="total_msg">
           <mat-header-cell *matHeaderCellDef> Total msg </mat-header-cell>
           <mat-cell *matCellDef="let element" title="{{element.total_msg}}">{{ element.total_msg}} </mat-cell>

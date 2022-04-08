@@ -23,7 +23,8 @@ class KafkaMLSink(object):
             Defaults '' for no dimension.
         label_reshape (str): Reshape of the label data. Example: '28 28' for a matrix of 28x28. 
             Defaults '' for no dimension.
-        validation_rate (float): rate of the training data for evaluation. Defaults 0.3
+        validation_rate (float): rate of the training data for evaluation. Defaults 0.2
+        test_rate (float): rate of the training data for test. Defaults 0.1
         control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
             Defaults to control
         group_id (str): Group ID of the Kafka consumer. Defaults to sink
@@ -39,7 +40,8 @@ class KafkaMLSink(object):
             Defaults '' for no dimension.
         label_reshape (str): Reshape of the label data. Example: '28 28' for a matrix of 28x28. 
             Defaults '' for no dimension.
-        validation_rate (float): rate of the training data for evaluation. Defaults 0.3
+        validation_rate (float): rate of the training data for evaluation. Defaults 0.2
+        test_rate (float): rate of the training data for test. Defaults 0.1
         control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
             Defaults to control
         group_id (str): Group ID of the Kafka consumer. Defaults to sink
@@ -50,7 +52,7 @@ class KafkaMLSink(object):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         input_format, description='', 
-        validation_rate=0, control_topic='control', group_id='sink'):
+        validation_rate=0, test_rate=0, control_topic='control', group_id='sink'):
 
         self.boostrap_servers = boostrap_servers
         self.topic = topic
@@ -58,6 +60,7 @@ class KafkaMLSink(object):
         self.input_format = input_format
         self.description = description
         self.validation_rate = validation_rate
+        self.test_rate = test_rate
         self.control_topic = control_topic
         self.group_id = group_id
         self.total_messages = 0
@@ -149,6 +152,7 @@ class KafkaMLSink(object):
             'description' : self.description,
             'input_config' : self.input_config,
             'validation_rate' : self.validation_rate,
+            'test_rate' : self.test_rate,
             'total_msg':self.total_messages, 
         }
         key = self.__object_to_bytes(self.deployment_id)
