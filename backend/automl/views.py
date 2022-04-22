@@ -543,6 +543,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                                         {'name': 'BATCH', 'value': str(deployment.batch)},
                                                         {'name': 'KWARGS_FIT', 'value': tf_kwargs_fit},
                                                         {'name': 'KWARGS_VAL', 'value': tf_kwargs_val},
+                                                        {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                         {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
                                                 'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)

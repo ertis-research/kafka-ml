@@ -18,6 +18,9 @@ from config import *
 from utils import *
 from decoders import *
 
+CONFUSSION_MODEL_IMAGE = 'confusion_matrix.png'
+'''Path of the confussion matrix image'''
+
 RETRIES = 10
 '''Number of retries for requests'''
 
@@ -47,8 +50,9 @@ def load_environment_vars():
     batch = int(os.environ.get('BATCH'))
     kwargs_fit = json.loads(os.environ.get('KWARGS_FIT').replace("'", '"'))
     kwargs_val = json.loads(os.environ.get('KWARGS_VAL').replace("'", '"'))
+    confussion_matrix = json.loads(os.environ.get('CONF_MAT_CONFIG').replace("'", '"'))
 
-    return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, N)
+    return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, N, confussion_matrix)
 
 def get_train_data(boostrap_servers, kafka_topic, group, batch, decoder):
     """Obtains the data and labels for training from Kafka
@@ -64,7 +68,7 @@ def get_train_data(boostrap_servers, kafka_topic, group, batch, decoder):
     """
 
     logging.info("Starts receiving training data from Kafka servers [%s] with topics [%s]", boostrap_servers,  kafka_topic)
-    train_data = kafka_io.KafkaDataset([kafka_topic], servers=boostrap_servers, group=group, eof=True, message_key=True).map(lambda x, y: decoder.decode(x, y)).batch(batch)
+    train_data = kafka_io.KafkaDataset([kafka_topic], servers=boostrap_servers, group=group, eof=True, message_key=True).map(lambda x, y: decoder.decode(x, y))
     
     return train_data
 
@@ -92,7 +96,7 @@ if __name__ == "__main__":
 
         start_consuming_data = time.time()
 
-        bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, N = load_environment_vars()
+        bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, N, confussion_matrix = load_environment_vars()
         """Loads the environment information"""
 
         logging.info("Received environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val) ([%s], [%s], [%s], [%s], [%d], [%d], [%s], [%s])", 
@@ -158,17 +162,37 @@ if __name__ == "__main__":
 
                         logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
                         
-                        split = int((1-data['validation_rate'])*(data['total_msg']/batch))
-                        validation_size= (data['total_msg']/batch)-split
-                        logging.info("Training batch size %d and validation batch size %d", split, validation_size)
+                        logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
+                        
+                        training_size = int((1-(data['validation_rate']+data['test_rate']))*(data['total_msg']))
+                        validation_size= int( data['validation_rate'] * data['total_msg'])
+                        test_size= int( data['test_rate'] * data['total_msg'])
+
+                        logging.info("Training batch size %d, validation batch size %d and test batch size %d", training_size, validation_size, test_size)
                         
                         start_training = time.time()
 
-                        train_dataset = kafka_dataset.take(split).cache().repeat()
+                        train_dataset = kafka_dataset.take(training_size).batch(batch)
                         """Splits dataset for training"""
 
-                        validation_dataset = kafka_dataset.skip(split).cache().repeat()
-                        """Splits dataset for validation"""
+                        test_dataset = kafka_dataset.skip(training_size)
+
+                        if validation_size > 0 and test_size > 0:
+                            """If validation and test size are greater than 0, then split the dataset for validation and test"""
+                            validation_dataset = test_dataset.skip(test_size).batch(batch)
+                            test_dataset = test_dataset.take(test_size).batch(batch)
+                        elif validation_size > 0:
+                            """If only validation size is greater than 0, then split the dataset for validation"""
+                            validation_dataset = test_dataset.batch(batch)
+                            test_dataset = None
+                        elif test_size > 0:
+                            """If only test size is greater than 0, then split the dataset for test"""
+                            validation_dataset = None
+                            test_dataset = test_dataset.batch(batch)
+                        else:
+                            """If no validation or test size is greater than 0, then split the dataset for training"""
+                            validation_dataset = None
+                            test_dataset = None
                         
                         logging.info("Splitting done, training is going to start.")
 
@@ -204,7 +228,7 @@ if __name__ == "__main__":
                         model.compile(optimizer='adam', loss=weights, metrics=['accuracy'], loss_weights=learning_rates)
                         """Compiles the global model"""
 
-                        model_trained = model.fit(train_dataset, steps_per_epoch=split, **kwargs_fit)
+                        model_trained = model.fit(train_dataset, validation_data=validation_dataset, **kwargs_fit)
                         """Trains the model"""
 
                         logging.info("Model trained history: %s", str(model_trained.history))
@@ -212,39 +236,52 @@ if __name__ == "__main__":
                         end_training = time.time()
                         logging.info("Total training time: %s", str(end_training - start_training))
 
-                        train_losses = []
+                        epoch_training_metrics   = []
+                        epoch_validation_metrics = []
+                        test_metrics = []
+
                         for m in tensorflow_models:
-                            s = m.name
-                            s += '_loss'
-                            train_losses.append(model_trained.history[s][-1])
-                            """Get last value of losses"""
+                            train_dic = {}
+                            val_dic = {}
+                            for k, v in model_trained.history.items():
+                                if m.name in k:
+                                    if not k.startswith("val_"):
+                                        try:
+                                            train_dic[k[len(m.name)+1:]].append(v)
+                                        except:
+                                            train_dic[k[len(m.name)+1:]] = v
+                                    else:
+                                        try:
+                                            val_dic[k[4+len(m.name)+1:]].append(v)
+                                        except:
+                                            val_dic[k[4+len(m.name)+1:]] = v
+                            epoch_training_metrics.append(train_dic)
+                            epoch_validation_metrics.append(val_dic)
 
-                        logging.info("Models trained! Losses: %s", str(train_losses))
-
-                        if validation_size > 0:
-                            logging.info("Models ready to evaluation with configuration %s", str(kwargs_val))
-                            evaluation = model.evaluate(validation_dataset, **kwargs_val)
-                            """Validates the models"""
-                            logging.info("Model trained evaluation: %s", str(evaluation))
+                        if test_size > 0:
+                            logging.info("Model ready to test with configuration %s", str(kwargs_val))
+                            evaluation = model.evaluate(test_dataset, **kwargs_val)
+                            """Validates the model"""
+                            logging.info("Model evaluation: %s", str(evaluation))
                             logging.info("Models evaluated!")
+                            
+                            for x in range(N):
+                                test_dic = {}
+                                for k, i in zip(epoch_training_metrics[x].keys(), range(x+1, len(epoch_training_metrics[x].keys())*N+1, N )) :
+                                    test_dic[k] = [evaluation[i]]
+                                test_metrics.append(test_dic)
+
+                            logging.info("Model test metrics: %s", str(evaluation))
+
 
                         retry = 0
                         finished = False
 
-                        dictionaries = []
-                        metrics = []
-                        for m in tensorflow_models:
-                            metrics_dic = {}
-                            train_metrics = ""
-                            for key in model_trained.history.keys():
-                                if not 'loss' in key and m.name in key:
-                                    metrics_dic[key] = model_trained.history[key][-1]
-                                    train_metrics += key+": "+str(round(model_trained.history[key][-1],10))+"\n"
-                                    """Get all metrics except the loss"""
-                            dictionaries.append(metrics_dic)
-                            metrics.append(train_metrics)
-
                         start_sending_results = time.time()
+
+                        logging.info(f"Training metrics per epoch {epoch_training_metrics}")
+                        logging.info(f"Validation metrics per epoch {epoch_validation_metrics}")
+                        logging.info(f"Test metrics {test_metrics}")
 
                         while not finished and retry < RETRIES:
                             try:
@@ -259,28 +296,23 @@ if __name__ == "__main__":
 
                                 files = []
                                 for p in TRAINED_MODEL_PATHS:
-                                    files_dic = {'trained_model': open(p, 'rb')}
+                                    files_dic = {'trained_model': open(p, 'rb'),
+                                                 'confussion_matrix': None} #  open(CONFUSSION_MODEL_IMAGE, 'rb') if cf_generated else None}
                                     files.append(files_dic)
 
+
                                 results_list = []
-                                for loss, metrics in zip(train_losses, metrics):
+                                for i in range (0, N):
                                     results = {
-                                        'train_loss': round(loss,10),
-                                        'train_metrics': metrics,
+                                            'train_metrics':  epoch_training_metrics[i],
+                                            'val_metrics':  epoch_validation_metrics[i],
+                                            'test_metrics':  test_metrics[i],
+                                            'training_time': round(end_training - start_training, 4),
+                                            'confusion_matrix': None # cf_matrix.tolist() if cf_generated else None
                                     }
                                     results_list.append(results)
-                                
-                                if validation_size > 0:
-                                    """if validation has been defined"""
-                                    for i, r in enumerate(results_list, start=1):
-                                        r['val_loss'] = float(evaluation[i])
-                                        r['val_metrics'] = ''
-                                        dic = dictionaries[i-1]
-                                        j = i + N
-                                        for key in dic:
-                                            r['val_metrics'] += key+": "+str(round(evaluation[j],10))+"\n"
-                                            j += N
-                                
+
+
                                 responses = []
                                 for (result, url, f) in zip(results_list, result_url, files):
                                     data = {'data' : json.dumps(result)}
