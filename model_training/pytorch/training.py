@@ -73,17 +73,17 @@ def load_environment_vars():
 
   return (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, confussion_matrix)
 
-def get_train_data(boostrap_servers, kafka_topic, group, transform):
+def get_train_data(boostrap_servers, kafka_topic, group, transform=None):
   """Obtains the data and labels for training from Kafka
 
     Args:
       boostrap_servers (str): list of boostrap servers for the connection with Kafka
-      kafka_topic (str): Kafka topic   out_type_x, out_type_y, reshape_x, reshape_y) (raw): input data
-      batch (int): batch size for training
-      decoder(class): decoder to decode the data
+      kafka_topic (str): Kafka topic (out_type_x, out_type_y, reshape_x, reshape_y) (raw): input data
+      group (str): Kafka group_id
+      transform(class): data transform
     
     Returns:
-      train_kafka: training data and labels from Kafka
+      train_data: training data and labels from Kafka
   """
   logging.info("Starts receiving training data from Kafka servers [%s] with topics [%s]", boostrap_servers,  kafka_topic)
   train_data = TrainingKafkaDataset(kafka_topic, boostrap_servers, group, transform)                              
@@ -196,7 +196,7 @@ if __name__ == '__main__':
             kafka_topic = data['topic']
             logging.info("Received control confirmation of data from Kafka for deployment ID %s. Ready to receive data from topic %s with batch %d", str(kafka_topic), deployment_id, batch)
             
-            kafka_dataset = get_train_data(bootstrap_servers, data, result_id, ToTensor())
+            kafka_dataset = get_train_data(bootstrap_servers, data, result_id, ToTensor() if len(data['input_format'].split()) >= 2 else None)
             """Gets the dataset from kafka"""
 
             logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
@@ -208,7 +208,10 @@ if __name__ == '__main__':
             logging.info("Training subdataset size %d, validation subdataset size %d, and test subdataset size, %d", training_size, validation_size, test_size)
             
             start = time.time()
-            train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(kafka_dataset, [training_size, validation_size, test_size])
+            diff = data['total_msg'] - (training_size + validation_size + test_size)
+
+
+            train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(kafka_dataset, [training_size+diff, validation_size, test_size])
             """Splits dataset for training and validation"""
             
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
