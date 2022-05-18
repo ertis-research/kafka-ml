@@ -196,7 +196,7 @@ if __name__ == '__main__':
             kafka_topic = data['topic']
             logging.info("Received control confirmation of data from Kafka for deployment ID %s. Ready to receive data from topic %s with batch %d", str(kafka_topic), deployment_id, batch)
             
-            kafka_dataset = get_train_data(bootstrap_servers, data, result_id, ToTensor() if len(data['input_format'].split()) >= 2 else None)
+            kafka_dataset = get_train_data(bootstrap_servers, data, result_id, ToTensor() if len(data['input_config']['data_reshape'].split()) >= 2 else None)
             """Gets the dataset from kafka"""
 
             logging.info("Model ready to be trained with configuration %s", str(kwargs_fit))
