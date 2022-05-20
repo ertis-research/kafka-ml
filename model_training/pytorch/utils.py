@@ -27,9 +27,6 @@ def download_model(model_url, retries, sleep_time):
             
       print(datatowrite)
           
-      # Remove pretrained=True # Change to Regex?
-      datatowrite = datatowrite.replace("pretrained=True", "pretrained=False")
-
       exec(datatowrite, None, globals())
 
       if DEBUG:
