@@ -1,0 +1,58 @@
+{
+    "average_updated": false,
+    "average_window": 10000,
+    "type": "regression",
+    "labels":[     
+    {
+          "id": 0,
+          "color": "#fff100",
+          "label": "Zero"
+        },
+        {
+          "id": 1,
+          "color": "#ff8c00",
+          "label": "One"
+        },
+        {
+          "id": 2,
+          "color": "#e81123",
+          "label": "Two"
+        },
+        {
+          "id": 3,
+          "color": "#ec008c",
+          "label": "Three"
+        },
+        {
+          "id": 4,
+          "color": "#68217a",
+          "label": "Four"
+        },
+        {
+          "id": 5,
+          "color": "#00188f",
+          "label": "Five"
+        },
+        {
+          "id": 6,
+          "color": "#00bcf2",
+          "label": "Six"
+        },
+        {
+          "id": 7,
+          "color": "#00b294",
+          "label": "Seven"
+        },
+        {
+          "id": 8,
+          "color": "#009e49",
+          "label": "Eight"
+        },
+        {
+          "id": 9,
+          "color": "#bad80a",
+          "label": "Nine"
+        }
+  
+      ]
+}

@@ -11,6 +11,7 @@ import {DatasourceListComponent} from './datasource-list/datasource-list.compone
 import {InferenceViewComponent} from './inference-view/inference-view.component'
 import {InferenceListComponent} from './inference-list/inference-list.component'
 import {PlotViewComponent} from './plot-view/plot-view.component'
+import {VisualizationComponent} from './visualization/visualization.component'
 
 const routes: Routes = [
   {path: 'configuration-create', component: ConfigurationViewComponent},
@@ -27,7 +28,8 @@ const routes: Routes = [
   {path: 'results', component: ResultListComponent},
   {path: 'results/:id', component: ResultListComponent},
   {path: 'results/inference/:id', component: InferenceViewComponent},
-  {path: 'results/chart/:id', component: PlotViewComponent}
+  {path: 'results/chart/:id', component: PlotViewComponent},
+  {path: 'visualization', component: VisualizationComponent}
 ];
 
 @NgModule({

@@ -48,6 +48,7 @@ import { InferenceViewComponent } from './inference-view/inference-view.componen
 import { InferenceListComponent } from './inference-list/inference-list.component';
 import { PlotViewComponent } from './plot-view/plot-view.component';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
+import { VisualizationComponent } from './visualization/visualization.component';
 
 @NgModule({
   declarations: [
@@ -69,6 +70,7 @@ import { NgxChartsModule } from '@swimlane/ngx-charts';
     InferenceViewComponent,
     InferenceListComponent,
     PlotViewComponent,
+    VisualizationComponent,
 
   ],
   imports: [

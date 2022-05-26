@@ -46,7 +46,7 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [20/01/2022] Added GPU support. ML Code has been taken out of backend.
 - [04/03/2022] Added PyTorch ML Framework support!
 - [08/04/2022] Added support for learning curves visualization, confusion matrix generation and small changes on metrics visualization. Now datasets can be splitted into training, validation and test.
-
+- [26/05/2022] Included support for visualization of prediction data. Now you can easily prototype and visualize your ML/AI application. You can train models, deploy them for inference, and visualize your prediction data just with data streams.
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
 
@@ -228,6 +228,81 @@ Finally, test the inference deployed using the MNIST example for inference in th
 ````
 python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 ````
+
+In the visualization tab, you can easily visualize your deployed models. First thing, you need to configure how your model prediction data will be visualized. Here is the example for the MINST dataset:
+
+```json
+{
+    "average_updated": false,
+    "average_window": 10000,
+    "type": "classification",
+    "labels":[     
+    {
+          "id": 0,
+          "color": "#fff100",
+          "label": "Zero"
+        },
+        {
+          "id": 1,
+          "color": "#ff8c00",
+          "label": "One"
+        },
+        {
+          "id": 2,
+          "color": "#e81123",
+          "label": "Two"
+        },
+        {
+          "id": 3,
+          "color": "#ec008c",
+          "label": "Three"
+        },
+        {
+          "id": 4,
+          "color": "#68217a",
+          "label": "Four"
+        },
+        {
+          "id": 5,
+          "color": "#00188f",
+          "label": "Five"
+        },
+        {
+          "id": 6,
+          "color": "#00bcf2",
+          "label": "Six"
+        },
+        {
+          "id": 7,
+          "color": "#00b294",
+          "label": "Seven"
+        },
+        {
+          "id": 8,
+          "color": "#009e49",
+          "label": "Eight"
+        },
+        {
+          "id": 9,
+          "color": "#bad80a",
+          "label": "Nine"
+        }
+      ]
+}
+````
+You can specify the two types of visualization: 'regression' and 'classification'. In classification mode, 'average_update' determines if you want to have the current status displayed based on the higher average status, and 'average_window' determines the windows for calculating the average.  
+
+For each output of your model, you have to define a label. 'id' represents the position of the param in the model output (e.g., suppose you have a temperature output as the second parameter of your model), and with 'color' and 'label' you can set a color and label to display for the param.
+
+Once you set the configuration, you must also set the output topic where the model is deployed, 'minst-out' in our last example. After this, visualization displays your data. 
+
+Here is an example in classification mode:
+
+<img src="images/classification.png" width="500">
+
+And in regression mode:
+
+<img src="images/regression.png" width="500">
 
 ## Installation and development
 

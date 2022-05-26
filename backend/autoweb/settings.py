@@ -39,7 +39,17 @@ INSTALLED_APPS = [
     'automl.apps.AutomlConfig',
     'rest_framework',
     'corsheaders',
+    'channels'
 ]
+
+ASGI_APPLICATION = 'autoweb.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

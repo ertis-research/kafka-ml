@@ -24,7 +24,7 @@ from automl.serializers import InferenceSerializer
 
 from automl.models import MLModel, Deployment, Configuration, TrainingResult, Datasource, Inference
 
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 
 def is_blank(attribute):
     """Checks if the attribute is an empty string or None.
@@ -1258,7 +1258,8 @@ class DatasourceToKafka(generics.CreateAPIView):
             if serializer.is_valid() and Deployment.objects.filter(pk=deployment_id).exists():
                 """Checks data received is valid and the deployment received exists in the system"""
                 
-                producer = KafkaProducer(bootstrap_servers=settings.BOOTSTRAP_SERVERS)
+                conf = {'bootstrap.servers': settings.BOOTSTRAP_SERVERS} 
+                producer = Producer(conf)
                 """Creates a Kafka Producer to send the message to the control topic"""
                 
                 kafka_data = copy.deepcopy(data)
@@ -1273,12 +1274,10 @@ class DatasourceToKafka(generics.CreateAPIView):
 
                 logging.info("Control message to be sent to kafka control topic %s", kafka_data)
 
-                producer.send(settings.CONTROL_TOPIC, key=key, value=data_bytes)
+                producer.produce(settings.CONTROL_TOPIC, key=key, value=data_bytes)
                 """Sends the data to Kafka"""
                 producer.flush()
                 """Waits until data is sent"""
-                producer.close()
-                """Closes the producer"""
 
                 return HttpResponse(status=status.HTTP_201_CREATED)
             return HttpResponse('Deployment not valid', status=status.HTTP_400_BAD_REQUEST)

@@ -1,0 +1,68 @@
+  
+  .open-close-container {
+    border: 1px solid #dddddd;
+    margin-top: 1em;
+    padding: 20px 20px 0px 20px;
+    color: #000000;
+    font-weight: bold;
+    font-size: 20px;
+    height: '200px';
+  }
+
+  mat-form-field.mat-form-field {
+    width: 100%;
+  }
+
+  .center {
+    text-align: center;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color:black;
+    height: 200px;
+    font-size:40px;
+    width: 75%;
+  }
+  
+  .example-chip-list {
+    width: 100%;
+  }
+  table {
+    width: 100%;
+    table-layout: fixed;
+  }
+  
+  .tr {
+    width: 100%;
+  }
+
+ .mat-cell{
+  padding-top: 10px;
+}
+
+.mat-column-one {
+  flex: none;
+  width: 300px;
+  text-align: center;
+}
+.mat-column-two {
+
+  flex: none;
+  width: 25% !important;
+  text-align: center;
+}
+.mat-column-three {
+  flex: none;
+  width: 25% !important;
+  text-align: center;
+}
+.mat-column-four {
+  flex: none;
+  width: 25% !important;
+  text-align: center;
+}
+
+tr.mat-header-row {
+  height: 0px;
+}

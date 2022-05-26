@@ -1,0 +1,84 @@
+<div class="container">
+    <div class="header">
+        </div>
+    
+    <mat-form-field>
+      <mat-placeholder>Label config</mat-placeholder>
+        <input matInput [(ngModel)]="config"  type="Label config">  
+        <button (click)="setConfig()" mat-button matSuffix mat-stroked-button aria-label="config">
+          <mat-icon >label</mat-icon>
+        </button>
+    </mat-form-field>
+    
+    <mat-form-field *ngIf="isClassification||isRegression">
+        <mat-placeholder>Kafka output topic</mat-placeholder>
+          <input matInput [(ngModel)]="topic" [disabled]="connected||topicConfigured" type="Kafka output topic">  
+          <button (click)="sendTopic()" [disabled]="connected||topicConfigured" mat-button matSuffix mat-stroked-button aria-label="topic">
+           <mat-icon >send</mat-icon>
+          </button>
+        <button (click)="closeWS()" *ngIf="connected" mat-button matSuffix mat-stroked-button aria-label="topic">
+           <mat-icon >cancel</mat-icon>
+        </button>
+      </mat-form-field>
+      <h2 *ngIf="isClassification||isRegression">Current status</h2>
+    <div *ngIf="isClassification" [ngStyle]="{'backgroundColor': color}" [@openClose]="state" class="open-close-container">
+     <p class="center">{{ workingCondition }}</p>
+    </div>
+    <br>
+    <h2 *ngIf="isClassification">Last status</h2> <br>
+    <div *ngIf="isClassification" class="table-container mat-elevation-z2">
+      <mat-table [dataSource]="dataSource">
+      <!-- Position Column -->
+      <ng-container matColumnDef="one">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element" [ngStyle]="{'backgroundColor': element.color_1}">{{element.c1}}</td>
+      </ng-container>
+    
+      <!-- Name Column -->
+      <ng-container matColumnDef="two">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element" [ngStyle]="{'backgroundColor': element.color_2}">{{element.c2}}</td>
+      </ng-container>
+    
+      <!-- Weight Column -->
+      <ng-container matColumnDef="three">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td  mat-cell *matCellDef="let element" [ngStyle]="{'backgroundColor': element.color_3}">{{element.c3}} </td>
+      </ng-container>
+    
+      <!-- Symbol Column -->
+      <ng-container matColumnDef="four">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element" [ngStyle]="{'backgroundColor': element.color_4}">{{element.c4}}</td>
+      </ng-container>
+    
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </mat-table>
+    </div>
+    <br>
+    <h2 *ngIf="isClassification">Average</h2> <br>
+    <div *ngIf="isClassification" #containerRef align="center">
+      <ngx-charts-bar-vertical class="width:100%;text-align: center;"
+        [view]="view"
+        [scheme]="colorScheme"
+        [results]="analysisData"
+        [gradient]="gradient"
+        [xAxis]="showXAxis"
+        [yAxis]="showYAxis"
+        [legend]="showLegend"
+        [showXAxisLabel]="showXAxisLabel"
+        [yScaleMin]="0" 
+        [yScaleMax]="1">
+      </ngx-charts-bar-vertical>
+    </div>
+    <div  *ngIf="isRegression"  #containerRef align="center">
+    <ngx-charts-line-chart 
+    (window:resize)="onResize($event)" 
+    [view]="view" [scheme]="colorScheme" [legend]="showLegend"
+    [showXAxisLabel]="true" [showYAxisLabel]="false" [xAxis]="true"
+    [yAxis]="true"
+    [yAxisLabel]="'Value'" [timeline]="true" 
+    [autoScale]="true" [results]="analysisData"></ngx-charts-line-chart>
+    </div>
+  </div>
