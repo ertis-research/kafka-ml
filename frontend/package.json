@@ -15,7 +15,7 @@
     "@angular/cdk": "^9.1.1",
     "@angular/common": "~9.1.0-next.3",
     "@angular/compiler": "~9.1.0-next.3",
-    "@angular/core": "~9.1.0-next.3",
+    "@angular/core": "~11.0.5",
     "@angular/forms": "~9.1.0-next.3",
     "@angular/material": "^9.1.1",
     "@angular/platform-browser": "~9.1.0-next.3",
