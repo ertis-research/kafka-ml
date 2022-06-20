@@ -121,6 +121,8 @@ Deploy a configuration of models in Kubernetes for training.
 
 Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
 
+Note: If you do not have the GPU(s) properly tuned, **set the "GPU  Memory usage estimation" parameter to 0**. Otherwise, the training component will be deployed, but in a pending state waiting to allocate GPU memory. If the pod is described, it will show a `aliyun.com/gpu-mem` related warning.
+
 <img src="images/configure-deployment.svg" width="500">
 
 Once the configuration is deployed, you will see one training result per model in the configuration. Models are now ready to be trained and receive stream data.
@@ -150,6 +152,8 @@ If you wish to visualise the generated confusion matrix (in case it has been ind
 In addition, from this view you can access to this data in a more generic way in JSON, allowing you to generate new plots and other information for your reports.
 
 When deploying a model for inference, the parameters for the input data stream will be automatically configured based on previous data streams received, you might also change this. Mostly you will have to configure the number of replicas you want to deploy for inference and the Kafka topics for input data (values to predict) and output data (predictions).
+
+Note: If you do not have the GPU(s) properly tuned, **set the "GPU  Memory usage estimation" parameter to 0**. Otherwise, the inference component will be deployed, but in a pending state waiting to allocate GPU memory. If the pod is described, it will show a `aliyun.com/gpu-mem` related warning.
 
 <img src="images/deploy-inference.svg" width="500">
 
