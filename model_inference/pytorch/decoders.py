@@ -1,6 +1,5 @@
 import numpy as np
 from utils import *
-from kafka import KafkaConsumer
 import avro.schema
 import io
 from avro.io import DatumReader, BinaryDecoder

@@ -24,6 +24,8 @@ def download_model(model_url, retries, sleep_time):
     try:
       
       datatowrite = requests.get(model_url).content.decode("utf-8")
+      
+      datatowrite = datatowrite.replace("pretrained=True", "pretrained=False")
             
       print(datatowrite)
       exec(datatowrite, None, globals())

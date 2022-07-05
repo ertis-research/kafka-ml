@@ -19,6 +19,7 @@ import json
 import requests
 import time
 import traceback
+import subprocess as sp
 
 from config import *
 from utils import *
@@ -38,6 +39,25 @@ RETRIES = 10
 
 SLEEP_BETWEEN_REQUESTS = 5
 '''Number of seconds between failed requests'''
+
+def select_gpu():
+  ACCEPTABLE_AVAILABLE_MEMORY = 1024
+  COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
+
+  try:
+    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+    memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+    memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+    
+    available_gpus = [i for i, x in enumerate(memory_free_values) if x > ACCEPTABLE_AVAILABLE_MEMORY]
+    print("Available GPUs:", available_gpus)
+    if len(available_gpus) > 1:
+        available_gpus = [memory_free_values.index(max(memory_free_values))]
+        print("Using GPU:", available_gpus)
+        
+    os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, available_gpus))
+  except Exception as e:
+    print('"nvidia-smi" is probably not installed. GPUs are not masked.', e)
 
 def load_environment_vars():
   """Loads the environment information receivedfrom dockers
@@ -77,7 +97,7 @@ def get_train_data(boostrap_servers, kafka_topic, group, decoder):
       train_kafka: training data and labels from Kafka
   """
   logging.info("Starts receiving training data from Kafka servers [%s] with topics [%s]", boostrap_servers,  kafka_topic)
-  train_data = kafka_io.KafkaDataset([kafka_topic], servers=boostrap_servers, group=group, eof=True, message_key=True).map(lambda x, y: decoder.decode(x, y))                                 
+  train_data = kafka_io.KafkaDataset(kafka_topic.split(','), servers=boostrap_servers, group=group, eof=True, message_key=True).map(lambda x, y: decoder.decode(x, y))                                 
   
   return train_data
 
@@ -148,7 +168,7 @@ if __name__ == '__main__':
                 }
             """
             kafka_topic = data['topic']
-            logging.info("Received control confirmation of data from Kafka for deployment ID %s. Ready to receive data from topic %s with batch %d", str(kafka_topic), deployment_id, batch)
+            logging.info("Received control confirmation of data from Kafka for deployment ID %s. Ready to receive data from topic %s with batch %d", deployment_id, str(kafka_topic), batch)
             
             decoder = DecoderFactory.get_decoder(data['input_format'], data['input_config'])
             """Gets the decoder from the information received"""

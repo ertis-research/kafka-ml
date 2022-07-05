@@ -7,7 +7,7 @@ from config import *
 import logging
 import sys
 import json
-from kafka import KafkaConsumer, KafkaProducer
+from confluent_kafka import Producer, Consumer
 import traceback
 from utils import *
 from decoders import *
@@ -21,6 +21,9 @@ RETRIES = 10
 
 SLEEP_BETWEEN_REQUESTS = 5
 '''Number of seconds between failed requests'''
+
+MAX_MESSAGES_TO_COMMIT = 16
+'''Maximum number of messages to commit at a time'''
 
 def load_environment_vars():
   """Loads the environment information received from dockers
@@ -101,18 +104,19 @@ if __name__ == '__main__':
     model.summary()
     """Prints the model information"""
 
-    consumer = KafkaConsumer(input_topic, bootstrap_servers=input_bootstrap_servers, group_id=group_id, enable_auto_commit=False)
+    consumer = Consumer({'bootstrap.servers': input_bootstrap_servers,'group.id': 'group_id','auto.offset.reset': 'earliest','enable.auto.commit': False})
+    consumer.subscribe([input_topic])
     """Starts a Kafka consumer to receive the information to predict"""
     
     logging.info("Started Kafka consumer in [%s] topic", input_topic)
 
-    output_producer = KafkaProducer(bootstrap_servers=output_bootstrap_servers)
+    output_producer = Producer({'bootstrap.servers': output_bootstrap_servers})
     """Starts a Kafka producer to send the predictions to the output"""
     
     logging.info("Started Kafka producer in [%s] topic", output_topic)
 
     if distributed:
-      upper_producer = KafkaProducer(bootstrap_servers=upper_bootstrap_servers)
+      upper_producer = Producer({'bootstrap.servers': upper_bootstrap_servers})
       """Starts a Kafka producer to send the predictions to upper model"""
     
       logging.info("Started Kafka producer in [%s] topic", output_upper)
@@ -120,13 +124,24 @@ if __name__ == '__main__':
     decoder = DecoderFactory.get_decoder(input_format, input_config)
     """Creates the data decoder"""
 
-    for msg in consumer:
+    commitedMessages = 0
+    """Number of messages commited"""
+
+    while True:
+      msg = consumer.poll(1.0)
+
+      if msg is None:
+          continue
+      if msg.error():
+          print("Consumer error: {}".format(msg.error()))
+          continue
+
       try:
         start_inference = time.time()
 
-        logging.info("Message received for prediction")
+        logging.debug("Message received for prediction")
 
-        input_decoded = decoder.decode(msg.value)
+        input_decoded = decoder.decode(msg.value())
         """Decodes the message received"""
 
         if distributed:
@@ -138,7 +153,7 @@ if __name__ == '__main__':
         prediction_value = prediction_output.tolist()[0]
         """Gets the prediction value"""
 
-        logging.info("Prediction done: %s", str(prediction_value))
+        logging.debug("Prediction done: %s", str(prediction_value))
 
         response = {
           'values': prediction_value
@@ -148,23 +163,33 @@ if __name__ == '__main__':
         response_to_kafka = json.dumps(response).encode()
         """Encodes the object response"""
 
+        commitedMessages += 1
+
         if distributed and max(prediction_value) < limit:
-          upper_producer.send(output_upper, prediction_to_upper.tobytes())
-          upper_producer.flush()
+          upper_producer.produce(output_upper, prediction_to_upper.tobytes())
+          ## Cada ciertos mensajes, 10 ej. commit.
+          if commitedMessages >= MAX_MESSAGES_TO_COMMIT:  
+            upper_producer.flush()
           """Flush the message to be sent now"""
         else:
-          output_producer.send(output_topic, response_to_kafka)
-          output_producer.flush()
+          output_producer.produce(output_topic, response_to_kafka)
+          ## Cada ciertos mensajes, 10 ej. commit.
+          if commitedMessages >= MAX_MESSAGES_TO_COMMIT:  
+            output_producer.flush()
           """Flush the message to be sent now"""
         """Sends the message to Kafka"""
 
-        logging.info("Prediction sent to Kafka")
+        logging.debug("Prediction sent to Kafka")
         
-        consumer.commit()
-        """Commit the consumer offset after processing the message"""
+
+        if commitedMessages >= MAX_MESSAGES_TO_COMMIT:          
+          consumer.commit()
+          commitedMessages = 0
+          """Commit the consumer offset after processing the message"""
+          logging.debug("Commited messages to Kafka")
 
         end_inference = time.time()
-        logging.info("Total inference time: %s", str(end_inference - start_inference))
+        logging.debug("Total inference time: %s", str(end_inference - start_inference))
       except Exception as e:
         traceback.print_exc()
         logging.error("Error with the received data [%s]. Waiting for new a new prediction.", str(e))

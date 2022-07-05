@@ -27,6 +27,7 @@ import json
 import requests
 import time
 import traceback
+import subprocess as sp
 
 from config import *
 from utils import *
@@ -47,6 +48,25 @@ RETRIES = 10
 
 SLEEP_BETWEEN_REQUESTS = 5
 '''Number of seconds between failed requests'''
+
+def select_gpu():
+  ACCEPTABLE_AVAILABLE_MEMORY = 1024
+  COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
+
+  try:
+    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+    memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+    memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+    
+    available_gpus = [i for i, x in enumerate(memory_free_values) if x > ACCEPTABLE_AVAILABLE_MEMORY]
+    print("Available GPUs:", available_gpus)
+    if len(available_gpus) > 1:
+        available_gpus = [memory_free_values.index(max(memory_free_values))]
+        print("Using GPU:", available_gpus)
+        
+    os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, available_gpus))
+  except Exception as e:
+    print('"nvidia-smi" is probably not installed. GPUs are not masked.', e)
 
 def load_environment_vars():
   """Loads the environment information receivedfrom dockers
@@ -150,6 +170,8 @@ if __name__ == '__main__':
           datefmt='%Y-%m-%d %H:%M:%S',
           )
     """Configures the logging"""
+
+    select_gpu()
 
     bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, confussion_matrix  = load_environment_vars()
     """Loads the environment information"""

@@ -2,5 +2,6 @@
 torchvision==0.11.1+cu113
 torchinfo==1.6.3
 pytorch-ignite==0.4.7
-kafka-python==2.0.2
+confluent-kafka==1.8.2
 avro==1.11.0
+requests==2.27.1

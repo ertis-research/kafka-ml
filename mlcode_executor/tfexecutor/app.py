@@ -9,6 +9,11 @@ import numpy as np
 
 from flask import Flask, request, Response
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
 def format_ml_code(code):
     """Checks if the ML code ends with the string 'model = ' in its last line. Otherwise, it adds the string.
         Args:
