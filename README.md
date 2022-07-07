@@ -410,6 +410,8 @@ REM Windows
 
 By default, Kafka-ML will be deployed on the namespace `kafkaml`. If you wish to change this, you can modify the variable that determines this at the start of the scripts. You should also modify the file `backend-deployment.yaml` specifying in which namespace you want to deploy the training and inference jobs.
 
+By default, Kafka-ML will be deployed using CPU-only images. If you desire to deploy Kafka-ML with images enabled for GPU acceleration, the `Dockerfile` and `requirements.txt` files of `mlcode_executor`, `model_inference` and `model_training` modules must be modified as indicated in those files.
+
 In case you want to build Kafka-ML step-by-step, then follow the following steps:
 
 1. You may need to deploy a local register to upload your Docker images. You can deploy it in the port 5000:

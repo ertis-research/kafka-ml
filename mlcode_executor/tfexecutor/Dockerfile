@@ -1,5 +1,8 @@
-# pull official base image
-FROM tensorflow/tensorflow:2.7.0-gpu
+# GPU Accelerated
+# FROM tensorflow/tensorflow:2.7.0-gpu
+
+# CPU Only
+FROM tensorflow/tensorflow:2.7.0
 
 # set work directory
 WORKDIR /usr/src/app
