@@ -26,6 +26,8 @@ spec:
           value: kafka-cluster:9092
         - name: CONTROL_TOPIC
           value: control
+        - name: KUBE_NAMESPACE
+          value: kafkaml
         - name: TENSORFLOW_TRAINING_MODEL_IMAGE
           value: localhost:5000/tensorflow_model_training
         - name: DISTRIBUTED_TRAINING_MODEL_IMAGE

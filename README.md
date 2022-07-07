@@ -395,8 +395,6 @@ Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documenta
 
 In this repository you can find files to build Kafka-ML in a simple way. These are [_Build_Kafka_ML.sh_](Build_Kafka_ML.sh) and [_Build_Kafka_ML.bat_](Build_Kafka_ML.bat) for Linux and Windows respectively. 
 
-It is possible that in the case of Windows there may be dependencies, since commands that do not exist in Windows base are used. The use of [Gow](https://github.com/bmatzelle/gow) is recommended to solve this.
-
 In case you want to build Kafka-ML in a fast way, run the following script commands depending of your OS:
 
 ```bash
@@ -409,6 +407,8 @@ chmod +x Build_Kafka_ML.sh
 REM Windows
 .\Build_Kafka_ML.bat
 ```
+
+By default, Kafka-ML will be deployed on the namespace `kafkaml`. If you wish to change this, you can modify the variable that determines this at the start of the scripts. You should also modify the file `backend-deployment.yaml` specifying in which namespace you want to deploy the training and inference jobs.
 
 In case you want to build Kafka-ML step-by-step, then follow the following steps:
 

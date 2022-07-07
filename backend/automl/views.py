@@ -92,7 +92,7 @@ def delete_deploy( inference_id, token=None, external_host=None ):
     api_instance = client.CoreV1Api( api_client )
     api_response = api_instance.delete_namespaced_replication_controller(
         name='model-inference-'+str( inference_id ),
-        namespace="default",
+        namespace=settings.KUBE_NAMESPACE,
         body=client.V1DeleteOptions(
             propagation_policy='Foreground',
             grace_period_seconds=5))
@@ -500,7 +500,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                     }
                                 }
                             }
-                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
+                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                         
                         elif result.model.distributed and result.model.father == None:
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
@@ -554,7 +554,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                     }
                                 }
                             }                                
-                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace='default')
+                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
                     traceback.print_exc()
@@ -821,7 +821,7 @@ class TrainingResultStop(generics.CreateAPIView):
 
                         api_response = api_instance.delete_namespaced_job(
                         name='model-training-'+str(result.id),
-                        namespace="default",
+                        namespace=settings.KUBE_NAMESPACE,
                         body=client.V1DeleteOptions(
                             propagation_policy='Foreground',
                             grace_period_seconds=5))
@@ -924,7 +924,7 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
 
                         api_response = api_instance.delete_namespaced_replication_controller(
                         name='model-inference-'+str(inference.id),
-                        namespace="default",
+                        namespace=settings.KUBE_NAMESPACE,
                         body=client.V1DeleteOptions(
                             propagation_policy='Foreground',
                             grace_period_seconds=5))
@@ -1189,7 +1189,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                 }
                             }
                         inference.save()
-                        resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace='default') # create_namespaced_deployment
+                        resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace=settings.KUBE_NAMESPACE) # create_namespaced_deployment
                         return HttpResponse(status=status.HTTP_200_OK)
                     except Exception as e:
                         Inference.objects.filter(pk=inference.pk).delete()

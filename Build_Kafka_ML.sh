@@ -1,4 +1,7 @@
 #!/bin/bash
+
+NAMESPACE="kafkaml"
+
 echo Hi, what do you want me to do?
 echo 0 - Fresh install of Kafka-ML
 echo 1 - Rebuild and deploy Backend Module
@@ -15,19 +18,19 @@ read input
 
 if [ $input -eq 0 ]
 then
-    kubectl delete service backend
-    kubectl delete service frontend
-    kubectl delete service kafka-cluster
-    kubectl delete service pthexecutor
-    kubectl delete service tfexecutor
-    kubectl delete service zookeeper
+    kubectl delete service backend -n $NAMESPACE
+    kubectl delete service frontend -n $NAMESPACE
+    kubectl delete service kafka-cluster -n $NAMESPACE
+    kubectl delete service pthexecutor -n $NAMESPACE
+    kubectl delete service tfexecutor -n $NAMESPACE
+    kubectl delete service zookeeper -n $NAMESPACE
 
-    kubectl apply -f backend-service.yaml
-    kubectl apply -f zookeeper-service.yaml
-    kubectl apply -f kafka-service.yaml
-    kubectl apply -f frontend-service.yaml
-    kubectl apply -f tf-executor-service.yaml
-    kubectl apply -f pth-executor-service.yaml
+    kubectl apply -f backend-service.yaml -n $NAMESPACE
+    kubectl apply -f zookeeper-service.yaml -n $NAMESPACE
+    kubectl apply -f kafka-service.yaml -n $NAMESPACE
+    kubectl apply -f frontend-service.yaml -n $NAMESPACE
+    kubectl apply -f tf-executor-service.yaml -n $NAMESPACE
+    kubectl apply -f pth-executor-service.yaml -n $NAMESPACE
     
     docker run -d -p 5000:5000 --restart=always --name registry registry:2 & # It will throw an error if you already have a registry
 fi
@@ -35,36 +38,36 @@ fi
 if [ $input -eq 0 ] || [ $input -eq 9 ]
 then
     # Zookeeper
-    kubectl delete pod zookeeper
-    kubectl apply -f zookeeper-pod.yaml
+    kubectl delete pod zookeeper -n $NAMESPACE
+    kubectl apply -f zookeeper-pod.yaml -n $NAMESPACE
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 7 ]
 then
     # Kafka
-    kubectl delete pod kafka-pod
-    kubectl apply -f kafka-pod.yaml
+    kubectl delete pod kafka-pod -n $NAMESPACE
+    kubectl apply -f kafka-pod.yaml -n $NAMESPACE
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 1 ]
 then
     # Backend
-    kubectl get jobs --no-headers=true | awk "/model-training/{print $1}" | xargs kubectl delete jobs
+    kubectl get jobs --no-headers=true -n $NAMESPACE | awk "/model-training/{print $1}" | xargs kubectl delete jobs -n $NAMESPACE
 
-    kubectl delete deploy backend
+    kubectl delete deploy backend -n $NAMESPACE
 
     cd backend
     docker build --tag localhost:5000/backend .
     docker push localhost:5000/backend 
     cd ..
 
-    kubectl apply -f backend-deployment.yaml
+    kubectl apply -f backend-deployment.yaml -n $NAMESPACE
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 2 ]
 then
     # Frontend (Heavy Load!)
-    kubectl delete deploy frontend
+    kubectl delete deploy frontend -n $NAMESPACE
 
     cd frontend
     sudo npm install
@@ -74,33 +77,33 @@ then
     docker push localhost:5000/frontend
     cd ..
 
-    kubectl apply -f frontend-deployment.yaml
+    kubectl apply -f frontend-deployment.yaml -n $NAMESPACE
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 3 ]
 then
     # TensorFlow Executor 
-    kubectl delete deploy tfexecutor
+    kubectl delete deploy tfexecutor -n $NAMESPACE
 
     cd mlcode_executor/tfexecutor
     docker build --tag localhost:5000/tfexecutor .
     docker push localhost:5000/tfexecutor 
     cd ../..
     
-    kubectl apply -f tf-executor-deployment.yaml
+    kubectl apply -f tf-executor-deployment.yaml -n $NAMESPACE
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 4 ]
 then
     # PyTorch Executor 
-    kubectl delete deploy pthexecutor
+    kubectl delete deploy pthexecutor -n $NAMESPACE
 
     cd mlcode_executor/pthexecutor
     docker build --tag localhost:5000/pthexecutor .
     docker push localhost:5000/pthexecutor 
     cd ../..
     
-    kubectl apply -f pth-executor-deployment.yaml
+    kubectl apply -f pth-executor-deployment.yaml -n $NAMESPACE
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 5 ]
@@ -132,12 +135,12 @@ fi
 if [ $input -eq 0 ] || [ $input -eq 8 ]
 then
     # Kafka Control Logger
-    kubectl delete deploy kafka-control-logger
+    kubectl delete deploy kafka-control-logger -n $NAMESPACE
 
     cd kafka_control_logger
     docker build --tag localhost:5000/kafka_control_logger .
     docker push localhost:5000/kafka_control_logger 
     cd ..
 
-    kubectl apply -f kafka-control-logger-deployment.yaml
+    kubectl apply -f kafka-control-logger-deployment.yaml -n $NAMESPACE
 fi

@@ -1,4 +1,8 @@
 @echo off
+
+@REM Set up this variable in order to change the namespace where Kafka-ML is going to be deployed.
+@set NAMESPACE=kafkaml
+
 :init
 echo Hi %USERNAME%, what do you want me to do?
 goto select
@@ -32,53 +36,52 @@ if %action% GTR 9 goto incorrecto
 if %action% LSS 0 goto incorrecto
 
 :all
-kubectl delete service backend
-kubectl delete service frontend
-kubectl delete service kafka-cluster
-kubectl delete service pthexecutor
-kubectl delete service tfexecutor
-kubectl delete service zookeeper
+kubectl delete service backend -n %NAMESPACE%
+kubectl delete service frontend -n %NAMESPACE%
+kubectl delete service kafka-cluster -n %NAMESPACE%
+kubectl delete service pthexecutor -n %NAMESPACE%
+kubectl delete service tfexecutor -n %NAMESPACE%
+kubectl delete service zookeeper -n %NAMESPACE%
 
-kubectl apply -f backend-service.yaml
-kubectl apply -f zookeeper-service.yaml
-kubectl apply -f kafka-service.yaml
-kubectl apply -f frontend-service.yaml
-kubectl apply -f tf-executor-service.yaml
-kubectl apply -f pth-executor-service.yaml
+kubectl apply -f backend-service.yaml -n %NAMESPACE%
+kubectl apply -f zookeeper-service.yaml -n %NAMESPACE%
+kubectl apply -f kafka-service.yaml -n %NAMESPACE%
+kubectl apply -f frontend-service.yaml -n %NAMESPACE%
+kubectl apply -f tf-executor-service.yaml -n %NAMESPACE%
+kubectl apply -f pth-executor-service.yaml -n %NAMESPACE%
 
 docker run -d -p 5000:5000 --restart=always --name registry registry:2 & ::It will throw an error if you already have a registry
 
 :zookeeper
 
-kubectl delete pod zookeeper
-kubectl apply -f zookeeper-pod.yaml
+kubectl delete pod zookeeper -n %NAMESPACE%
+kubectl apply -f zookeeper-pod.yaml -n %NAMESPACE%
 
 if NOT %action%==0 goto end  
 
 :kafka
-kubectl delete pod kafka-pod
-kubectl apply -f kafka-pod.yaml
+kubectl delete pod kafka-pod -n %NAMESPACE%
+kubectl apply -f kafka-pod.yaml -n %NAMESPACE%
 
 if NOT %action%==0 goto end  
 
 :backend
 :: Backend
-kubectl get jobs --no-headers=true | awk "/model-training/{print $1}" | xargs kubectl delete jobs
-:: You'll need Gow in order to run this instruction!! https://github.com/bmatzelle/gow    
+for /f "tokens=1" %%a in ('kubectl get jobs --no-headers -n %NAMESPACE%') do kubectl delete job %%a -n %NAMESPACE%
 
-kubectl delete deploy backend
+kubectl delete deploy backend -n %NAMESPACE%
 
 cd backend
 docker build --tag localhost:5000/backend .
 docker push localhost:5000/backend 
 cd ..
 
-kubectl apply -f backend-deployment.yaml
+kubectl apply -f backend-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
 
 :frontend
 :: Frontend (Heavy Load!)
-kubectl delete deploy frontend
+kubectl delete deploy frontend -n %NAMESPACE%
 
 cd frontend
 call npm install
@@ -88,31 +91,31 @@ docker build --tag localhost:5000/frontend .
 docker push localhost:5000/frontend
 cd ..
 
-kubectl apply -f frontend-deployment.yaml
+kubectl apply -f frontend-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end 
 
 :tfexecutor
 :: TensorFlow Executor 
-kubectl delete deploy tfexecutor
+kubectl delete deploy tfexecutor -n %NAMESPACE%
 
 cd mlcode_executor/tfexecutor 
 docker build --tag localhost:5000/tfexecutor .
 docker push localhost:5000/tfexecutor 
 cd ../..
    
-kubectl apply -f tf-executor-deployment.yaml
+kubectl apply -f tf-executor-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
 
 :pthexecutor
 :: PyTorch Executor 
-kubectl delete deploy pthexecutor
+kubectl delete deploy pthexecutor -n %NAMESPACE%
 
 cd mlcode_executor/pthexecutor
 docker build --tag localhost:5000/pthexecutor .
 docker push localhost:5000/pthexecutor 
 cd ../..
    
-kubectl apply -f pth-executor-deployment.yaml
+kubectl apply -f pth-executor-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
 
 :model_training
@@ -143,14 +146,14 @@ if NOT %action%==0 goto end
 
 :kafka_control_logger
 :: Kafka Control Logger
-kubectl delete deploy kafka-control-logger
+kubectl delete deploy kafka-control-logger -n %NAMESPACE%
 
 cd kafka_control_logger
 docker build --tag localhost:5000/kafka_control_logger .
 docker push localhost:5000/kafka_control_logger 
 cd ..
 
-kubectl apply -f kafka-control-logger-deployment.yaml
+kubectl apply -f kafka-control-logger-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
 
 

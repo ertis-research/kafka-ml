@@ -161,4 +161,6 @@ PYTORCH_INFERENCE_MODEL_IMAGE = os.environ.get('PYTORCH_INFERENCE_MODEL_IMAGE')
 TENSORFLOW_EXECUTOR_URL = "http://localhost:8001/" if os.environ.get('TFEXECUTOR_URL') is None else os.environ.get('TFEXECUTOR_URL')
 PYTORCH_EXECUTOR_URL = "http://localhost:8002/" if os.environ.get('PTHEXECUTOR_URL') is None else os.environ.get('PTHEXECUTOR_URL')
 
+KUBE_NAMESPACE = "kafkaml" if os.environ.get('KUBE_NAMESPACE') is None else os.environ.get('KUBE_NAMESPACE')
+
 DATA_UPLOAD_MAX_MEMORY_SIZE = None
