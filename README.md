@@ -337,7 +337,7 @@ By default, Kafka-ML will be deployed on the namespace `kafkaml`. If you wish to
 By default, Kafka-ML will be deployed using our images at DockerHub. These images have been built for CPU and GPU and you can choose the one you prefer from modifying `backend-deployment.yaml`, `pth-executor-deployment.yaml` and `tf-executor-deployment.yaml` files, being by default the CPU version.
 
 ### Troubleshooting
-Depending of Kubernetes and Docker version, there is a possibility that some errors may be encountered due to lack of permissions during the deployment of models for training and inference. In order to solve this,  The `permissions-fix.yaml` file is given in the repository. You just need to create the new resources using `kubectl apply -f permissions-fix.yaml`
+Depending of Kubernetes and Docker version, there is a possibility that some errors may be encountered due to lack of permissions during the deployment of models for training and inference. In order to solve this,  The `permissions-fix.yaml` file is given in the repository. You just need to create the new resources using `kubectl apply -f permissions-fix.yaml`, giving permissions in that namespace. (Default: `kafkaml`)
 
 ## Installation and development
 

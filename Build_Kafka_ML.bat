@@ -39,6 +39,7 @@ if %action% LSS 0 goto incorrecto
 
 :all
 kubectl create namespace %NAMESPACE%    
+kubectl apply -f permissions-fix-yaml
 
 kubectl delete service backend -n %NAMESPACE%
 kubectl delete service frontend -n %NAMESPACE%
