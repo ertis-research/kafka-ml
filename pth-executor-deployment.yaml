@@ -17,8 +17,9 @@ spec:
     spec:
       containers:
       - name: pthexecutor
-        image: localhost:5000/pthexecutor
+        image: ertis/kafka-ml-pthexecutor:v1.0           # If you want use our builded image at Docker Hub.
+    # - image: ertis/kafka-ml-pthexecutor-gpu:v1.0       # If you want use our builded image at Docker Hub with GPU Support.
+    # - image: localhost:5000/kafka_control_logger       # If you want use your local build image.
         ports:
         - containerPort: 8002
         imagePullPolicy: IfNotPresent
-        

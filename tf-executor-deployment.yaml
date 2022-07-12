@@ -17,7 +17,9 @@ spec:
     spec:
       containers:
       - name: tfexecutor
-        image: localhost:5000/tfexecutor
+        image: ertis/kafka-ml-tfexecutor:v1.0           # If you want use our builded image at Docker Hub.
+    # - image: ertis/kafka-ml-tfexecutor-gpu:v1.0       # If you want use our builded image at Docker Hub with GPU Support.
+    # - image: localhost:5000/tfexecutor                # If you want use your local build image.
         ports:
         - containerPort: 8001
         imagePullPolicy: IfNotPresent

@@ -33,10 +33,13 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [Usage](#usage)
     - [Single models](#Single-models)
     - [Distributed models](#Distributed-models)
+- [Deploy Kafka-ML in a fast way](#Deploy-Kafka-ML-in-a-fast-way)
+    - [Requirements](#Requirements)
+    - [Steps to run Kafka-ML](#Steps-to-run-Kafka-ML)
 - [Installation and development](#Installation-and-development)
-    - [Requirements](#requirements) 
-    - [GPU configuration](#GPU-configuration)
+    - [Requirements to build locally](#Requirements-to-build-locally) 
     - [Steps to build Kafka-ML](#Steps-to-build-Kafka-ML)
+    - [GPU configuration](#GPU-configuration)
 - [Publications](#publications)
 - [License](#license)
 
@@ -307,95 +310,15 @@ Finally, test the inference deployed using the MNIST example for inference in th
 python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 ````
 
-## Installation and development
-
+## Deploy Kafka-ML in a fast way
 ### Requirements
-
-- [Python supported by Tensorflow 3.5–3.7 and PyTorch 1.10](https://www.python.org/)
-- [Node.js](https://nodejs.org/)
 - [Docker](https://www.docker.com/)
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
 
-### GPU configuration
+### Steps to run Kafka-ML 
+In this repository you can find files to deploy Kafka-ML in a simple way. These are [_Build_Kafka_ML.sh_](Build_Kafka_ML.sh) and [_Build_Kafka_ML.bat_](Build_Kafka_ML.bat) for Linux and Windows respectively. 
 
-The following steps are required in order to use GPU acceleration in Kafka-ML and Kubernetes. These steps are required to be performed in all the Kubernetes nodes.
-
-1. GPU Driver installation
-```bash
-# SSH into the worker machine with GPU
-$ ssh USERNAME@EXTERNAL_IP
-
-# Verify ubuntu driver 
-$ sudo apt install ubuntu-drivers-common
-$ ubuntu-drivers devices
-
-# Install the recommended driver
-$ sudo ubuntu-drivers autoinstall
-
-# Reboot the machine 
-$ sudo reboot
-
-# After the reboot, test if the driver is installed correctly
-$ nvidia-smi
-```
-
-2. Nvidia Docker installation
-```bash
-# SSH into the worker machine with GPU
-$ ssh USERNAME@EXTERNAL_IP
-
-# Add the package repositories
-$ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-$ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-$ sudo apt-get update && sudo apt-get install -y nvidia-docker2
-$ sudo systemctl restart docker
-```
-
-3. Modify the following file
-```bash
-# SSH into the worker machine with GPU
-$ ssh USERNAME@EXTERNAL_IP
-$ sudo tee /etc/docker/daemon.json <<EOF
-{
-    "default-runtime": "nvidia",
-    "runtimes": {
-        "nvidia": {
-            "path": "/usr/bin/nvidia-container-runtime",
-            "runtimeArgs": []
-        }
-    }
-}
-EOF
-$ sudo pkill -SIGHUP docker
-$ sudo reboot
-```
-
-4. Kubernetes GPU Sharing extension installation
-```bash
-# From your local machine that has access to the Kubernetes API
-$ curl -O https://raw.githubusercontent.com/AliyunContainerService/gpushare-scheduler-extender/master/config/gpushare-schd-extender.yaml
-$ kubectl create -f gpushare-schd-extender.yaml
-
-$ wget https://raw.githubusercontent.com/AliyunContainerService/gpushare-device-plugin/master/device-plugin-rbac.yaml
-$ kubectl create -f device-plugin-rbac.yaml
-
-$ wget https://raw.githubusercontent.com/AliyunContainerService/gpushare-device-plugin/master/device-plugin-ds.yaml
-# update the local file so the first line is 'apiVersion: apps/v1'
-$ kubectl create -f device-plugin-ds.yaml
-
-# From your local machine that has access to the Kubernetes API
-$ kubectl label node worker-gpu-0 gpushare=true
-```
-
-Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documentation](https://blog.ml6.eu/a-guide-to-gpu-sharing-on-top-of-kubernetes-6097935ababf).
-
-### Steps to build Kafka-ML
-
-In this repository you can find files to build Kafka-ML in a simple way. These are [_Build_Kafka_ML.sh_](Build_Kafka_ML.sh) and [_Build_Kafka_ML.bat_](Build_Kafka_ML.bat) for Linux and Windows respectively. 
-
-In case you want to build Kafka-ML in a fast way, run the following script commands depending of your OS:
+In case you want to deploy Kafka-ML in a fast way, run the following script commands depending of your OS:
 
 ```bash
 # Linux-based
@@ -410,7 +333,25 @@ REM Windows
 
 By default, Kafka-ML will be deployed on the namespace `kafkaml`. If you wish to change this, you can modify the variable that determines this at the start of the scripts. You should also modify the file `backend-deployment.yaml` specifying in which namespace you want to deploy the training and inference jobs.
 
-By default, Kafka-ML will be deployed using CPU-only images. If you desire to deploy Kafka-ML with images enabled for GPU acceleration, the `Dockerfile` and `requirements.txt` files of `mlcode_executor`, `model_inference` and `model_training` modules must be modified as indicated in those files.
+By default, Kafka-ML will be deployed using our images at DockerHub. These images have been built for CPU and GPU and you can choose the one you prefer from modifying `backend-deployment.yaml`, `pth-executor-deployment.yaml` and `tf-executor-deployment.yaml` files, being by default the CPU version.
+
+
+## Installation and development
+
+### Requirements to build locally
+
+- [Python supported by Tensorflow 3.5–3.7 and PyTorch 1.10](https://www.python.org/)
+- [Node.js](https://nodejs.org/)
+- [Docker](https://www.docker.com/)
+- [kubernetes>=v1.15.5](https://kubernetes.io/)
+
+### Steps to build Kafka-ML
+
+In this repository you can find files to build Kafka-ML in case you want to contribute. 
+
+In case you want to build Kafka-ML in a fast way, you should modify the variable `LOCAL_BUILD` in build scripts and modify the deployments files to use the local images. Once that is done, you can run the build scripts.
+
+By default, Kafka-ML will be built using CPU-only images. If you desire to build Kafka-ML with images enabled for GPU acceleration, the `Dockerfile` and `requirements.txt` files of `mlcode_executor`, `model_inference` and `model_training` modules must be modified as indicated in those files.
 
 In case you want to build Kafka-ML step-by-step, then follow the following steps:
 
@@ -569,6 +510,83 @@ Add this IP also to the  **ALLOWED_HOSTS** env var in the `backend-deployment.ya
     - name: ALLOWED_HOSTS
       value: y.y.y.y, localhost
 ````
+
+### GPU configuration
+
+The following steps are required in order to use GPU acceleration in Kafka-ML and Kubernetes. These steps are required to be performed in all the Kubernetes nodes.
+
+1. GPU Driver installation
+```bash
+# SSH into the worker machine with GPU
+$ ssh USERNAME@EXTERNAL_IP
+
+# Verify ubuntu driver 
+$ sudo apt install ubuntu-drivers-common
+$ ubuntu-drivers devices
+
+# Install the recommended driver
+$ sudo ubuntu-drivers autoinstall
+
+# Reboot the machine 
+$ sudo reboot
+
+# After the reboot, test if the driver is installed correctly
+$ nvidia-smi
+```
+
+2. Nvidia Docker installation
+```bash
+# SSH into the worker machine with GPU
+$ ssh USERNAME@EXTERNAL_IP
+
+# Add the package repositories
+$ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+$ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+$ sudo apt-get update && sudo apt-get install -y nvidia-docker2
+$ sudo systemctl restart docker
+```
+
+3. Modify the following file
+```bash
+# SSH into the worker machine with GPU
+$ ssh USERNAME@EXTERNAL_IP
+$ sudo tee /etc/docker/daemon.json <<EOF
+{
+    "default-runtime": "nvidia",
+    "runtimes": {
+        "nvidia": {
+            "path": "/usr/bin/nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    }
+}
+EOF
+$ sudo pkill -SIGHUP docker
+$ sudo reboot
+```
+
+4. Kubernetes GPU Sharing extension installation
+```bash
+# From your local machine that has access to the Kubernetes API
+$ curl -O https://raw.githubusercontent.com/AliyunContainerService/gpushare-scheduler-extender/master/config/gpushare-schd-extender.yaml
+$ kubectl create -f gpushare-schd-extender.yaml
+
+$ wget https://raw.githubusercontent.com/AliyunContainerService/gpushare-device-plugin/master/device-plugin-rbac.yaml
+$ kubectl create -f device-plugin-rbac.yaml
+
+$ wget https://raw.githubusercontent.com/AliyunContainerService/gpushare-device-plugin/master/device-plugin-ds.yaml
+# update the local file so the first line is 'apiVersion: apps/v1'
+$ kubectl create -f device-plugin-ds.yaml
+
+# From your local machine that has access to the Kubernetes API
+$ kubectl label node worker-gpu-0 gpushare=true
+```
+
+Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documentation](https://blog.ml6.eu/a-guide-to-gpu-sharing-on-top-of-kubernetes-6097935ababf).
+
+
 ## Publications
 1. Carnero, A., Martín, C., Torres, D. R., Garrido, D., Díaz, M., & Rubio, B. (2021). [Managing and Deploying Distributed and Deep Neural Models through Kafka-ML in the Cloud-to-Things Continuum](https://ieeexplore.ieee.org/abstract/document/9529202). IEEE Access, 9, 125478-125495.
 

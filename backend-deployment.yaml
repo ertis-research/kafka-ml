@@ -16,7 +16,8 @@ spec:
       name: backend
     spec:
       containers:
-      - image: localhost:5000/backend
+      - image: ertis/kafka-ml-backend:v1.0  # If you want use our builded image at Docker Hub.
+    # - image: localhost:5000/backend       # If you want use your local build image.
         name: backend
         ports:
         - containerPort: 8000
@@ -29,15 +30,25 @@ spec:
         - name: KUBE_NAMESPACE
           value: kafkaml
         - name: TENSORFLOW_TRAINING_MODEL_IMAGE
-          value: localhost:5000/tensorflow_model_training
+          value: ertis/kafka-ml-tensorflow_model_training:v1.0      # If you want use our builded image at Docker Hub.
+        # value: ertis/kafka-ml-tensorflow_model_training-gpu:v1.0  # If you want use our builded image at Docker Hub with GPU Support.
+        # value: localhost:5000/tensorflow_model_training           # If you want use your local build image.
         - name: DISTRIBUTED_TRAINING_MODEL_IMAGE
-          value: localhost:5000/distributed_model_training
+          value: ertis/kafka-ml-distributed_model_training:v1.0     # If you want use our builded image at Docker Hub.
+        # value: ertis/kafka-ml-distributed_model_training-gpu:v1.0 # If you want use our builded image at Docker Hub with GPU Support.
+        # value: localhost:5000/distributed_model_training          # If you want use your local build image.
         - name: TENSORFLOW_INFERENCE_MODEL_IMAGE
-          value: localhost:5000/tensorflow_model_inference
+          value: ertis/kafka-ml-tensorflow_model_inference:v1.0
+        # value: ertis/kafka-ml-tensorflow_model_inference-gpu:v1.0 # If you want use our builded image at Docker Hub with GPU Support.
+        # value: localhost:5000/tensorflow_model_inference          # If you want use your local build image.          
         - name: PYTORCH_TRAINING_MODEL_IMAGE
-          value: localhost:5000/pytorch_model_training
+          value: ertis/kafka-ml-pytorch_model_training:v1.0
+        # value: ertis/kafka-ml-pytorch_model_training-gpu:v1.0     # If you want use our builded image at Docker Hub with GPU Support.
+        # value: localhost:5000/pytorch_model_training              # If you want use your local build image.
         - name: PYTORCH_INFERENCE_MODEL_IMAGE
-          value: localhost:5000/pytorch_model_inference
+          value: ertis/kafka-ml-pytorch_model_inference:v1.0
+        # value: ertis/kafka-ml-pytorch_model_inference-gpu:v1.0    # If you want use our builded image at Docker Hub with GPU Support.
+        # value: localhost:5000/pytorch_model_inference             # If you want use your local build image.
         - name: FRONTEND_URL
           value: http://localhost
         - name: BACKEND_URL

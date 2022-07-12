@@ -18,7 +18,8 @@ spec:
       name: kafka-control-logger
     spec:
       containers:
-      - image: localhost:5000/kafka_control_logger
+      - image: ertis/kafka-ml-kafka_control_logger:v1.0  # If you want use our builded image at Docker Hub.
+    # - image: localhost:5000/kafka_control_logger       # If you want use your local build image.
         name: kafka-control-logger
         imagePullPolicy: IfNotPresent
         env:

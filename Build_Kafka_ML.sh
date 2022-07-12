@@ -1,8 +1,10 @@
 #!/bin/bash
 
 NAMESPACE="kafkaml"
+LOCAL_BUILD=false
 
-echo Hi, what do you want me to do?
+echo Selected namespace \"$NAMESPACE\" and local build is \"$LOCAL_BUILD\"
+echo Hi "$USER", what do you want me to do?
 echo 0 - Fresh install of Kafka-ML
 echo 1 - Rebuild and deploy Backend Module
 echo 2 - Rebuild and deploy Frontend Module
@@ -31,8 +33,11 @@ then
     kubectl apply -f frontend-service.yaml -n $NAMESPACE
     kubectl apply -f tf-executor-service.yaml -n $NAMESPACE
     kubectl apply -f pth-executor-service.yaml -n $NAMESPACE
-    
-    docker run -d -p 5000:5000 --restart=always --name registry registry:2 & # It will throw an error if you already have a registry
+
+    if [ $LOCAL_BUILD == true ]
+    then
+        docker run -d -p 5000:5000 --restart=always --name registry registry:2 & # It will throw an error if you already have a registry
+    fi
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 9 ]
@@ -56,10 +61,13 @@ then
 
     kubectl delete deploy backend -n $NAMESPACE
 
-    cd backend
-    docker build --tag localhost:5000/backend .
-    docker push localhost:5000/backend 
-    cd ..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd backend
+        docker build --tag localhost:5000/backend .
+        docker push localhost:5000/backend 
+        cd ..
+    fi
 
     kubectl apply -f backend-deployment.yaml -n $NAMESPACE
 fi
@@ -69,13 +77,16 @@ then
     # Frontend (Heavy Load!)
     kubectl delete deploy frontend -n $NAMESPACE
 
-    cd frontend
-    sudo npm install
-    sudo npm i -g @angular/cli
-    sudo ng build -c production
-    docker build --tag localhost:5000/frontend .
-    docker push localhost:5000/frontend
-    cd ..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd frontend
+        sudo npm install
+        sudo npm i -g @angular/cli
+        sudo ng build -c production
+        docker build --tag localhost:5000/frontend .
+        docker push localhost:5000/frontend
+        cd ..
+    fi
 
     kubectl apply -f frontend-deployment.yaml -n $NAMESPACE
 fi
@@ -85,10 +96,13 @@ then
     # TensorFlow Executor 
     kubectl delete deploy tfexecutor -n $NAMESPACE
 
-    cd mlcode_executor/tfexecutor
-    docker build --tag localhost:5000/tfexecutor .
-    docker push localhost:5000/tfexecutor 
-    cd ../..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd mlcode_executor/tfexecutor
+        docker build --tag localhost:5000/tfexecutor .
+        docker push localhost:5000/tfexecutor 
+        cd ../..
+    fi
     
     kubectl apply -f tf-executor-deployment.yaml -n $NAMESPACE
 fi
@@ -98,10 +112,13 @@ then
     # PyTorch Executor 
     kubectl delete deploy pthexecutor -n $NAMESPACE
 
-    cd mlcode_executor/pthexecutor
-    docker build --tag localhost:5000/pthexecutor .
-    docker push localhost:5000/pthexecutor 
-    cd ../..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd mlcode_executor/pthexecutor
+        docker build --tag localhost:5000/pthexecutor .
+        docker push localhost:5000/pthexecutor 
+        cd ../..
+    fi
     
     kubectl apply -f pth-executor-deployment.yaml -n $NAMESPACE
 fi
@@ -109,27 +126,33 @@ fi
 if [ $input -eq 0 ] || [ $input -eq 5 ]
 then
     # Model training module
-    cd model_training/tensorflow 
-    docker build --tag localhost:5000/tensorflow_model_training .
-    docker push localhost:5000/tensorflow_model_training 
-    docker build -f Dockerfile_distributed --tag localhost:5000/distributed_model_training . &
-    docker push localhost:5000/distributed_model_training
-    cd ../pytorch
-    docker build --tag localhost:5000/pytorch_model_training .
-    docker push localhost:5000/pytorch_model_training
-    cd ../..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd model_training/tensorflow 
+        docker build --tag localhost:5000/tensorflow_model_training .
+        docker push localhost:5000/tensorflow_model_training 
+        docker build -f Dockerfile_distributed --tag localhost:5000/distributed_model_training . &
+        docker push localhost:5000/distributed_model_training
+        cd ../pytorch
+        docker build --tag localhost:5000/pytorch_model_training .
+        docker push localhost:5000/pytorch_model_training
+        cd ../..
+    fi
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 6 ]
 then
     # Model Inference
-    cd model_inference/tensorflow
-    docker build --tag localhost:5000/tensorflow_model_inference .
-    docker push localhost:5000/tensorflow_model_inference 
-    cd ../pytorch
-    docker build --tag localhost:5000/pytorch_model_inference .
-    docker push localhost:5000/pytorch_model_inference
-    cd ../..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd model_inference/tensorflow
+        docker build --tag localhost:5000/tensorflow_model_inference .
+        docker push localhost:5000/tensorflow_model_inference 
+        cd ../pytorch
+        docker build --tag localhost:5000/pytorch_model_inference .
+        docker push localhost:5000/pytorch_model_inference
+        cd ../..
+    fi
 fi
 
 if [ $input -eq 0 ] || [ $input -eq 8 ]
@@ -137,10 +160,13 @@ then
     # Kafka Control Logger
     kubectl delete deploy kafka-control-logger -n $NAMESPACE
 
-    cd kafka_control_logger
-    docker build --tag localhost:5000/kafka_control_logger .
-    docker push localhost:5000/kafka_control_logger 
-    cd ..
+    if [ $LOCAL_BUILD == true ]
+    then
+        cd kafka_control_logger
+        docker build --tag localhost:5000/kafka_control_logger .
+        docker push localhost:5000/kafka_control_logger 
+        cd ..
+    fi
 
     kubectl apply -f kafka-control-logger-deployment.yaml -n $NAMESPACE
 fi

@@ -2,8 +2,10 @@
 
 @REM Set up this variable in order to change the namespace where Kafka-ML is going to be deployed.
 @set NAMESPACE=kafkaml
+@set LOCAL_BUILD=false
 
 :init
+echo Selected namespace "%NAMESPACE%" and local build is "%LOCAL_BUILD%"
 echo Hi %USERNAME%, what do you want me to do?
 goto select
 :incorrecto
@@ -50,7 +52,12 @@ kubectl apply -f frontend-service.yaml -n %NAMESPACE%
 kubectl apply -f tf-executor-service.yaml -n %NAMESPACE%
 kubectl apply -f pth-executor-service.yaml -n %NAMESPACE%
 
+:: If local_build is true, build the images locally, otherwise, build them on the cluster.
+if %LOCAL_BUILD%==true goto local_build_registry
+goto docker_registry
+:local_build_registry
 docker run -d -p 5000:5000 --restart=always --name registry registry:2 & ::It will throw an error if you already have a registry
+:docker_registry
 
 :zookeeper
 
@@ -71,10 +78,14 @@ for /f "tokens=1" %%a in ('kubectl get jobs --no-headers -n %NAMESPACE%') do kub
 
 kubectl delete deploy backend -n %NAMESPACE%
 
+if %LOCAL_BUILD%==true goto local_build_backend
+goto docker_backend
+:local_build_backend
 cd backend
 docker build --tag localhost:5000/backend .
 docker push localhost:5000/backend 
 cd ..
+:docker_backend
 
 kubectl apply -f backend-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
@@ -83,6 +94,9 @@ if NOT %action%==0 goto end
 :: Frontend (Heavy Load!)
 kubectl delete deploy frontend -n %NAMESPACE%
 
+if %LOCAL_BUILD%==true goto local_build_frontend
+goto docker_frontend
+:local_build_frontend
 cd frontend
 call npm install
 call npm i -g @angular/cli
@@ -90,6 +104,7 @@ call ng build -c production
 docker build --tag localhost:5000/frontend .
 docker push localhost:5000/frontend
 cd ..
+:docker_frontend
 
 kubectl apply -f frontend-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end 
@@ -98,10 +113,14 @@ if NOT %action%==0 goto end
 :: TensorFlow Executor 
 kubectl delete deploy tfexecutor -n %NAMESPACE%
 
+if %LOCAL_BUILD%==true goto local_build_tfexecutor
+goto docker_tfexecutor
+:local_build_tfexecutor
 cd mlcode_executor/tfexecutor 
 docker build --tag localhost:5000/tfexecutor .
 docker push localhost:5000/tfexecutor 
 cd ../..
+:docker_tfexecutor
    
 kubectl apply -f tf-executor-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
@@ -110,16 +129,24 @@ if NOT %action%==0 goto end
 :: PyTorch Executor 
 kubectl delete deploy pthexecutor -n %NAMESPACE%
 
+if %LOCAL_BUILD%==true goto local_build_ptexecutor
+goto docker_ptexecutor
+:local_build_ptexecutor
 cd mlcode_executor/pthexecutor
 docker build --tag localhost:5000/pthexecutor .
 docker push localhost:5000/pthexecutor 
 cd ../..
+:docker_ptexecutor
    
 kubectl apply -f pth-executor-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
 
 :model_training
 :: Model training module
+
+if %LOCAL_BUILD%==true goto local_build_trainingtf
+goto docker_trainingtf
+:local_build_trainingtf
 cd model_training/tensorflow 
 docker build --tag localhost:5000/tensorflow_model_training .
 docker push localhost:5000/tensorflow_model_training 
@@ -129,11 +156,16 @@ cd ../pytorch
 docker build --tag localhost:5000/pytorch_model_training .
 docker push localhost:5000/pytorch_model_training
 cd ../..
+:docker_trainingtf
 
 if NOT %action%==0 goto end  
 
 :model_inference
 :: Model Inference
+
+if %LOCAL_BUILD%==true goto local_build_inferencetf
+goto docker_inferencetf
+:local_build_inferencetf
 cd model_inference/tensorflow
 docker build --tag localhost:5000/tensorflow_model_inference .
 docker push localhost:5000/tensorflow_model_inference 
@@ -141,6 +173,7 @@ cd ../pytorch
 docker build --tag localhost:5000/pytorch_model_inference .
 docker push localhost:5000/pytorch_model_inference
 cd ../..
+:docker_inferencetf
 
 if NOT %action%==0 goto end  
 
@@ -148,13 +181,16 @@ if NOT %action%==0 goto end
 :: Kafka Control Logger
 kubectl delete deploy kafka-control-logger -n %NAMESPACE%
 
+if %LOCAL_BUILD%==true goto local_build_kafka_control_logger
+goto docker_kafka_control_logger
+:local_build_kafka_control_logger
 cd kafka_control_logger
 docker build --tag localhost:5000/kafka_control_logger .
 docker push localhost:5000/kafka_control_logger 
 cd ..
+:docker_kafka_control_logger
 
 kubectl apply -f kafka-control-logger-deployment.yaml -n %NAMESPACE%
 if NOT %action%==0 goto end  
-
 
 :end
