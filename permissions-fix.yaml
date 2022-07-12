@@ -1,0 +1,24 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: crud-role
+  namespace: kafkaml
+rules:
+- apiGroups: ["", "apps", "batch"]
+  resources: [ "deployments", "jobs", pods", "replicasets", services" ]
+  verbs: [ "create", "get", "list", "delete", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: crud-role-binding
+  namespace: kafkaml
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: crud-role
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: kafkaml

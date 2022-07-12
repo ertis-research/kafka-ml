@@ -36,6 +36,7 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [Deploy Kafka-ML in a fast way](#Deploy-Kafka-ML-in-a-fast-way)
     - [Requirements](#Requirements)
     - [Steps to run Kafka-ML](#Steps-to-run-Kafka-ML)
+    - [Troubleshooting](#Troubleshooting)
 - [Installation and development](#Installation-and-development)
     - [Requirements to build locally](#Requirements-to-build-locally) 
     - [Steps to build Kafka-ML](#Steps-to-build-Kafka-ML)
@@ -316,7 +317,7 @@ python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
 
 ### Steps to run Kafka-ML 
-In this repository you can find files to deploy Kafka-ML in a simple way. These are [_Build_Kafka_ML.sh_](Build_Kafka_ML.sh) and [_Build_Kafka_ML.bat_](Build_Kafka_ML.bat) for Linux and Windows respectively. 
+In this repository you can find files to deploy Kafka-ML in a simple way. These are [_Build_Kafka_ML.sh_](Build_Kafka_ML.sh) and [_Build_Kafka_ML.bat_](Build_Kafka_ML.bat) for Linux and Windows respectively. These scripts will create the namespace where Kafka-ML will be deployed.
 
 In case you want to deploy Kafka-ML in a fast way, run the following script commands depending of your OS:
 
@@ -335,6 +336,8 @@ By default, Kafka-ML will be deployed on the namespace `kafkaml`. If you wish to
 
 By default, Kafka-ML will be deployed using our images at DockerHub. These images have been built for CPU and GPU and you can choose the one you prefer from modifying `backend-deployment.yaml`, `pth-executor-deployment.yaml` and `tf-executor-deployment.yaml` files, being by default the CPU version.
 
+### Troubleshooting
+Depending of Kubernetes and Docker version, there is a possibility that some errors may be encountered due to lack of permissions during the deployment of models for training and inference. In order to solve this,  The `permissions-fix.yaml` file is given in the repository. You just need to create the new resources using `kubectl apply -f permissions-fix.yaml`
 
 ## Installation and development
 
@@ -349,7 +352,7 @@ By default, Kafka-ML will be deployed using our images at DockerHub. These image
 
 In this repository you can find files to build Kafka-ML in case you want to contribute. 
 
-In case you want to build Kafka-ML in a fast way, you should modify the variable `LOCAL_BUILD` in build scripts and modify the deployments files to use the local images. Once that is done, you can run the build scripts.
+In case you want to build Kafka-ML in a fast way, you should set the variable `LOCAL_BUILD` to `true` in build scripts and modify the deployments files to use the local images. Once that is done, you can run the build scripts.
 
 By default, Kafka-ML will be built using CPU-only images. If you desire to build Kafka-ML with images enabled for GPU acceleration, the `Dockerfile` and `requirements.txt` files of `mlcode_executor`, `model_inference` and `model_training` modules must be modified as indicated in those files.
 
@@ -466,10 +469,13 @@ docker push x.x.x.x:5000/backend
 
 Now, we have to update the location of these images (tr) in the `backend-deployment.yaml` file:
 
-```
+```yaml
  containers:
  -   - image: localhost:5000/backend
  +   - image: x.x.x.x:5000/backend
+        
+    - name: BOOTSTRAP_SERVERS
+      value: kafka-cluster:9092 # You can specify all the Kafka Bootstrap Servers that you have. e.g.: kafka-cluster-2:9092,kafka-cluster-3:9092,kafka-cluster-4:9092,kafka-cluster-5:9092,kafka-cluster-6:9092,kafka-cluster-7:9092
         
     - name: TRAINING_MODEL_IMAGE
 -     value: localhost:5000/model_training
@@ -477,7 +483,23 @@ Now, we have to update the location of these images (tr) in the `backend-deploym
     - name: INFERENCE_MODEL_IMAGE
 -     value: localhost:5000/model_inference
 +     value: x.x.x.x:5000/model_inference
+    - name: FRONTEND_URL
+-     value: http://localhost
++     value: http://x.x.x.x
 ```
+
+The same should be done at `frontend-deployment.yaml` file:
+```yaml
+ containers:
+ -   - image: localhost:5000/backend
+ +   - image: x.x.x.x:5000/backend
+        
+    - name: BACKEND_URL
+-     value: http://localhost:8000
++     value: http://x.x.x.x:8000
+```
+
+
 To be able to deploy components in a Kubernetes cluster, we need to create a service account, give access to that account and generate a token:
 
 ```bash

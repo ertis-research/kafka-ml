@@ -38,6 +38,8 @@ if %action% GTR 9 goto incorrecto
 if %action% LSS 0 goto incorrecto
 
 :all
+kubectl create namespace %NAMESPACE%    
+
 kubectl delete service backend -n %NAMESPACE%
 kubectl delete service frontend -n %NAMESPACE%
 kubectl delete service kafka-cluster -n %NAMESPACE%

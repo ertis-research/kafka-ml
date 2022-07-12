@@ -20,6 +20,8 @@ read input
 
 if [ $input -eq 0 ]
 then
+    kubectl create namespace $NAMESPACE
+
     kubectl delete service backend -n $NAMESPACE
     kubectl delete service frontend -n $NAMESPACE
     kubectl delete service kafka-cluster -n $NAMESPACE
