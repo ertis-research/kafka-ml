@@ -367,6 +367,28 @@ class ConfigurationUsedFrameworks(generics.GenericAPIView):
             logging.error(str(e))
             return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
 
+class DistributedConfiguration(generics.GenericAPIView):
+    """View to know if a configuration has distributed models.
+        
+        URL: /distributedConfiguration/{:configuration_pk}
+    """
+    def get(self, request, pk, format=None):
+        """Return True if the configuration has distributed models else False"""
+        try:
+            if Configuration.objects.filter(pk=pk).exists():
+                obj = Configuration.objects.get(pk=pk)
+                resp = False
+
+                for m in obj.ml_models.all():
+                    if m.distributed:
+                        resp = True
+
+                return HttpResponse(json.dumps(resp), status=status.HTTP_200_OK)
+            return HttpResponse('Configuration does not exists', status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logging.error(str(e))
+            return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
+
 class DeploymentList(generics.ListCreateAPIView):
     """View to get the list of deployments and create a new deployment in Kubernetes
         
@@ -427,23 +449,42 @@ class DeploymentList(generics.ListCreateAPIView):
             serializer = DeployDeploymentSerializer(data=data)
             if serializer.is_valid():
                 try:
-                    """ KUBERNETES code goes here"""
+                    """KUBERNETES code goes here"""
                     config.load_incluster_config() # To run inside the container
                     # config.load_kube_config() # To run externally
                     logging.info("Connection to Kubernetes %s %s", os.environ.get('KUBE_TOKEN'), os.environ.get('KUBE_HOST'))
                     api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
                     api_instance = client.BatchV1Api(api_client)
-                    #api_instance = client.BatchV1Api()
+                    # api_instance = client.BatchV1Api()
                     
-                    if not tf_kwargs_fit_empty:    
+                    if not tf_kwargs_fit_empty:
                         # TensorFlow Verification
                         tf_kwargs_fit  = parse_kwargs_fit(data['tf_kwargs_fit'])
                         tf_kwargs_val  = parse_kwargs_fit(data['tf_kwargs_val']) if not tf_kwargs_val_empty else json.dumps({})
 
-                        data_to_send = {"batch": data['batch'], "kwargs_fit": tf_kwargs_fit, "kwargs_val": tf_kwargs_val}                        
+                        data_to_send = {"batch": data['batch'], "kwargs_fit": tf_kwargs_fit, "kwargs_val": tf_kwargs_val}
                         tf_resp = requests.post(settings.TENSORFLOW_EXECUTOR_URL+"check_deploy_config/", data=json.dumps(data_to_send))
                         if tf_resp.status_code != 200:
                             raise ValueError('Some TensorFlow arguments are not valid.')
+                        
+                        if 'incremental' in data.keys() and data['incremental'] == True:
+                            if 'numeratorBatch' in data.keys() and 'denominatorBatch' in data.keys() and data['numeratorBatch'] >= data['denominatorBatch']:
+                                raise ValueError('Arguments numerator and denominator batch are not valid.')
+
+                            if 'indefinite' in data.keys() and data['indefinite'] == True:
+                                if Configuration.objects.filter(pk=data['configuration']).exists():
+                                    obj = Configuration.objects.get(pk=data['configuration'])
+                                    for m in obj.ml_models.all():
+                                        if not m.distributed:
+                                            if not data['monitoring_metric'] in m.code:
+                                                raise ValueError('Monitoring metric does not match.')
+                                        else:
+                                            if not 'metrics' in data.keys():
+                                                if data['monitoring_metric'] != 'sparse_categorical_accuracy':
+                                                    raise ValueError('Monitoring metric does not match (default: sparse_categorical_accuracy).')
+                                            else:
+                                                if data['metrics'] != "" and not data['monitoring_metric'] in data['metrics']:
+                                                    raise ValueError('Monitoring metric does not match.')
 
                     if not pth_kwargs_fit_empty:
                         # PyTorch Verification
@@ -451,13 +492,13 @@ class DeploymentList(generics.ListCreateAPIView):
                         pth_kwargs_val = parse_kwargs_fit(data['pth_kwargs_val']) if not pth_kwargs_val_empty else json.dumps({})
 
                         data_to_send = {"batch": data['batch'], "kwargs_fit": pth_kwargs_fit, "kwargs_val": pth_kwargs_val}
-                        pth_resp = requests.post(settings.PYTORCH_EXECUTOR_URL+"check_deploy_config/"   , data=json.dumps(data_to_send))
+                        pth_resp = requests.post(settings.PYTORCH_EXECUTOR_URL+"check_deploy_config/", data=json.dumps(data_to_send))
                         if pth_resp.status_code != 200:
                             raise ValueError('Some PyTorch arguments are not valid.')
                                         
                     deployment = serializer.save()
 
-                    for result in TrainingResult.objects.filter(deployment=deployment):       
+                    for result in TrainingResult.objects.filter(deployment=deployment):
                         if result.model.framework == "tf":
                             image = settings.TENSORFLOW_TRAINING_MODEL_IMAGE
                             kwargs_fit = tf_kwargs_fit
@@ -466,41 +507,96 @@ class DeploymentList(generics.ListCreateAPIView):
                             image = settings.PYTORCH_TRAINING_MODEL_IMAGE
                             kwargs_fit = pth_kwargs_fit
                             kwargs_val = pth_kwargs_val
+
+                        if not result.model.distributed:
+                            if not deployment.incremental:
+                                case = 1
+                            else:
+                                case = 2
+                        else:
+                            if not deployment.incremental:
+                                case = 3
+                            else:
+                                case = 4
                         
                         if not result.model.distributed:
-                            job_manifest = {
-                                'apiVersion': 'batch/v1',
-                                'kind': 'Job',
-                                'metadata': {
-                                    'name': 'model-training-'+str(result.id)
-                                },
-                                'spec': {
-                                    'ttlSecondsAfterFinished' : 10,
-                                    'template' : {
-                                        'spec': {
-                                            'containers': [{
-                                                'image': image, 
-                                                'name': 'training',
-                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                        {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
-                                                        {'name': 'RESULT_ID', 'value': str(result.id)},
-                                                        {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                                        {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                        {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                        {'name': 'KWARGS_FIT', 'value': kwargs_fit},
-                                                        {'name': 'KWARGS_VAL', 'value': kwargs_val},
-                                                        {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
-                                                        ],
-                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                            }],
-                                            'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                            'restartPolicy': 'OnFailure'
+                            if not deployment.incremental:
+                                job_manifest = {
+                                    'apiVersion': 'batch/v1',
+                                    'kind': 'Job',
+                                    'metadata': {
+                                        'name': 'model-training-'+str(result.id)
+                                    },
+                                    'spec': {
+                                        'ttlSecondsAfterFinished' : 10,
+                                        'template' : {
+                                            'spec': {
+                                                'containers': [{
+                                                    'image': image,
+                                                    'name': 'training',
+                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                            {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
+                                                            {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                            {'name': 'CASE', 'value': str(case)}
+                                                            ],
+                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                }],
+                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                'restartPolicy': 'OnFailure'
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                            else:
+                                job_manifest = {
+                                    'apiVersion': 'batch/v1',
+                                    'kind': 'Job',
+                                    'metadata': {
+                                        'name': 'incremental-model-training-'+str(result.id)
+                                    },
+                                    'spec': {
+                                        'ttlSecondsAfterFinished' : 10,
+                                        'template' : {
+                                            'spec': {
+                                                'containers': [{
+                                                    'image': image,
+                                                    'name': 'training',
+                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                            {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
+                                                            {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                            {'name': 'CASE', 'value': str(case)},
+                                                            {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
+                                                            {'name': 'MESSAGE_POLL_TIMEOUT', 'value': str(deployment.message_poll_timeout)},
+                                                            {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
+                                                            {'name': 'CHANGE', 'value': deployment.change},
+                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
+                                                            {'name': 'NUMERATOR_BATCH', 'value': str(deployment.numeratorBatch)},
+                                                            {'name': 'DENOMINATOR_BATCH', 'value': str(deployment.denominatorBatch)}
+                                                            ],
+                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                }],
+                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                'restartPolicy': 'OnFailure'
+                                            }
+                                        }
+                                    }
+                                }
+                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                         
                         elif result.model.distributed and result.model.father == None:
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
@@ -522,39 +618,91 @@ class DeploymentList(generics.ListCreateAPIView):
                             result_urls.reverse()
                             result_ids.reverse()
 
-                            job_manifest = {
-                                'apiVersion': 'batch/v1',
-                                'kind': 'Job',
-                                'metadata': {
-                                    'name': 'model-distributed-training'+n
-                                },
-                                'spec': {
-                                    'ttlSecondsAfterFinished' : 10,
-                                    'template' : {
-                                        'spec': {
-                                            'containers': [{
-                                                'image': settings.DISTRIBUTED_TRAINING_MODEL_IMAGE, 
-                                                'name': 'training',
-                                                'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                        {'name': 'RESULT_URL', 'value': str(result_urls)},
-                                                        {'name': 'RESULT_ID', 'value': str(result_ids)},
-                                                        {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                                        {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                        {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                        {'name': 'KWARGS_FIT', 'value': tf_kwargs_fit},
-                                                        {'name': 'KWARGS_VAL', 'value': tf_kwargs_val},
-                                                        {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
-                                                        ],
-                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                            }],
-                                            'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                            'restartPolicy': 'OnFailure'
+                            if not deployment.incremental:
+                                job_manifest = {
+                                    'apiVersion': 'batch/v1',
+                                    'kind': 'Job',
+                                    'metadata': {
+                                        'name': 'model-distributed-training'+n
+                                    },
+                                    'spec': {
+                                        'ttlSecondsAfterFinished' : 10,
+                                        'template' : {
+                                            'spec': {
+                                                'containers': [{
+                                                    'image': image,
+                                                    'name': 'training',
+                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                            {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                            {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                            {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                            {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                            {'name': 'LOSS', 'value': deployment.loss},
+                                                            {'name': 'METRICS', 'value': deployment.metrics},
+                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                            {'name': 'CASE', 'value': str(case)}
+                                                            ],
+                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                }],
+                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                'restartPolicy': 'OnFailure'
+                                            }
+                                        }
+                                    }
+                                }                                
+                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                            else:
+                                job_manifest = {
+                                    'apiVersion': 'batch/v1',
+                                    'kind': 'Job',
+                                    'metadata': {
+                                        'name': 'incremental-model-distributed-training'+n
+                                    },
+                                    'spec': {
+                                        'ttlSecondsAfterFinished' : 10,
+                                        'template' : {
+                                            'spec': {
+                                                'containers': [{
+                                                    'image': image,
+                                                    'name': 'training',
+                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                            {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                            {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                            {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                            {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                            {'name': 'LOSS', 'value': deployment.loss},
+                                                            {'name': 'METRICS', 'value': deployment.metrics},
+                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                            {'name': 'CASE', 'value': str(case)},
+                                                            {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
+                                                            {'name': 'MESSAGE_POLL_TIMEOUT', 'value': str(deployment.message_poll_timeout)},
+                                                            {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
+                                                            {'name': 'CHANGE', 'value': deployment.change},
+                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
+                                                            {'name': 'NUMERATOR_BATCH', 'value': str(deployment.numeratorBatch)},
+                                                            {'name': 'DENOMINATOR_BATCH', 'value': str(deployment.denominatorBatch)}
+                                                            ],
+                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                }],
+                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                'restartPolicy': 'OnFailure'
+                                            }
                                         }
                                     }
                                 }
-                            }                                
-                            resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
                     traceback.print_exc()
@@ -699,12 +847,13 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, pk, format=None):
-        """ Expects a JSON in the request body with the information to upload the information of a result. 
+        """Expects a JSON in the request body with the information to upload the information of a result. 
             The result PK has to be in the URL.
 
             Args:
                 pk (int): Primary key of the result (in the URL)
                 trained_model (File): file with the trained model (body)
+                confussion_matrix (File): file with the confussion matrix (body)
                 json (str): Information to update the result (in the body).
                     train_loss_hist (str): List of trained losses
                     train_acc_hist (str): List of trained accuracies
@@ -712,7 +861,8 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                     val_acc (str): Accuracy in validation
                     
                     Request example:
-                        FILES: trained_model: '...'   
+                        FILES: trained_model: '...'
+                               confussion_matrix: '...'
                         Body:
                         {
                             'train_loss_hist': '0.12, 0.01',
@@ -734,10 +884,13 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                     serializer.save()
                 else:
                     logging.info("Cannot save training result")
-                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)                
+                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
                 trained_model = request.FILES['trained_model']
-                confussion_matrix = request.FILES['confussion_matrix'] if obj.deployment.conf_mat_settings and obj.test_metrics != {} else None
+                if not obj.model.distributed:
+                    confussion_matrix = request.FILES['confussion_matrix'] if obj.deployment.conf_mat_settings and obj.test_metrics != {} else None
+                else:
+                    confussion_matrix = None
                 
                 fs = FileSystemStorage()
                 path = os.path.join(settings.MEDIA_ROOT, settings.TRAINED_MODELS_DIR)
@@ -761,7 +914,6 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                     
                     filename = fs.save(path+str(obj.id)+'.pth', trained_model)
                     obj.trained_model.name=(settings.TRAINED_MODELS_DIR+str(obj.id)+'.pth')
-
 
                 obj.status = TrainingResult.STATUS.finished
                 obj.save()
@@ -836,6 +988,11 @@ class TrainingResultStop(generics.CreateAPIView):
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 class TrainingResultGetMetrics(generics.GenericAPIView):
+    """View to get training metrics from a training result
+        
+        URL: /results/chart/{:id_result}
+    """
+
     def get(self, request, pk, format=None):
         """Get the metrics information from a training result"""
         try:
@@ -857,15 +1014,17 @@ class TrainingResultGetMetrics(generics.GenericAPIView):
                         epoch_train_met = {"value": obj.train_metrics[metric][n_epoch], "name": n_epoch+1}
                         met_train["series"].append(epoch_train_met)
                         
-                        if existsValid:
+                    if existsValid:
+                        for n_epoch in range(len(obj.val_metrics[metric])):
                             epoch_valid_met = {"value": obj.val_metrics[metric][n_epoch], "name": n_epoch+1}
                             met_val["series"].append(epoch_valid_met)    
+                    
                     res.append(met_train)
 
                     if existsValid:
                         res.append(met_val)
 
-                    response = json.dumps({'metrics':res, 'conf_mat':obj.confusion_matrix})
+                response = json.dumps({'metrics': res, 'conf_mat': obj.confusion_matrix})
 
                 return HttpResponse(response, status=status.HTTP_200_OK)
             return HttpResponse('Training result does not exists', status=status.HTTP_400_BAD_REQUEST)
@@ -1207,7 +1366,6 @@ class DatasourceList(generics.ListCreateAPIView):
     """
     queryset = Datasource.objects.all()
     serializer_class = DatasourceSerializer
-
 
 class DatasourceToKafka(generics.CreateAPIView):
     """View to create a new datasource and send it to kafka

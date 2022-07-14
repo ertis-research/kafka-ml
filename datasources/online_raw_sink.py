@@ -1,7 +1,7 @@
 from .sink import KafkaMLSink
 
-class RawSink(KafkaMLSink):
-    """Class representing a sink of RAW training data to Apache Kafka.
+class OnlineRawSink(KafkaMLSink):
+    """Class representing an online sink of RAW training data to Apache Kafka.
 
         Args:
             boostrap_servers (str): List of Kafka brokers
@@ -13,8 +13,6 @@ class RawSink(KafkaMLSink):
                 Defaults '' for no dimension.
             label_reshape (str): Reshape of the label data. Example: '28 28' for a matrix of 28x28. 
                 Defaults '' for no dimension.
-            validation_rate (float): rate of the training data for validation. Defaults 0
-            test_rate (float): rate of the training data for test. Defaults 0
             control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
                 Defaults to control
             group_id (str): Group ID of the Kafka consumer. Defaults to sink
@@ -26,13 +24,16 @@ class RawSink(KafkaMLSink):
                 Defaults '' for no dimension.
             label_reshape (str): Reshape of the label data. Example: '28 28' for a matrix of 28x28. 
                 Defaults '' for no dimension.
+
     """
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         data_type=None, label_type=None, description='', data_reshape=None, label_reshape=None, 
-        validation_rate=0, test_rate=0, control_topic='control', group_id='sink'):
+        control_topic='control', group_id='sink'):
         
         input_format = 'RAW'
+        validation_rate = 0
+        test_rate = 0
         super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
             validation_rate, test_rate, control_topic, group_id)
         
@@ -62,6 +63,7 @@ class RawSink(KafkaMLSink):
                 'label_type': self.label_type,
                 'data_reshape' : self.data_reshape,
                 'label_reshape' : self.label_reshape,
-            }    
+            }
+            super().send_online_control_msg()
         
         super().send(data.tobytes(), label.tobytes())

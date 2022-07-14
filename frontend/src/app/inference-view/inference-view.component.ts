@@ -31,7 +31,7 @@ export class InferenceViewComponent implements OnInit {
     if (this.route.snapshot.paramMap.has('id')) {
       this.resultID = Number(this.route.snapshot.paramMap.get('id'));
       this.resultService.getInferenceInfo(this.resultID).subscribe((data: JSON[]) => {
-        if (data['input_format']!=''){
+        if (data['input_format'] != ''){
           this.inference.input_format = data['input_format'];
           this.inference.input_config = data['input_config'];
           this.snackbar.open('Input format and configuration found from another dataset/inference', '', {
@@ -45,41 +45,54 @@ export class InferenceViewComponent implements OnInit {
           duration: 3000
         });
       });
-    }
-    this.modelService.getModelResultID(this.resultID).subscribe(
-      (data) => {
-        this.model=<MLModel> data;
-        if(this.model.distributed && this.model.father != null) {
-          this.distributed = true;
-        } else {
-          this.distributed = false;
+      if (this.resultID != -1) {
+        this.modelService.getModelResultID(this.resultID).subscribe(
+          (data) => {
+            this.model=<MLModel> data;
+            if(this.model.distributed && this.model.father != null) {
+              this.distributed = true;
+            } else {
+              this.distributed = false;
+            }
+          },  //changed
+          (err)=>{
+            this.valid = false;
+            this.snackbar.open('Error model not found', '', {
+              duration: 3000
+            });
+          }
+        );
+      } else {
+        this.valid = true;
+        if (sessionStorage.getItem('inference')) {
+          let infer = JSON.parse(sessionStorage.getItem('inference'));
+          this.inference = <Inference>infer;
         }
-      },  //changed
-      (err)=>{
-        this.valid = false;
-        this.snackbar.open('Error model not found', '', {
-          duration: 3000
-        });
       }
-    );
+    }
   }
+
   back() {
     this.location.back();
   }
-  deployInference(inference: Inference){
-    inference.model_result = this.resultID;
-    this.resultService.deployInference(this.resultID, inference).subscribe((data: JSON[]) => {
+
+  deployInference(inference: Inference) {
+    if (this.resultID != -1) {
+      inference.model_result = this.resultID;
+      this.resultService.deployInference(this.resultID, inference).subscribe((data: JSON[]) => {
         this.snackbar.open('Model deployed for inference', '', {
           duration: 3000
         });
-        this.router.navigateByUrl('/inferences');
+      this.router.navigateByUrl('/inferences');
       },
       (err) => {
         this.snackbar.open('Error deploying the model for inference', '', {
           duration: 3000
         });
-
-    });
+      });
+    } else {
+      sessionStorage.setItem('inference', JSON.stringify(this.inference));
+      this.location.back();
+    }
   }
-
 }

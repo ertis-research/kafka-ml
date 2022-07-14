@@ -6,6 +6,7 @@ import { ConfigurationService } from '../services/configuration.service';
 import { DeploymentService } from '../services/deployment.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Inference } from '../shared/inference.model';
 @Component({
   selector: 'app-deployment-view',
   templateUrl: './deployment-view.component.html',
@@ -23,11 +24,26 @@ export class DeploymentViewComponent implements OnInit {
   deployment: Deployment = new Deployment();
   configuration: Configuration = new Configuration();
   configurationID: number;
-
   valid: boolean = false;
   detectedFrameworks: string[] = [];
+  showIncremental: Boolean = false;
+  showDistributed: Boolean = false;
+  hideTimeout: Boolean = false;
+  inference: Inference = new Inference();
   ngOnInit(): void {
-    this.deployment.conf_mat_settings = false;
+    if (localStorage.length > 0) {
+      let incremental = JSON.parse(localStorage.getItem('showIncremental'));
+      this.showIncremental = Boolean(incremental);
+      let timeout = JSON.parse(localStorage.getItem('hideTimeout'));
+      this.hideTimeout = Boolean(timeout);
+      let formValue = JSON.parse(localStorage.getItem('form-data'));
+      this.deployment = <Deployment>formValue;
+      localStorage.clear();
+      let infer = JSON.parse(sessionStorage.getItem('inference'));
+      this.inference = <Inference>infer;
+    } else {
+      this.deployment.conf_mat_settings = false;
+    }
     if (this.route.snapshot.paramMap.has('id')) {
       this.configurationID = Number(this.route.snapshot.paramMap.get('id'));
       this.configurationService.getConfiguration(this.configurationID).subscribe(
@@ -39,6 +55,11 @@ export class DeploymentViewComponent implements OnInit {
               this.detectedFrameworks = <string[]>data
             }
           )
+          this.configurationService.getDistributedConfiguration(this.configurationID).subscribe(
+            (data) => {
+              this.showDistributed = Boolean(data)
+            }
+          )
         },
         (err) => {
           this.snackbar.open('Configuration not found', '', {
@@ -47,7 +68,64 @@ export class DeploymentViewComponent implements OnInit {
         });
     }
   }
+
+  incrementalControl(e: any) {
+    if (e.checked) {
+      this.showIncremental = true;
+    } else {
+      this.showIncremental = false;
+      this.hideTimeout = false;
+    }
+  }
+
+  timeoutControl(e: any) {
+    if (e.checked) {
+      this.hideTimeout = true;
+    } else {
+      this.hideTimeout = false;
+    }
+  }
+  
+  configureInference(deployment: Deployment) {
+    localStorage.setItem('form-data', JSON.stringify(deployment));
+    localStorage.setItem('showIncremental', JSON.stringify(this.showIncremental));
+    localStorage.setItem('hideTimeout', JSON.stringify(this.hideTimeout));
+    this.router.navigateByUrl('/results/inference/-1');
+  }
+  
   onSubmit(deployment: Deployment) {
+    if (deployment.learning_rate && deployment.learning_rate.toString() == '') {
+      delete deployment.learning_rate;
+    }
+
+    if (deployment.numeratorBatch == null) {
+      delete deployment.numeratorBatch;
+    }
+
+    if (deployment.denominatorBatch == null) {
+      delete deployment.denominatorBatch;
+    }
+
+    if (deployment.stream_timeout == null) {
+      delete deployment.stream_timeout;
+    }
+
+    if (deployment.message_poll_timeout == null) {
+      delete deployment.message_poll_timeout;
+    }
+
+    if (deployment.optimizer == '') {
+      delete deployment.optimizer;
+    }
+
+    if (deployment.loss == '') {
+      delete deployment.loss;
+    }
+
+    if (deployment.metrics == '') {
+      delete deployment.metrics;
+    }
+
     deployment.configuration = this.configurationID;
 
     deployment.tf_kwargs_fit = deployment.tf_kwargs_fit || "";

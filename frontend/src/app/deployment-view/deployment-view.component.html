@@ -6,6 +6,63 @@
 
     <form class="create-deployment-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
 
+      <mat-form-field *ngIf="showDistributed" class="full-width">
+        <mat-label>Optimizer</mat-label>
+        <input matInput placeholder="adam" name="optimizer" id="optimizer" #nameRef="ngModel" [ngModel]="deployment.optimizer">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showDistributed" class="full-width">
+        <mat-label>Learning rate</mat-label>
+        <input matInput placeholder="0.001" name="learning_rate" id="learning_rate" #nameRef="ngModel" [ngModel]="deployment.learning_rate">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showDistributed" class="full-width">
+        <mat-label>Loss function</mat-label>
+        <input matInput placeholder="sparse_categorical_crossentropy" name="loss" id="loss" #nameRef="ngModel" [ngModel]="deployment.loss">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showDistributed" class="full-width">
+        <mat-label>Metrics (splitted by comas)</mat-label>
+        <input matInput placeholder="sparse_categorical_accuracy" name="metrics" id="metrics" #nameRef="ngModel" [ngModel]="deployment.metrics">
+      </mat-form-field>
+      
+      <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">Incremental training</mat-checkbox>
+
+      <!--<mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>-->
+      
+      <br>
+
+      <mat-label *ngIf="showIncremental && hideTimeout">Configure inference parameters</mat-label>
+      <button mat-icon-button *ngIf="showIncremental && hideTimeout" (click)="configureInference(form.value)">
+        <mat-icon color="primary">launch</mat-icon>
+      </button>
+      
+      <mat-form-field *ngIf="showIncremental && !hideTimeout" class="full-width">
+        <mat-label>Stream timeout (in milliseconds)</mat-label>
+        <input matInput type="number" placeholder="60000" name="stream_timeout" id="stream_timeout" #nameRef="ngModel" [ngModel]="deployment.stream_timeout">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showIncremental" class="full-width">
+        <mat-label>Message poll timeout (in milliseconds)</mat-label>
+        <input matInput type="number" placeholder="60000" name="message_poll_timeout" id="message_poll_timeout" #nameRef="ngModel" [ngModel]="deployment.message_poll_timeout">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
+        <mat-label>Monitoring metric (must match with some previously defined metric)</mat-label>
+        <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel" [ngModel]="deployment.monitoring_metric">
+      </mat-form-field>
+
+      <mat-label *ngIf="showIncremental && hideTimeout">If the monitoring metric improves, does it increase or decrease? </mat-label>
+      <mat-radio-group *ngIf="showIncremental && hideTimeout" matInput required name="change" [ngModel]="deployment.change">
+        <mat-radio-button value="up">Increase</mat-radio-button>
+        <mat-radio-button value="down">Decrease</mat-radio-button>
+      </mat-radio-group>
+
+      <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
+        <mat-label>Improvement</mat-label>
+        <input matInput placeholder="0.05" name="improvement" id="improvement" #nameRef="ngModel" [ngModel]="deployment.improvement">
+      </mat-form-field>
+      
       <mat-form-field class="full-width" *ngIf="detectedFrameworks.length > 0">
         <mat-label>Batch size for training</mat-label>
         <input matInput required type="number" placeholder="10" name="batch" id="batch" #nameRef="ngModel"
@@ -40,8 +97,18 @@
           name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
       </mat-form-field>
 
+      <mat-form-field *ngIf="showIncremental" class="full-width">
+        <mat-label>Numerator batch for validation</mat-label>
+        <input matInput type="number" placeholder="1" name="numeratorBatch" id="numeratorBatch" #nameRef="ngModel" [ngModel]="deployment.numeratorBatch">
+      </mat-form-field>
+
+      <mat-form-field *ngIf="showIncremental" class="full-width">
+        <mat-label>Denominator batch for validation</mat-label>
+        <input matInput type="number" placeholder="5" name="denominatorBatch" id="denominatorBatch" #nameRef="ngModel" [ngModel]="deployment.denominatorBatch">
+      </mat-form-field>
+
       <mat-form-field *ngIf="detectedFrameworks.length > 0">
-        <mat-label>GPU Memory usage estimation (Kubernetes Scheduler)</mat-label>
+        <mat-label>GPU Memory usage estimation in GB (Kubernetes Scheduler)</mat-label>
         <input matInput required type="number" placeholder="0" name="gpumem" [ngModel]="deployment.gpumem">
       </mat-form-field>
 

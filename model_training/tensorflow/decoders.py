@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 import tensorflow_io as tfio
 from utils import *
 
@@ -17,24 +16,23 @@ class DecoderFactory:
 
 class RawDecoder:
     """RAW class decoder implementation
-        ARGS:
-            configuration (dic): configuration properties
-        Attributes:
-            datatype(tensorflowtype): tensorflow type
-            reshape: reshape of the data
-            datatype (:obj:DType): output type of the train data
-            reshape_x (:obj:array): reshape for training data (optional)
-            labeltype (:obj:DType): output type of the label data
-            reshape_y (obj:array): reshape for label data (optional)
-
+    ARGS:
+        configuration (dic): configuration properties
+    Attributes:
+        datatype(tensorflowtype): tensorflow type
+        reshape: reshape of the data
+        datatype (:obj:DType): output type of the train data
+        reshape_x (:obj:array): reshape for training data (optional)
+        labeltype (:obj:DType): output type of the label data
+        reshape_y (obj:array): reshape for label data (optional)
     """
     def __init__(self, configuration):
-        self.datatype = string_to_tensorflow_type(configuration['data_type'])
+        self.datatype = string_to_numpy_type(configuration['data_type'])
         self.x_reshape = configuration['data_reshape']
         if self.x_reshape is not None:
             self.x_reshape = np.fromstring(self.x_reshape, dtype=int, sep=' ')
 
-        self.labeltype = string_to_tensorflow_type(configuration['label_type'])
+        self.labeltype = string_to_numpy_type(configuration['label_type'])
         self.y_reshape = configuration['label_reshape']
         if self.y_reshape is not None:
             self.y_reshape = np.fromstring(self.y_reshape, dtype=int, sep=' ')
@@ -44,12 +42,11 @@ class RawDecoder:
 
 class AvroDecoder:
     """AVRO class decoder implementation
-        ARGS:
-            configuration (dic): configuration properties
-        Attributes:
-            data_scheme(str): scheme of the AVRO implementation for data
-            label_scheme(str): scheme of the AVRO implementation for label
-
+    ARGS:
+        configuration (dic): configuration properties
+    Attributes:
+        data_scheme(str): scheme of the AVRO implementation for data
+        label_scheme(str): scheme of the AVRO implementation for label
     """
     def __init__(self, configuration):
         self.data_scheme = str(configuration['data_scheme']).replace("'", '"')
@@ -68,4 +65,3 @@ class AvroDecoder:
             res_y.append(decode_y.get(key))
 
         return (res_x, res_y)
-    

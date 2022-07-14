@@ -33,6 +33,7 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [Usage](#usage)
     - [Single models](#Single-models)
     - [Distributed models](#Distributed-models)
+    - [Incremental training](#Incremental-training)
 - [Deploy Kafka-ML in a fast way](#Deploy-Kafka-ML-in-a-fast-way)
     - [Requirements](#Requirements)
     - [Steps to run Kafka-ML](#Steps-to-run-Kafka-ML)
@@ -51,6 +52,8 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [04/03/2022] Added PyTorch ML Framework support!
 - [08/04/2022] Added support for learning curves visualization, confusion matrix generation and small changes on metrics visualization. Now datasets can be splitted into training, validation and test.
 - [26/05/2022] Included support for visualization of prediction data. Now you can easily prototype and visualize your ML/AI application. You can train models, deploy them for inference, and visualize your prediction data just with data streams.
+- [14/07/2022] Added incremental training support and configuration of training parameters for the deployment of distributed models.
+
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated below in [Installation and development](#Installation-and-development).
 
@@ -125,7 +128,7 @@ Deploy a configuration of models in Kubernetes for training.
 
 Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
 
-Note: If you do not have the GPU(s) properly tuned, **set the "GPU  Memory usage estimation" parameter to 0**. Otherwise, the training component will be deployed, but in a pending state waiting to allocate GPU memory. If the pod is described, it will show a `aliyun.com/gpu-mem` related warning.
+Note: If you do not have the GPU(s) properly tuned, **set the "GPU  Memory usage estimation" parameter to 0**. Otherwise, the training component will be deployed, but in a pending state waiting to allocate GPU memory. If the pod is described, it will show a `aliyun.com/gpu-mem` related warning. If you wish, you can mark the last field for the creation of the confusion matrix at the end of the training.
 
 <img src="images/configure-deployment.svg" width="500">
 
@@ -247,23 +250,23 @@ Create a distributed model with just a TF/Keras model source code and some impor
 
 ```py
 edge_input = keras.Input(shape=(28,28,1), name='input_img')
-x = layers.Conv2D(28, kernel_size=(3,3), name='conv2d')(edge_input)
-x = layers.MaxPooling2D(pool_size=(2,2), name='maxpooling')(x)
-x = layers.Flatten(name='flatten')(x)
-output_to_fog = layers.Dense(64, activation=tf.nn.relu, name='output_to_fog')(x)
-edge_output = layers.Dense(10, activation=tf.nn.softmax, name='edge_output')(output_to_fog)
+x = tf.keras.layers.Conv2D(28, kernel_size=(3,3), name='conv2d')(edge_input)
+x = tf.keras.layers.MaxPooling2D(pool_size=(2,2), name='maxpooling')(x)
+x = tf.keras.layers.Flatten(name='flatten')(x)
+output_to_fog = tf.keras.layers.Dense(64, activation=tf.nn.relu, name='output_to_fog')(x)
+edge_output = tf.keras.layers.Dense(10, activation=tf.nn.softmax, name='edge_output')(output_to_fog)
 edge_model = keras.Model(inputs=[edge_input], outputs=[output_to_fog, edge_output], name='edge_model')
 
 fog_input = keras.Input(shape=64, name='fog_input')
-output_to_cloud = layers.Dense(64, activation=tf.nn.relu, name='output_to_cloud')(fog_input)
-fog_output = layers.Dense(10, activation=tf.nn.softmax, name='fog_output')(output_to_cloud)
+output_to_cloud = tf.keras.layers.Dense(64, activation=tf.nn.relu, name='output_to_cloud')(fog_input)
+fog_output = tf.keras.layers.Dense(10, activation=tf.nn.softmax, name='fog_output')(output_to_cloud)
 fog_model = keras.Model(inputs=[fog_input], outputs=[output_to_cloud, fog_output], name='fog_model')
 
 cloud_input = keras.Input(shape=64, name='cloud_input')
-x = layers.Dense(64, activation=tf.nn.relu, name='relu1')(cloud_input)
-x = layers.Dense(128, activation=tf.nn.relu, name='relu2')(x)
-x = layers.Dropout(0.2)(x)
-cloud_output = layers.Dense(10, activation=tf.nn.softmax, name='cloud_output')(x)
+x = tf.keras.layers.Dense(64, activation=tf.nn.relu, name='relu1')(cloud_input)
+x = tf.keras.layers.Dense(128, activation=tf.nn.relu, name='relu2')(x)
+x = tf.keras.layers.Dropout(0.2)(x)
+cloud_output = tf.keras.layers.Dense(10, activation=tf.nn.softmax, name='cloud_output')(x)
 cloud_model = keras.Model(inputs=cloud_input, outputs=[cloud_output], name='cloud_model')
 ````
 
@@ -279,7 +282,7 @@ Deploy the configuration of distributed sub-models in Kubernetes for training.
 
 <img src="images/deploy-distributed-configuration.png" width="500">
 
-Change the batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Validation parameters are optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
+Change the optimizer, learning rate, loss function, metrics, batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Optimizer, learning rate, loss function and metrics parameters are optional, so if not specified, default values are taken, which are: *adam, *0.001, *sparse_categorical_crossentropy and *sparse_categorical_accuracy, respectively. Validation parameters are also optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
 
 <img src="images/configure-distributed-deployment.png" width="500">
 
@@ -310,6 +313,16 @@ Finally, test the inference deployed using the MNIST example for inference in th
 ````
 python examples/MINST_RAW_format/mnist_dataset_inference_example.py
 ````
+
+### Incremental training
+
+Incremental training is a machine learning method in which input data is continuously used to extend the existing model's knowledge i.e. to further train the model. It represents a dynamic learning technique that can be applied when training data becomes available gradually over time or its size is out of system memory limits.
+
+Currently, the only framework that supports incremental training is TensorFlow. In this case, the usage example will be the same as the one presented for the single models, only the configuration deployment form will change and will now contain more fields.
+
+As before, change the fields as desired. The new incremental fields are: stream timeout, message poll timeout, numerator and denominator batch parameters. The stream timeout parameter is used to configure the duration for which the dataset will block for new messages before timing out. The message poll timeout parameter is the window size to get new data. Finally, the numerator and denominator batch parameters represent the fraction of batches to be used for validation (numerator must be smaller than the denominator). They are not required, so if not specified, default values are taken, which are: *60000, *60000, *1 and *5, respectively.
+
+<img src="images/deploy-incremental-configuration.png" width="500">
 
 ## Deploy Kafka-ML in a fast way
 ### Requirements
@@ -391,8 +404,6 @@ In case you want to build Kafka-ML step-by-step, then follow the following steps
     cd model_training/tensorflow
     docker build --tag localhost:5000/tensorflow_model_training .
     docker push localhost:5000/tensorflow_model_training 
-    docker build -f Dockerfile_distributed --tag localhost:5000/distributed_model_training .
-    docker push localhost:5000/distributed_model_training
 
     cd ../pytorch
     docker build --tag localhost:5000/pytorch_model_training .

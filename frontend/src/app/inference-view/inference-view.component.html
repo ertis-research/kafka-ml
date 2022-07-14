@@ -1,8 +1,12 @@
 <div class="container">
   <mat-card>
-  <mat-card-title>
+  <mat-card-title *ngIf="resultID != -1">
     Deploy Training result {{resultID}} for inference
-    </mat-card-title>
+  </mat-card-title>
+
+  <mat-card-title *ngIf="resultID == -1">
+    Inference parameters configuration
+  </mat-card-title>
     
     <form class="create-inference-form" #form="ngForm" (ngSubmit)="deployInference(form.value)" autocomplete="off">
       
@@ -18,7 +22,7 @@
 
       <mat-form-field class="full-width">
         <mat-label>Configutation for input data</mat-label>
-        <input  matInput required  placeholder="RAW" name="input_config"  #nameRef="ngModel" [ngModel]="inference.input_config">
+        <input matInput required placeholder="{&quot;data_type&quot;: &quot;&quot;, &quot;label_type&quot;: &quot;&quot;, &quot;data_reshape&quot;: &quot;&quot;, &quot;label_reshape&quot;: &quot;&quot;}" name="input_config"  #nameRef="ngModel" [ngModel]="inference.input_config">
       </mat-form-field>
 
       <mat-form-field class="full-width">

@@ -153,8 +153,6 @@ goto docker_trainingtf
 cd model_training/tensorflow 
 docker build --tag localhost:5000/tensorflow_model_training .
 docker push localhost:5000/tensorflow_model_training 
-docker build -f Dockerfile_distributed --tag localhost:5000/distributed_model_training . & 
-docker push localhost:5000/distributed_model_training
 cd ../pytorch
 docker build --tag localhost:5000/pytorch_model_training .
 docker push localhost:5000/pytorch_model_training

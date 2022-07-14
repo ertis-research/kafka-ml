@@ -44,6 +44,7 @@ export class ModelViewComponent implements OnInit {
           (data) => {
             this.model=<MLModel> data;
             this.showFather = this.model.distributed;
+            this.framework = this.model.framework;
           },  //changed
           (err)=>{
             this.valid = false;
@@ -64,6 +65,7 @@ export class ModelViewComponent implements OnInit {
       }
     );
   }
+  
   back() {
     this._location.back();
   }
@@ -176,5 +178,4 @@ model = NeuralNetwork()
          );
       }
   }
-
 }

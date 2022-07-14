@@ -1,4 +1,3 @@
-import tensorflow as tf
 from tensorflow import keras
 import urllib
 import time
@@ -41,96 +40,51 @@ def load_model(model_path):
     """Prints model architecture"""
   return model
 
-def string_to_tensorflow_type(out_type):
-  """Converts a string with the same name to a Tensorflow type.
-  Acceptable types are half, float, double, int32, uint16, uint8, 
-            int16, int8, int64, string, bool.
+def string_to_numpy_type(out_type):
+  """Converts a string with the same name to a Numpy type.
+  Acceptable types are half, float, double, int32, uint16, uint8, int16, int8, int64, string, bool.
   Args:
-      out_type (str): Output type to convert
+    out_type (str): Output type to convert
   Returns:
-    Tensorflow DType: Tensorflow DType of the intput
+    Numpy DType: Numpy DType of the intput
   """
   if out_type == 'half':
-    return tf.half
-  elif out_type == 'float16':
-    return tf.float16
+    return np.half
+  elif out_type == 'float':
+    return np.float
   elif out_type == 'float32':
-    return tf.float32
-  elif out_type == 'float64':
-    return tf.float64
+    return np.float32
   elif out_type == 'double':
-    return tf.double
+    return np.double
   elif out_type == 'int64':
-    return tf.int64
+    return np.int64
   elif out_type == 'int32':
-    return tf.int32
+    return np.int32
   elif out_type == 'int16':
-    return tf.int16 
+    return np.int16 
   elif out_type == 'int8':
-    return tf.int8
-  elif out_type == 'uint64':
-    return tf.uint64
-  elif out_type == 'uint32':
-    return tf.uint32
+    return np.int8
   elif out_type == 'uint16':
-    return tf.uint16 
+    return np.uint16 
   elif out_type == 'uint8':
-    return tf.uint8
+    return np.uint8 
   elif out_type == 'string':
-    return tf.string
+    return np.string
   elif out_type == 'bool':
-    return tf.bool
+    return np.bool
   else:
-    raise Exception('string_to_tensorflow_type: Unsupported type')
-
-def string_to_numpy_type(out_type):
-    """Converts a string with the same name to a Numpy type.
-    Acceptable types are half, float, double, int32, uint16, uint8, 
-                int16, int8, int64, string, bool.
-    Args:
-        out_type (str): Output type to convert
-    Returns:
-        Numpy DType: Numpy DType of the intput
-    """
-    if out_type == 'half':
-        return np.half
-    elif out_type == 'float':
-        return np.float
-    elif out_type == 'float32':
-        return np.float32
-    elif out_type == 'double':
-        return np.double
-    elif out_type == 'int64':
-        return np.int64
-    elif out_type == 'int32':
-        return np.int32
-    elif out_type == 'int16':
-        return np.int16 
-    elif out_type == 'int8':
-        return np.int8
-    elif out_type == 'uint16':
-        return np.uint16 
-    elif out_type == 'uint8':
-        return np.uint8 
-    elif out_type == 'string':
-        return np.string
-    elif out_type == 'bool':
-        return np.bool
-    else:
-        raise Exception('string_to_numpy_type: Unsupported type')
+    raise Exception('string_to_numpy_type: Unsupported type')
 
 def decode_raw(x, output_type, output_reshape):
-    """Decodes the raw data received from Kafka and reshapes it if needed.
-
-        Args:
-        x (raw): input data
-        output_type (numpy type): output type of the received data
-        reshape (array): reshape the numpy type (optional)
-        
-        Returns:
-        DType: raw data to tensorflow model loaded
-    """
-    res = np.frombuffer(x, dtype=output_type)
-    output_reshape = np.insert(output_reshape, 0, 1, axis=0)
-    res = res.reshape(*output_reshape)
-    return res
+  """Decodes the raw data received from Kafka and reshapes it if needed.
+  Args:
+    x (raw): input data
+    output_type (numpy type): output type of the received data
+    reshape (array): reshape the numpy type (optional)
+  Returns:
+    DType: raw data to tensorflow model loaded
+  """
+  res = np.frombuffer(x, dtype=output_type)
+  output_reshape = np.insert(output_reshape, 0, 1, axis=0)
+  res = res.reshape(*output_reshape)
+  return res

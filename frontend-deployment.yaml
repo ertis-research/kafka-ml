@@ -16,8 +16,8 @@ spec:
       name: frontend
     spec:
       containers:
-      - image: ertis/kafka-ml-frontend:v1.0  # If you want use our builded image at Docker Hub.
-    # - image: localhost:5000/frontend       # If you want use your local build image.
+      - image: ertis/kafka-ml-frontend:v1.0  # If you want to use our builded image at Docker Hub.
+    # - image: localhost:5000/frontend       # If you want to use your local build image.
         name: frontend
         ports:
         - containerPort: 80

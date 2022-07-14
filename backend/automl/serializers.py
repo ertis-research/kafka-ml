@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 from automl.models import MLModel, Configuration, Deployment, TrainingResult, Datasource, Inference
 
@@ -99,7 +98,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deployment
-        fields = ['batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'configuration']
+        fields = ['optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'message_poll_timeout', 'monitoring_metric', 'change', 'improvement', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'numeratorBatch', 'denominatorBatch', 'conf_mat_settings', 'configuration']
     
     def validate_batch(self, value):
         """Checks that batch size is greater than 0"""
@@ -138,7 +137,7 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'time']
+        fields = ['id', 'configuration', 'results', 'optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'message_poll_timeout', 'monitoring_metric', 'change', 'improvement', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'numeratorBatch', 'denominatorBatch', 'conf_mat_settings', 'time']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""

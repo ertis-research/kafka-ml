@@ -4,3 +4,10 @@
     width: 100%;
   }
   
+.mat-radio-button ~ .mat-radio-button {
+    margin-left: 16px;
+  }
+
+.mat-checkbox ~ .mat-checkbox {
+    margin-left: 16px;
+  }

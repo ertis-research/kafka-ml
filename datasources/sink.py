@@ -1,4 +1,3 @@
-
 __author__ = 'Cristian Martin Fdez'
 
 from kafka import KafkaConsumer, TopicPartition, KafkaProducer
@@ -146,6 +145,7 @@ class KafkaMLSink(object):
 
     def __send_control_msg(self):
         """Sends control message to Apache Kafka with the information"""
+
         dic = {
             'topic': self.__stringify_partitions(),
             'input_format': self.input_format,
@@ -153,10 +153,26 @@ class KafkaMLSink(object):
             'input_config' : self.input_config,
             'validation_rate' : self.validation_rate,
             'test_rate' : self.test_rate,
-            'total_msg':self.total_messages, 
+            'total_msg': self.total_messages
         }
         key = self.__object_to_bytes(self.deployment_id)
         data = json.dumps(dic).encode('utf-8')
+        self.__producer.send(self.control_topic, key=key, value=data)
+        self.__producer.flush()
+        logging.info("Control message to Kafka %s", str(dic))
+    
+    def __send_online_control_msg(self):
+        """Sends online control message to Apache Kafka with the information"""
+
+        dic = {
+            'topic': self.topic,
+            'input_format': self.input_format,
+            'description' : self.description,
+            'input_config' : self.input_config
+        }
+        key = self.__object_to_bytes(self.deployment_id)
+        data = json.dumps(dic).encode('utf-8')
+        logging.info("Control topic %s and bootstrap server %s and groupid %s", self.control_topic, self.boostrap_servers, self.group_id)
         self.__producer.send(self.control_topic, key=key, value=data)
         self.__producer.flush()
         logging.info("Control message to Kafka %s", str(dic))
@@ -171,6 +187,52 @@ class KafkaMLSink(object):
         else:
             self.__producer.send(self.topic, key=label, value=data)
 
+    def __shape_to_string(self, out_shape):
+        """Converts shape to string type.
+        Args:
+            out_shape (shape): Output shape to convert
+        Returns:
+            string: String shape of the input
+        """
+
+        if type(out_shape).__name__.startswith('tf.Tensor') or type(out_shape).__name__.startswith('ndarray'):
+            return str(out_shape.shape).replace('(','').replace(',','').replace(')','')
+        elif type(out_shape).__name__.startswith('list'):
+            return str(len(out_shape))
+        else:
+            return '1'
+
+    def __type_to_string(self, out_type):
+        """Converts DType to string type.
+        Args:
+            out_type (DType): Output type to convert
+        Returns:
+            string: String DType of the input
+        """
+        
+        while type(out_type).__name__.startswith('tf.Tensor') or type(out_type).__name__.startswith('ndarray'):
+           out_type = out_type[0]
+
+        if type(out_type).__name__.startswith('tf'):
+           out_type = out_type.numpy().item()
+
+        return type(out_type).__name__
+
+    def send_online_control_msg(self):
+        """Sends online control message to Apache Kafka with the information"""
+        
+        self.__send_online_control_msg()
+    
+    def shape_to_string(self, out_shape):
+        """Converts shape to string type"""
+
+        return self.__shape_to_string(out_shape)
+
+    def type_to_string(self, out_type):
+        """Converts DType to string type"""
+        
+        return self.__type_to_string(out_type)
+    
     def send(self, data, label):
         """Sends data and label to Apache Kafka"""
         
@@ -181,14 +243,18 @@ class KafkaMLSink(object):
         
         self.__send(data, None)
 
+    def online_close(self):
+        """Closes the connection with Kafka"""
+        
+        self.__producer.flush()
+        self.__producer.close()
+        self.__consumer.close(autocommit=False)
 
     def close(self):
         """Closes the connection with Kafka and sends the control message to the control topic"""
+
         self.__producer.flush()
         self.__update_partitions()
         self.__send_control_msg()
         self.__producer.close()
         self.__consumer.close(autocommit=False)
-
-
-

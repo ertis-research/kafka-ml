@@ -45,4 +45,10 @@ export class ConfigurationService {
       return this.httpClient.get(url);
     }
 
+    distributedConfiguration = this.baseUrl + '/distributedConfiguration/';
+    
+    getDistributedConfiguration(id: number){
+      const url = `${this.distributedConfiguration}${id}`
+      return this.httpClient.get(url);
+    }
 }
