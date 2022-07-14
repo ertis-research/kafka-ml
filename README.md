@@ -282,7 +282,7 @@ Deploy the configuration of distributed sub-models in Kubernetes for training.
 
 <img src="images/deploy-distributed-configuration.png" width="500">
 
-Change the optimizer, learning rate, loss function, metrics, batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Optimizer, learning rate, loss function and metrics parameters are optional, so if not specified, default values are taken, which are: *adam, *0.001, *sparse_categorical_crossentropy and *sparse_categorical_accuracy, respectively. Validation parameters are also optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
+Change the optimizer, learning rate, loss function, metrics, batch size, training and validation parameters in the Deployment form. Use the same format and parameters than TensorFlow methods *fit* and *evaluate* respectively. Optimizer, learning rate, loss function and metrics parameters are optional, so if not specified, default values are taken, which are: *adam*, *0.001*, *sparse_categorical_crossentropy* and *sparse_categorical_accuracy*, respectively. Validation parameters are also optional (they are only used if *validation_rate>0 or test_rate>0* in the stream data received).
 
 <img src="images/configure-distributed-deployment.png" width="500">
 
@@ -320,7 +320,7 @@ Incremental training is a machine learning method in which input data is continu
 
 Currently, the only framework that supports incremental training is TensorFlow. In this case, the usage example will be the same as the one presented for the single models, only the configuration deployment form will change and will now contain more fields.
 
-As before, change the fields as desired. The new incremental fields are: stream timeout, message poll timeout, numerator and denominator batch parameters. The stream timeout parameter is used to configure the duration for which the dataset will block for new messages before timing out. The message poll timeout parameter is the window size to get new data. Finally, the numerator and denominator batch parameters represent the fraction of batches to be used for validation (numerator must be smaller than the denominator). They are not required, so if not specified, default values are taken, which are: *60000, *60000, *1 and *5, respectively.
+As before, change the fields as desired. The new incremental fields are: stream timeout, message poll timeout, numerator and denominator batch parameters. The stream timeout parameter is used to configure the duration for which the dataset will block for new messages before timing out. The message poll timeout parameter is the window size to get new data. Finally, the numerator and denominator batch parameters represent the fraction of batches to be used for validation (numerator must be smaller than the denominator). They are not required, so if not specified, default values are taken, which are: *60000*, *60000*, *1* and *5*, respectively.
 
 <img src="images/deploy-incremental-configuration.png" width="500">
 
