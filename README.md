@@ -324,6 +324,16 @@ As before, change the fields as desired. The new incremental fields are: stream 
 
 <img src="images/deploy-incremental-configuration.png" width="500">
 
+Once the configuration is deployed, you will see one training result per model in the configuration. Models are now ready to be trained and receive stream data. Now, it is time to ingest the model(s) with your data stream for training.
+
+If you have used the MINST model you can use the example `mnist_dataset_online_training_example.py`. You only need to configure the *deployment_id* attribute to the one generated in Kafka-ML, maybe it is still 1. This is the way to match data streams with configurations and models during training. You may need to install the Python libraries listed in datasources/requirements.txt.
+
+If so, please execute the incremental MISNT example for training:
+
+````
+python examples/MINST_RAW_format/mnist_dataset_online_training_example.py
+````
+
 ## Deploy Kafka-ML in a fast way
 ### Requirements
 - [Docker](https://www.docker.com/)
