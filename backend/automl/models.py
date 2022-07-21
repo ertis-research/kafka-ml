@@ -47,7 +47,7 @@ class Deployment(models.Model):
     pth_kwargs_val = models.CharField(max_length=100, blank=True)
     numeratorBatch = models.IntegerField(default=1, blank=True, null=True)
     denominatorBatch = models.IntegerField(default=5, blank=True, null=True)
-    conf_mat_settings = models.BooleanField()
+    conf_mat_settings = models.BooleanField(default=False, blank=True, null=True)
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
     time = models.DateTimeField(default=now, editable=False)
 

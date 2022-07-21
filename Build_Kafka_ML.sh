@@ -21,7 +21,7 @@ read input
 if [ $input -eq 0 ]
 then
     kubectl create namespace $NAMESPACE
-    kubectl apply -f permissions-fix-yaml
+    kubectl apply -f permissions-fix.yaml
 
     kubectl delete service backend -n $NAMESPACE
     kubectl delete service frontend -n $NAMESPACE

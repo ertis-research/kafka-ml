@@ -352,6 +352,7 @@ if __name__ == '__main__':
             elif case == NOT_DISTRIBUTED_INCREMENTAL or case == DISTRIBUTED_INCREMENTAL:
               test_dataset = None
               test_size = 0
+              incremental_validation = {}
               for mini_ds in online_kafka_dataset:
                 mini_ds = mini_ds.map(lambda x, y: decoder.decode(x, y)).batch(batch)
                 if len(mini_ds) > 0:
@@ -359,7 +360,13 @@ if __name__ == '__main__':
                   if counter < denominatorBatch - numeratorBatch:
                     model_trained = model.fit(mini_ds, **kwargs_fit)
                   elif counter < denominatorBatch:
-                    incremental_validation = model.evaluate(mini_ds, **kwargs_val)
+                    aux_val = model.evaluate(mini_ds, **kwargs_val)
+                    if incremental_validation == {}:
+                      for k, i in zip(model_trained.history.keys(), range(len(model_trained.history.keys()))):
+                        incremental_validation[k] = [aux_val[i]]
+                    else:
+                      for k, i in zip(incremental_validation.keys(), range(len(incremental_validation.keys()))):
+                        incremental_validation[k].append(aux_val[i])
                     if test_dataset == None:
                       test_dataset = mini_ds
                     else:
@@ -377,11 +384,11 @@ if __name__ == '__main__':
             logging.info("Model trained! Loss: %s",str(model_trained.history['loss'][-1]))
 
             if case == NOT_DISTRIBUTED_NOT_INCREMENTAL or case == NOT_DISTRIBUTED_INCREMENTAL:
-              epoch_training_metrics   = {}
+              epoch_training_metrics = {}
               epoch_validation_metrics = {}
               test_metrics = {}
             elif case == DISTRIBUTED_NOT_INCREMENTAL or case == DISTRIBUTED_INCREMENTAL:
-              epoch_training_metrics   = []
+              epoch_training_metrics = []
               epoch_validation_metrics = []
               test_metrics = []
             
@@ -403,9 +410,8 @@ if __name__ == '__main__':
                   epoch_training_metrics[k].append(v)
                 except:
                   epoch_training_metrics[k] = v
-              if 'incremental_validation' in locals() or 'incremental_validation' in globals():
-                for k, i in zip(epoch_training_metrics.keys(), range(len(epoch_training_metrics.keys()))):
-                    epoch_validation_metrics[k] = [incremental_validation[i]]
+              if incremental_validation != {}:
+                epoch_validation_metrics = incremental_validation
             elif case == DISTRIBUTED_NOT_INCREMENTAL:
               for m in tensorflow_models:
                 train_dic = {}
@@ -434,11 +440,13 @@ if __name__ == '__main__':
                     except:
                       train_dic[k[len(m.name)+1:]] = v
                 epoch_training_metrics.append(train_dic)
-              if 'incremental_validation' in locals() or 'incremental_validation' in globals():
-                for x in range(N):
+              if incremental_validation != {}:
+                incremental_validation.pop('loss')
+                for m in tensorflow_models:
                   val_dic = {}
-                  for k, i in zip(epoch_training_metrics[x].keys(), range(x+1, len(epoch_training_metrics[x].keys())*N+1, N)):
-                    val_dic[k] = [incremental_validation[i]]
+                  for k in incremental_validation.keys():
+                    if m.name in k:
+                      val_dic[k[len(m.name)+1:]] = incremental_validation[k]
                   epoch_validation_metrics.append(val_dic)
               else:
                 epoch_validation_metrics.append({})

@@ -114,7 +114,7 @@
 
       <br>
       
-      <mat-slide-toggle *ngIf="detectedFrameworks.length > 0" name="conf_mat_settings" [ngModel]="deployment.conf_mat_settings" value="false">Create confusion matrix at end (if test set is specified)</mat-slide-toggle>
+      <mat-slide-toggle *ngIf="detectedFrameworks.length > 0 && !showIncremental" name="conf_mat_settings" [ngModel]="deployment.conf_mat_settings" value="false">Create confusion matrix at end (if test set is specified)</mat-slide-toggle>
       
       <div class="row-buttons">
         <span class="spacer"></span>
@@ -123,7 +123,6 @@
           Deploy
         </button>
       </div>
-
     </form>
   </mat-card>
 </div>

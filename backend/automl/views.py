@@ -362,7 +362,7 @@ class ConfigurationUsedFrameworks(generics.GenericAPIView):
                     frameworks_used.add(x.framework)
 
                 return HttpResponse(json.dumps(list(frameworks_used)), status=status.HTTP_200_OK)
-            return HttpResponse('Configuration does not exists', status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse('Configuration does not exist', status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logging.error(str(e))
             return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
@@ -1000,7 +1000,7 @@ class TrainingResultGetMetrics(generics.GenericAPIView):
                 obj = TrainingResult.objects.get(pk=pk)
 
                 existsValid = False
-                if obj.val_metrics != {}:
+                if obj.val_metrics != {} and obj.val_metrics != []:
                     existsValid = True
 
                 res = []
@@ -1027,7 +1027,7 @@ class TrainingResultGetMetrics(generics.GenericAPIView):
                 response = json.dumps({'metrics': res, 'conf_mat': obj.confusion_matrix})
 
                 return HttpResponse(response, status=status.HTTP_200_OK)
-            return HttpResponse('Training result does not exists', status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse('Training result does not exist', status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logging.error(str(e))
             return HttpResponse('Information not valid', status=status.HTTP_400_BAD_REQUEST)
@@ -1118,7 +1118,7 @@ class InferenceResultID(generics.ListCreateAPIView):
     """
     
     def get(self, request, pk, format=None):
-        """ Checks the training result exists and returns the input format and configuration if there any in other inference or 
+        """ Checks if the training result exists and returns the input format and configuration if there any in other inference or 
             datasource objects to facilitate the inference deployment.
         """
         try:
@@ -1414,7 +1414,7 @@ class DatasourceToKafka(generics.CreateAPIView):
             serializer = DatasourceSerializer(data=data)
             deployment_id = int(data['deployment'])
             if serializer.is_valid() and Deployment.objects.filter(pk=deployment_id).exists():
-                """Checks data received is valid and the deployment received exists in the system"""
+                """Checks if data received is valid and deployment received exists in the system"""
                 
                 conf = {'bootstrap.servers': settings.BOOTSTRAP_SERVERS} 
                 producer = Producer(conf)
