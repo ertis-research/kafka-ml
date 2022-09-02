@@ -60,7 +60,7 @@
         <ng-container matColumnDef="chart">
           <mat-header-cell *matHeaderCellDef > Chart </mat-header-cell>
           <mat-cell *matCellDef="let element">            
-            <button mat-icon-button *ngIf="element.status=='finished'"  title="Show metrics chart" routerLink="/results/chart/{{element.id}}/">
+            <button mat-icon-button title="Show metrics chart" routerLink="/results/chart/{{element.id}}/">
               <mat-icon color="primary">show_chart</mat-icon>
             </button>
           </mat-cell>

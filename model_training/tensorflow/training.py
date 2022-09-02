@@ -41,6 +41,124 @@ RETRIES = 10
 SLEEP_BETWEEN_REQUESTS = 5
 '''Number of seconds between failed requests'''
 
+class CustomCallback(keras.callbacks.Callback):
+  def __init__(self, result_url, case, tensorflow_models=None):
+    super().__init__()
+    self.case = case
+    self.tensorflow_models = tensorflow_models
+    if self.case == NOT_DISTRIBUTED_NOT_INCREMENTAL or self.case == NOT_DISTRIBUTED_INCREMENTAL:
+      self.url = result_url.replace('results', 'results_metrics')
+      self.epoch_training_metrics = {}
+      self.epoch_validation_metrics = {}
+    elif self.case == DISTRIBUTED_NOT_INCREMENTAL or self.case == DISTRIBUTED_INCREMENTAL:
+      self.url = []
+      for elem in result_url:
+        self.url.append(elem.replace('results', 'results_metrics'))
+      self.epoch_training_metrics = []
+      self.epoch_validation_metrics = []
+      for i in range(len(self.tensorflow_models)):
+        self.epoch_training_metrics.append({})
+        self.epoch_validation_metrics.append({})
+
+  def __send_data(self, logs, inc_val):
+    finished = False
+
+    if not inc_val:
+      if self.case == NOT_DISTRIBUTED_NOT_INCREMENTAL or self.case == NOT_DISTRIBUTED_INCREMENTAL:
+        for k, v in logs.items():
+          if not k.startswith("val_"):
+            if not k in self.epoch_training_metrics.keys():
+              self.epoch_training_metrics[k] = [v]
+            else:
+              self.epoch_training_metrics[k].append(v)
+          else:
+            if not k[4:] in self.epoch_validation_metrics.keys():
+              self.epoch_validation_metrics[k[4:]] = [v]
+            else:
+              self.epoch_validation_metrics[k[4:]].append(v)
+      elif self.case == DISTRIBUTED_NOT_INCREMENTAL or self.case == DISTRIBUTED_INCREMENTAL:
+        for i, m in zip(range(len(self.tensorflow_models)), self.tensorflow_models):
+          for k, v in logs.items():
+            if m.name in k:
+              if not k.startswith("val_"):
+                if not k[len(m.name)+1:] in self.epoch_training_metrics[i].keys():
+                  self.epoch_training_metrics[i][k[len(m.name)+1:]] = [v]
+                else:
+                  self.epoch_training_metrics[i][k[len(m.name)+1:]].append(v)
+              else:
+                if not k[4+len(m.name)+1:] in self.epoch_validation_metrics[i].keys():
+                  self.epoch_validation_metrics[i][k[4+len(m.name)+1:]] = [v]
+                else:
+                  self.epoch_validation_metrics[i][k[4+len(m.name)+1:]].append(v)
+    else:
+      if self.case == NOT_DISTRIBUTED_INCREMENTAL:
+        for k, v in logs.items():
+          if not k in self.epoch_validation_metrics.keys():
+            self.epoch_validation_metrics[k] = [v]
+          else:
+            self.epoch_validation_metrics[k].append(v)
+      elif self.case == DISTRIBUTED_INCREMENTAL:
+        for i, m in zip(range(len(self.tensorflow_models)), self.tensorflow_models):
+          for k, v in logs.items():
+            if m.name in k:
+              if not k[len(m.name)+1:] in self.epoch_validation_metrics[i].keys():
+                self.epoch_validation_metrics[i][k[len(m.name)+1:]] = [v]
+              else:
+                self.epoch_validation_metrics[i][k[len(m.name)+1:]].append(v)
+    
+    if self.case == NOT_DISTRIBUTED_NOT_INCREMENTAL or self.case == NOT_DISTRIBUTED_INCREMENTAL:
+      results = {
+                'train_metrics': self.epoch_training_metrics,
+                'val_metrics': self.epoch_validation_metrics
+      }
+    elif self.case == DISTRIBUTED_NOT_INCREMENTAL or self.case == DISTRIBUTED_INCREMENTAL:
+      results_list = []
+      for i in range(len(self.tensorflow_models)):
+        results = {
+                  'train_metrics': self.epoch_training_metrics[i],
+                  'val_metrics': self.epoch_validation_metrics[i]
+        }
+        results_list.append(results)
+
+    retry = 0
+    while not finished and retry < RETRIES:
+      try:
+        if self.case == NOT_DISTRIBUTED_NOT_INCREMENTAL or self.case == NOT_DISTRIBUTED_INCREMENTAL:
+          data = {'data': json.dumps(results)}
+          r = requests.post(self.url, data=data)
+          if r.status_code == 200:
+            finished = True
+            logging.info("Metrics updated!")
+          else:
+            time.sleep(SLEEP_BETWEEN_REQUESTS)
+            retry += 1
+        elif self.case == DISTRIBUTED_NOT_INCREMENTAL or self.case == DISTRIBUTED_INCREMENTAL:
+          responses = []
+          for (result, url) in zip(results_list, self.url):
+            data = {'data': json.dumps(result)}
+            r = requests.post(url, data=data)
+            responses.append(r.status_code)
+          if responses[0] == 200 and len(set(responses)) == 1:
+            finished = True
+            logging.info("Metrics updated!")
+          else:
+            time.sleep(SLEEP_BETWEEN_REQUESTS)
+            retry += 1
+      except Exception as e:
+        traceback.print_exc()
+        retry += 1
+        logging.error("Error sending the metrics to the backend [%s].", str(e))
+        time.sleep(SLEEP_BETWEEN_REQUESTS)
+
+  def on_epoch_end(self, epoch, logs=None):
+    logging.info("Updating training metrics from epoch {}".format(epoch))
+    self.__send_data(logs, False)
+
+  def on_test_end(self, logs=None):
+    if self.case == NOT_DISTRIBUTED_INCREMENTAL or self.case == DISTRIBUTED_INCREMENTAL:
+      logging.info("Updating validation metrics")
+      self.__send_data(logs, True)
+
 def select_gpu():
   ACCEPTABLE_AVAILABLE_MEMORY = 1024
   COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
@@ -347,8 +465,13 @@ if __name__ == '__main__':
               model.compile(optimizer=optimizer, loss=weights, metrics=metrics, loss_weights=learning_rates)
               """Compiles the global model"""
             
+            if 'tensorflow_models' in globals() or 'tensorflow_models' in locals():
+              callback = CustomCallback(result_url, case, tensorflow_models)
+            else:
+              callback = CustomCallback(result_url, case)
+
             if case == NOT_DISTRIBUTED_NOT_INCREMENTAL or case == DISTRIBUTED_NOT_INCREMENTAL:
-              model_trained = model.fit(train_dataset, validation_data=validation_dataset, **kwargs_fit)
+              model_trained = model.fit(train_dataset, validation_data=validation_dataset, **kwargs_fit, callbacks=[callback])
             elif case == NOT_DISTRIBUTED_INCREMENTAL or case == DISTRIBUTED_INCREMENTAL:
               test_dataset = None
               test_size = 0
@@ -358,9 +481,9 @@ if __name__ == '__main__':
                 if len(mini_ds) > 0:
                   counter += 1
                   if counter < denominatorBatch - numeratorBatch:
-                    model_trained = model.fit(mini_ds, **kwargs_fit)
+                    model_trained = model.fit(mini_ds, **kwargs_fit, callbacks=[callback])
                   elif counter < denominatorBatch:
-                    aux_val = model.evaluate(mini_ds, **kwargs_val)
+                    aux_val = model.evaluate(mini_ds, **kwargs_val, callbacks=[callback])
                     if incremental_validation == {}:
                       for k, i in zip(model_trained.history.keys(), range(len(model_trained.history.keys()))):
                         incremental_validation[k] = [aux_val[i]]
@@ -373,7 +496,7 @@ if __name__ == '__main__':
                       test_dataset = test_dataset.concatenate(mini_ds)
                   elif counter == denominatorBatch:
                     counter = 0
-                    model_trained = model.fit(mini_ds, **kwargs_fit)
+                    model_trained = model.fit(mini_ds, **kwargs_fit, callbacks=[callback])
               if test_dataset != None:
                 test_dataset = test_dataset.batch(batch)
                 test_size = len(test_dataset)

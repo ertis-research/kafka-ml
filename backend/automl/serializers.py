@@ -150,6 +150,11 @@ class SimpleResultSerializer(serializers.ModelSerializer):
         model = TrainingResult
         fields = ['id', 'train_metrics', 'val_metrics', 'test_metrics', 'confusion_matrix', 'training_time']
 
+class SimplerResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingResult
+        fields = ['id', 'train_metrics', 'val_metrics']
+
 class TrainingResultSerializer(serializers.ModelSerializer):
     deployment = SimpleDeploymentSerializer()
     model = SimpleModelSerializer()

@@ -20,7 +20,7 @@ from kubernetes import client, config
 
 from automl.serializers import MLModelSerializer, ConfigurationSerializer, DeploymentSerializer, DatasourceSerializer
 from automl.serializers import TrainingResultSerializer, SimpleResultSerializer, DeployDeploymentSerializer, DeployInferenceSerializer
-from automl.serializers import InferenceSerializer
+from automl.serializers import InferenceSerializer, SimplerResultSerializer
 
 from automl.models import MLModel, Deployment, Configuration, TrainingResult, Datasource, Inference
 
@@ -944,6 +944,54 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
         except Exception as e:
             traceback.print_exc()
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+class TrainingResultMetricsID(generics.ListCreateAPIView):
+    """View to upload the metrics of a result per epoch. 
+        
+        URL: POST /results_metrics/{:id_result} to upload the metrics of a result per epoch.
+    """
+
+    def post(self, request, pk, format=None):
+        """Expects a JSON in the request body with the information to upload the metrics of a result per epoch.
+            The result PK has to be in the URL.
+
+            Args:
+                pk (int): Primary key of the result (in the URL)
+                json (str): Information to update the result (in the body).
+                    train_loss (str): Loss in training
+                    train_acc (str): Accuracy in training
+                    val_loss (str): Loss in validation
+                    val_acc (str): Accuracy in validation
+                    
+                    Request example:
+                        Body:
+                        {
+                            'train_loss': 0.12,
+                            'train_acc': 0.92,
+                            'val_loss': 0.12,
+                            'val_acc': 0.95,
+                        }
+            Returns:
+                HTTP_200_OK: if the result has been updated
+                HTTP_400_BAD_REQUEST: if there has been any error updating the result
+        """
+        if TrainingResult.objects.filter(pk=pk).exists():
+            try:
+                data = json.loads(request.data['data'])
+                obj = TrainingResult.objects.get(id=pk)
+                serializer = SimplerResultSerializer(obj, data = data, partial=True)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                else:
+                    logging.info("Cannot save training result")
+                    return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+                obj.save()
+                return HttpResponse(status=status.HTTP_200_OK)
+            except Exception as e:
+                return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+        return HttpResponse('Training result does not exist', status=status.HTTP_400_BAD_REQUEST)
 
 class InferenceList(generics.ListCreateAPIView):
     """View to get the list of inferences
