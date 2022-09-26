@@ -40,7 +40,7 @@ export class PlotViewComponent implements OnInit {
       this.view = [event.target.innerWidth * 0.50, 400];
   }
 
-  ngOnInit(): void {
+  refreshData() {
     if (this.route.snapshot.paramMap.has('id')) {
       this.resultID = Number(this.route.snapshot.paramMap.get('id'));
           
@@ -56,6 +56,8 @@ export class PlotViewComponent implements OnInit {
         
         this.conf_matrix_retrieved = data['conf_mat'];
 
+        this.onFormChange();
+
         if (this.conf_matrix_retrieved != null) {
           this.resultService.getConfusionMatrix(this.resultID).subscribe(blob => {
             let objectURL = URL.createObjectURL(blob);       
@@ -69,6 +71,10 @@ export class PlotViewComponent implements OnInit {
           });
         });
     }
+  }
+
+  ngOnInit(): void {
+    this.refreshData();
   }
 
   onFormChange(): void {
@@ -95,6 +101,5 @@ export class PlotViewComponent implements OnInit {
     }
     a.click();
   }
-
 
 }

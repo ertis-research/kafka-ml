@@ -10,6 +10,10 @@
         </mat-select>
     </mat-form-field>
 
+    <button mat-icon-button (click)="refreshData()">
+        <mat-icon>refresh</mat-icon>
+    </button>
+
     <ngx-charts-line-chart *ngIf="data_shown.length!=0" (window:resize)="onResize($event)" [view]="view" [scheme]="colorScheme" [legend]="true"
         [showXAxisLabel]="true" [showYAxisLabel]="false" [xAxis]="true" [yAxis]="true" [xAxisLabel]="'Epochs'"
         [yAxisLabel]="'Value'" [timeline]="true" [autoScale]="true" [results]="data_shown"></ngx-charts-line-chart>
