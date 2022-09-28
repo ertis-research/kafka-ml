@@ -271,11 +271,37 @@ if __name__ == '__main__':
                   epochs_metric_dict[k].append(v)
                 except:
                   epochs_metric_dict[k] = [v]
+            
+            def send_epoch_metrics(res):
+              retry = 0
+              finished = False
+              while not finished and retry < RETRIES:
+                try:
+                  data = {'data': json.dumps(res)}
+                  url = result_url.replace('results', 'results_metrics')
+                  r = requests.post(url, data=data)
+                  if r.status_code == 200:
+                    finished = True
+                    logging.info("Metrics updated!")
+                  else:
+                    time.sleep(SLEEP_BETWEEN_REQUESTS)
+                    retry += 1
+                except Exception as e:
+                  traceback.print_exc()
+                  retry += 1
+                  logging.error("Error sending the metrics to the backend [%s].", str(e))
+                  time.sleep(SLEEP_BETWEEN_REQUESTS)
 
             @trainer.on(Events.EPOCH_COMPLETED)
             def get_training_metrics(engine):    
               save_metrics(engine.state.metrics.copy().items(), epoch_training_metrics)
-              if validation_size > 0: evaluator.run(val_dataloader)        
+              if validation_size > 0: evaluator.run(val_dataloader)
+
+              results = {
+                'train_metrics': epoch_training_metrics,
+                'val_metrics': epoch_validation_metrics
+              }    
+              send_epoch_metrics(results)
 
             if validation_size > 0:        
               @evaluator.on(Events.COMPLETED)
