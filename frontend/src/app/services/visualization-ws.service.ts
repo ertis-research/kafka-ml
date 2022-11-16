@@ -10,8 +10,7 @@ export class VisualizationWsService {
 
   constructor() { }
 
-  //url = 'ws'+this.baseUrl.replace('http','').replace('https','') + '/ws/';
-  url = "ws://localhost:8000" + '/ws/';
+  url = 'ws'+this.baseUrl.replace('http','').replace('https','') + '/ws/';
 
   ws: WebSocket;
   socketIsOpen = 1;
