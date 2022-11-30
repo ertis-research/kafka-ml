@@ -52,23 +52,23 @@ if __name__ == '__main__':
   try:
     if DEBUG:
       logging.basicConfig(
-          stream=sys.stdout,
-          level=logging.DEBUG,
-          format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s: %(message)s',
-          datefmt='%Y-%m-%d %H:%M:%S',
-          )
+        stream=sys.stdout,
+        level=logging.DEBUG,
+        format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+        )
     else:
       logging.basicConfig(
-          stream=sys.stdout,
-          level=logging.INFO,
-          format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s: %(message)s',
-          datefmt='%Y-%m-%d %H:%M:%S',
-          )
+        stream=sys.stdout,
+        level=logging.INFO,
+        format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+        )
     """Configures the logging"""
 
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
+      tf.config.experimental.set_memory_growth(gpu, True)
 
     input_bootstrap_servers, output_bootstrap_servers, model_url, input_format, input_config, input_topic, output_topic, group_id = load_environment_vars()
     """Loads the environment information"""
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     model.summary()
     """Prints the model information"""
 
-    consumer = Consumer({'bootstrap.servers': input_bootstrap_servers,'group.id': 'group_id','auto.offset.reset': 'earliest','enable.auto.commit': False})
+    consumer = Consumer({'bootstrap.servers': input_bootstrap_servers, 'group.id': group_id, 'auto.offset.reset': 'earliest', 'enable.auto.commit': False})
     consumer.subscribe([input_topic])
     """Starts a Kafka consumer to receive the information to predict"""
     
@@ -131,10 +131,10 @@ if __name__ == '__main__':
       msg = consumer.poll(1.0)
 
       if msg is None:
-          continue
+        continue
       if msg.error():
-          print("Consumer error: {}".format(msg.error()))
-          continue
+        print("Consumer error: {}".format(msg.error()))
+        continue
 
       try:
         start_inference = time.time()
@@ -167,20 +167,17 @@ if __name__ == '__main__':
 
         if distributed and max(prediction_value) < limit:
           upper_producer.produce(output_upper, prediction_to_upper.tobytes())
-          ## Cada ciertos mensajes, 10 ej. commit.
           if commitedMessages >= MAX_MESSAGES_TO_COMMIT:  
             upper_producer.flush()
           """Flush the message to be sent now"""
         else:
           output_producer.produce(output_topic, response_to_kafka)
-          ## Cada ciertos mensajes, 10 ej. commit.
           if commitedMessages >= MAX_MESSAGES_TO_COMMIT:  
             output_producer.flush()
           """Flush the message to be sent now"""
         """Sends the message to Kafka"""
 
         logging.debug("Prediction sent to Kafka")
-        
 
         if commitedMessages >= MAX_MESSAGES_TO_COMMIT:          
           consumer.commit()
@@ -196,4 +193,3 @@ if __name__ == '__main__':
   except Exception as e:
     traceback.print_exc()
     logging.error("Error in main [%s]. Service will be restarted.", str(e))
-

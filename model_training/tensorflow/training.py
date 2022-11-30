@@ -257,7 +257,7 @@ def get_online_train_data(boostrap_servers, kafka_topic, group, stream_timeout, 
       boostrap_servers (str): list of boostrap servers for the connection with Kafka
       kafka_topic (str): Kafka topic
       group (str): Kafka group
-      stream_timeout (int): stream timeout to wait for new data
+      stream_timeout (int): stream timeout to wait for new data, if -1 it blocks indefinitely
       message_poll_timeout (int): window size to get new data
     
     Returns:
@@ -324,7 +324,7 @@ if __name__ == '__main__':
       logging.info("Received environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, optimizer, learning_rate, loss, metric, batch, kwargs_fit, kwargs_val, stream_timeout, message_poll_timeout, monitoring_metric, change, improvement, numeratorBatch, denominatorBatch) ([%s], [%s], [%s], [%s], [%d], [%s], [%s], [%s], [%s], [%d], [%s], [%s], [%d], [%d], [%s], [%s], [%s], [%d], [%d])",
               bootstrap_servers, str(result_url), str(result_id), control_topic, deployment_id, optimizer, str(learning_rate), loss, metrics, batch, str(kwargs_fit), str(kwargs_val), stream_timeout, message_poll_timeout, monitoring_metric, change, str(improvement), numeratorBatch, denominatorBatch)
     """Loads the environment information"""
-    
+
     if case == NOT_DISTRIBUTED_NOT_INCREMENTAL or case == NOT_DISTRIBUTED_INCREMENTAL:
       download_model(result_url, PRE_MODEL_PATH, RETRIES, SLEEP_BETWEEN_REQUESTS)
     

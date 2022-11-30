@@ -31,11 +31,6 @@
       <!--<mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>-->
       
       <br>
-
-      <mat-label *ngIf="showIncremental && hideTimeout">Configure inference parameters</mat-label>
-      <button mat-icon-button *ngIf="showIncremental && hideTimeout" (click)="configureInference(form.value)">
-        <mat-icon color="primary">launch</mat-icon>
-      </button>
       
       <mat-form-field *ngIf="showIncremental && !hideTimeout" class="full-width">
         <mat-label>Stream timeout (in milliseconds)</mat-label>

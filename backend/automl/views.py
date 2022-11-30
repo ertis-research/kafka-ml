@@ -35,8 +35,8 @@ def is_blank(attribute):
     """
     return attribute is None or attribute == ''
 
-def kubernetes_config( token=None, external_host=None ):
-    """ Get Kubernetes configuration.
+def kubernetes_config(token=None, external_host=None):
+    """Get Kubernetes configuration.
         You can provide a token and the external host IP 
         to access a external Kubernetes cluster. If one
         of them is not provided the configuration returned
@@ -48,13 +48,12 @@ def kubernetes_config( token=None, external_host=None ):
             Kubernetes API client
     """
     aConfiguration = client.Configuration()
-    if token != None and \
-        external_host != None:
-
+    if token != None and external_host != None:
         aConfiguration.host = external_host 
         aConfiguration.verify_ssl = False
-        aConfiguration.api_key = { "authorization": "Bearer " + token }
-    api_client = client.ApiClient( aConfiguration) 
+        aConfiguration.api_key = {"authorization": "Bearer " + token}
+    
+    api_client = client.ApiClient(aConfiguration) 
     return api_client
 
 def parse_kwargs_fit(kwargs_fit):
@@ -74,7 +73,7 @@ def parse_kwargs_fit(kwargs_fit):
     
     return json.dumps(dic)
 
-def delete_deploy( inference_id, token=None, external_host=None ):
+def delete_deploy(inference_id, token=None, external_host=None):
     """ Delete a previous deployment.
         You can also provide an external host and its token
         to delete a deployment there. If one of them is not provided,
@@ -88,10 +87,10 @@ def delete_deploy( inference_id, token=None, external_host=None ):
         Return:
             Response of Kubernetes Cluster
     """
-    api_client = kubernetes_config( token=token, external_host=external_host )
-    api_instance = client.CoreV1Api( api_client )
+    api_client = kubernetes_config(token=token, external_host=external_host)
+    api_instance = client.CoreV1Api(api_client)
     api_response = api_instance.delete_namespaced_replication_controller(
-        name='model-inference-'+str( inference_id ),
+        name='model-inference-'+str(inference_id),
         namespace=settings.KUBE_NAMESPACE,
         body=client.V1DeleteOptions(
             propagation_policy='Foreground',
@@ -398,7 +397,7 @@ class DeploymentList(generics.ListCreateAPIView):
     serializer_class = DeploymentSerializer
 
     def post(self, request, format=None):
-        """ Expects a JSON in the request body with the information to create a new deployment
+        """Expects a JSON in the request body with the information to create a new deployment
 
             Args JSON:
                 batch (int): Name of the model
@@ -824,7 +823,7 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
         """Gets the model file for training"""
 
         try:
-            result= TrainingResult.objects.get(pk=pk)
+            result = TrainingResult.objects.get(pk=pk)
             """Obtains the model filename"""
             
             if result.model.framework == "tf":
@@ -1159,6 +1158,7 @@ class InferenceStopDelete(generics.RetrieveUpdateDestroyAPIView):
         except Exception as e:
             traceback.print_exc()
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
+
 class InferenceResultID(generics.ListCreateAPIView):
     """View to get information and deploy a new inference from a training result
         
@@ -1226,7 +1226,7 @@ class InferenceResultID(generics.ListCreateAPIView):
             return HttpResponse('Result not found', status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, pk, format=None):
-        """ Expects a JSON in the request body with the information to deploy a inference.
+        """Expects a JSON in the request body with the information to deploy a inference.
             The result PK has to be in the URL.
 
             Args:
@@ -1234,19 +1234,22 @@ class InferenceResultID(generics.ListCreateAPIView):
                 replicas (int): number of replicas to be deployed
                 input_format (str): input format of the data received 
                 configuration (str): configuration input format for the inference
+                input_topic: topic to receive the data
+                output_topic: topic to send output data
+                upper_topic: topic to send the data to the upper layer
                     Example:
                         {
                             "replicas": 2,
-                            "input_format" : "RAW", 
-                            "configuration" : {
+                            "input_format": "RAW", 
+                            "configuration": {
                                 "data_type": "uint8", 
                                 "label_type": "uint8", 
                                 "data_reshape": "28 28", 
                                 "label_reshape": ""
                             }
-                            "input_topic" : "inference-input",
-                            "output_topic" : "inference-output",
-
+                            "input_topic": "inference-input",
+                            "output_topic": "inference-output",
+                            "upper_topic": "inference-upper"
                         }
                         
             Returns:
@@ -1265,8 +1268,8 @@ class InferenceResultID(generics.ListCreateAPIView):
                     inference = serializer.save()
                     try:
                         config.load_incluster_config() # To run inside the container
-                        #config.load_kube_config() # To run externally
-                        #api_instance = client.CoreV1Api()
+                        # config.load_kube_config() # To run externally
+                        # api_instance = client.CoreV1Api()
 
                         if not is_blank(inference.external_host) and not is_blank(inference.token):
                             token=inference.token
@@ -1276,7 +1279,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                             external_host=os.environ.get('KUBE_HOST')
 
                         api_client = kubernetes_config(token=token, external_host=external_host)
-                        api_instance = client.CoreV1Api( api_client)
+                        api_instance = client.CoreV1Api(api_client)
 
                         if not is_blank(inference.input_kafka_broker):
                             input_kafka_broker = inference.input_kafka_broker
@@ -1405,7 +1408,7 @@ class InferenceResultID(generics.ListCreateAPIView):
             except Exception as e:
                 traceback.print_exc()
                 return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
-        return HttpResponse('Result not found', status=status.HTTP_400_BAD_REQUEST)        
+        return HttpResponse('Result not found', status=status.HTTP_400_BAD_REQUEST)
 
 class DatasourceList(generics.ListCreateAPIView):
     """View to get the list of datasources and create a new datasource
