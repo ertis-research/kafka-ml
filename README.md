@@ -54,6 +54,7 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [26/05/2022] Included support for visualization of prediction data. Now you can easily prototype and visualize your ML/AI application. You can train models, deploy them for inference, and visualize your prediction data just with data streams.
 - [14/07/2022] Added incremental training support and configuration of training parameters for the deployment of distributed models.
 - [02/09/2022] Added real-time display of training parameters.
+- [26/12/2022] Added indefinite incremental training support.
 
 ## Deploy Kafka-ML in a fast way
 ### Requirements

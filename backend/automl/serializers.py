@@ -128,7 +128,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         configuration = Configuration.objects.get(pk=configuration_id)
         deployment = Deployment.objects.create(configuration=configuration, **validated_data)
         for model in configuration.ml_models.all():
-                    TrainingResult.objects.create(model=model, deployment=deployment)
+            TrainingResult.objects.create(model=model, deployment=deployment)
         return deployment
 
 class DeploymentSerializer(serializers.ModelSerializer):

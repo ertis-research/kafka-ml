@@ -28,7 +28,7 @@
       
       <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">Incremental training</mat-checkbox>
 
-      <!--<mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>-->
+      <mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>
       
       <br>
       
@@ -43,7 +43,7 @@
       </mat-form-field>
 
       <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
-        <mat-label>Monitoring metric (must match with some previously defined metric)</mat-label>
+        <mat-label>Monitoring metric only for single models (must match with some previously defined metric)</mat-label>
         <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel" [ngModel]="deployment.monitoring_metric">
       </mat-form-field>
 

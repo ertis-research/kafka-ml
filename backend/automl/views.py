@@ -252,7 +252,6 @@ class ModelResultID(generics.RetrieveAPIView):
             return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
         else:
             return HttpResponse('TrainingResult not found', status=status.HTTP_400_BAD_REQUEST)
-        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
 class ConfigurationList(generics.ListCreateAPIView):
     """View to get the list of configurations and create a new configuration
@@ -477,13 +476,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                         if not m.distributed:
                                             if not data['monitoring_metric'] in m.code:
                                                 raise ValueError('Monitoring metric does not match.')
-                                        else:
-                                            if not 'metrics' in data.keys():
-                                                if data['monitoring_metric'] != 'sparse_categorical_accuracy':
-                                                    raise ValueError('Monitoring metric does not match (default: sparse_categorical_accuracy).')
-                                            else:
-                                                if data['metrics'] != "" and not data['monitoring_metric'] in data['metrics']:
-                                                    raise ValueError('Monitoring metric does not match.')
 
                     if not pth_kwargs_fit_empty:
                         # PyTorch Verification
@@ -687,8 +679,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                                             {'name': 'CASE', 'value': str(case)},
                                                             {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                             {'name': 'MESSAGE_POLL_TIMEOUT', 'value': str(deployment.message_poll_timeout)},
-                                                            {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
-                                                            {'name': 'CHANGE', 'value': deployment.change},
                                                             {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
                                                             {'name': 'NUMERATOR_BATCH', 'value': str(deployment.numeratorBatch)},
                                                             {'name': 'DENOMINATOR_BATCH', 'value': str(deployment.denominatorBatch)}
@@ -729,13 +719,12 @@ class DeploymentsConfigurationID(generics.RetrieveDestroyAPIView):
         """Gets the list of deployments of a configuration"""
 
         if Configuration.objects.filter(pk=pk).exists():
-            configuration= Configuration.objects.get(pk=pk)
+            configuration = Configuration.objects.get(pk=pk)
             deployments = Deployment.objects.filter(configuration=configuration)
             serializer = DeploymentSerializer(deployments, many=True)
             return HttpResponse(json.dumps(serializer.data), status=status.HTTP_200_OK)
         else:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk, format=None):
         """Deletes a deployment"""
@@ -751,7 +740,6 @@ class DeploymentsConfigurationID(generics.RetrieveDestroyAPIView):
         except Exception as e:
             traceback.print_exc()
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
-
 
 class TrainingResultList(generics.ListAPIView):
     """View to get the list of results
@@ -771,14 +759,12 @@ class DeploymentResultID(generics.RetrieveDestroyAPIView):
         """Gets the list of deployments of a configuration"""
 
         if Deployment.objects.filter(pk=pk).exists():
-            deployment= Deployment.objects.get(pk=pk)
+            deployment = Deployment.objects.get(pk=pk)
             results = TrainingResult.objects.filter(deployment=deployment)
             serializer = TrainingResultSerializer(results, many=True)
             return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
         else:
             return HttpResponse('Deployment not found', status=status.HTTP_400_BAD_REQUEST)
-        return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-    
 
 class DownloadTrainedModel(generics.RetrieveAPIView):
     """View to download a trained model
@@ -846,7 +832,7 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, pk, format=None):
-        """Expects a JSON in the request body with the information to upload the information of a result. 
+        """Expects a JSON in the request body with the information to upload the information of a result.
             The result PK has to be in the URL.
 
             Args:
@@ -877,6 +863,13 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
             try:
                 data = json.loads(request.data['data'])
                 obj = TrainingResult.objects.get(id=pk)
+
+                if data['indefinite'] == True:
+                    deployment = obj.deployment
+                    model = obj.model
+                    obj = TrainingResult.objects.create(deployment=deployment, model=model)
+                    
+                data.pop('indefinite')
                 serializer = SimpleResultSerializer(obj, data = data, partial=True)
                 
                 if serializer.is_valid():
