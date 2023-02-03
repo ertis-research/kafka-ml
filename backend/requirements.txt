@@ -1,4 +1,4 @@
-django==3.2.13
+django==3.2.17
 djangorestframework==3.11.0
 django-cors-headers==3.2.1
 django-model-utils==4.0.0
