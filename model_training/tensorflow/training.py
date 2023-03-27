@@ -99,14 +99,14 @@ if __name__ == '__main__':
               training.configure_distributed_models()
             """Distributed models configuration"""
 
-            training_results = training.train(splits, kafka_dataset, decoder, start)
+            training_results = training.train(splits, kafka_dataset, decoder, data['validation_rate'], start)
             """Trains the model"""
 
             end = time.time()
             logging.info("Total training time: %s", str(end - start))
             logging.info("Model trained! Loss: %s", str(training_results['model_trained'].history['loss'][-1]))
 
-            epoch_training_metrics, epoch_validation_metrics, test_metrics = training.saveMetrics(training_results['model_trained'], training_results['incremental_validation'])
+            epoch_training_metrics, epoch_validation_metrics, test_metrics = training.saveMetrics(training_results['model_trained'])
             """Saves training metrics"""
 
             if isinstance(training, SingleClassicTraining) or isinstance(training, DistributedClassicTraining):
@@ -116,7 +116,7 @@ if __name__ == '__main__':
             cf_generated = None
             cf_matrix = None
 
-            if isinstance(training, SingleClassicTraining) or isinstance(training, SingleIncrementalTraining):
+            if isinstance(training, SingleClassicTraining):
               cf_generated, cf_matrix = training.getConfussionMatrix(splits, training_results)
             """Creates confussion matrix"""
 

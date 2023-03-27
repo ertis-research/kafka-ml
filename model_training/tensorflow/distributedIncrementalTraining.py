@@ -18,12 +18,9 @@ class DistributedIncrementalTraining(MainTraining):
         loss (str): loss
         metrics (str): monitoring metrics
         stream_timeout (int): stream timeout to wait for new data
-        message_poll_timeout (int): window size to get new data
         monitoring_metric (str): metric to track for indefinite training
         change (str): direction in which monitoring metric improves
         improvement (decimal): how many the monitoring metric improves
-        numeratorBatch (int): number of batches to take for validation
-        denominatorBatch (int): total number of batches for validation
     """
 
     def __init__(self):
@@ -40,14 +37,14 @@ class DistributedIncrementalTraining(MainTraining):
         logging.info("Received distributed environment information (optimizer, learning_rate, loss, metrics) ([%s], [%s], [%s], [%s])",
                 self.optimizer, str(self.learning_rate), self.loss, self.metrics)
 
-        self.stream_timeout, self.message_poll_timeout, self.monitoring_metric, self.change, self.improvement, self.numeratorBatch, self.denominatorBatch = load_incremental_environment_vars()
+        self.stream_timeout, self.monitoring_metric, self.change, self.improvement = load_incremental_environment_vars()
 
         if self.stream_timeout == -1:
             self.monitoring_metric = 'loss'
             self.change = 'down'
 
-        logging.info("Received incremental environment information (stream_timeout, message_poll_timeout, monitoring_metric, change, improvement, numeratorBatch, denominatorBatch) ([%d], [%d], [%s], [%s], [%s], [%d], [%d])",
-                self.stream_timeout, self.message_poll_timeout, self.monitoring_metric, self.change, str(self.improvement), self.numeratorBatch, self.denominatorBatch)
+        logging.info("Received incremental environment information (stream_timeout, monitoring_metric, change, improvement) ([%d], [%s], [%s], [%s])",
+                self.stream_timeout, self.monitoring_metric, self.change, str(self.improvement))
 
     def get_models(self):
         """Downloads the models and loads them"""
@@ -64,40 +61,17 @@ class DistributedIncrementalTraining(MainTraining):
 
         super().create_distributed_model()
     
-    def train(self, splits, kafka_dataset, decoder, start):
+    def train(self, splits, kafka_dataset, decoder, validation_rate, start):
         """Trains the model"""
 
         callback = DistributedTrackTrainingCallback(DISTRIBUTED_INCREMENTAL, self.result_url, self.tensorflow_models)
 
-        return super().train_incremental_model(kafka_dataset, decoder, callback, start)
+        return super().train_incremental_model(kafka_dataset, decoder, validation_rate, callback, start)
     
-    def saveMetrics(self, model_trained, incremental_validation):
+    def saveMetrics(self, model_trained):
         """Saves the metrics of the model"""
         
-        epoch_training_metrics = []
-        epoch_validation_metrics = []
-
-        for m in self.tensorflow_models:
-            train_dic = {}
-            for k, v in model_trained.history.items():
-                if m.name in k:
-                    try:
-                        train_dic[k[len(m.name)+1:]].append(v)
-                    except:
-                        train_dic[k[len(m.name)+1:]] = v
-            epoch_training_metrics.append(train_dic)
-        if incremental_validation != {}:
-            incremental_validation.pop('loss')
-            for m in self.tensorflow_models:
-                val_dic = {}
-                for k in incremental_validation.keys():
-                    if m.name in k:
-                        val_dic[k[len(m.name)+1:]] = incremental_validation[k]
-                epoch_validation_metrics.append(val_dic)
-        else:
-            epoch_validation_metrics.append({})
-
-        return epoch_training_metrics, epoch_validation_metrics, []
+        return super().saveDistributedMetrics(model_trained)
     
     def sendMetrics(self, cf_generated, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, cf_matrix):
         """Sends the metrics to the control topic"""

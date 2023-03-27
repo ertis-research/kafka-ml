@@ -37,11 +37,6 @@
         <input matInput type="number" placeholder="60000" name="stream_timeout" id="stream_timeout" #nameRef="ngModel" [ngModel]="deployment.stream_timeout">
       </mat-form-field>
 
-      <mat-form-field *ngIf="showIncremental" class="full-width">
-        <mat-label>Message poll timeout (in milliseconds)</mat-label>
-        <input matInput type="number" placeholder="60000" name="message_poll_timeout" id="message_poll_timeout" #nameRef="ngModel" [ngModel]="deployment.message_poll_timeout">
-      </mat-form-field>
-
       <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
         <mat-label>Monitoring metric only for single models (must match with some previously defined metric)</mat-label>
         <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel" [ngModel]="deployment.monitoring_metric">
@@ -90,16 +85,6 @@
         <input matInput placeholder="" value=""
           pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
           name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
-      </mat-form-field>
-
-      <mat-form-field *ngIf="showIncremental" class="full-width">
-        <mat-label>Numerator batch for validation</mat-label>
-        <input matInput type="number" placeholder="1" name="numeratorBatch" id="numeratorBatch" #nameRef="ngModel" [ngModel]="deployment.numeratorBatch">
-      </mat-form-field>
-
-      <mat-form-field *ngIf="showIncremental" class="full-width">
-        <mat-label>Denominator batch for validation</mat-label>
-        <input matInput type="number" placeholder="5" name="denominatorBatch" id="denominatorBatch" #nameRef="ngModel" [ngModel]="deployment.denominatorBatch">
       </mat-form-field>
 
       <mat-form-field *ngIf="detectedFrameworks.length > 0">

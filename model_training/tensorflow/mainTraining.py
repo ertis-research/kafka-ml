@@ -89,14 +89,13 @@ class MainTraining(object):
             Returns:
             online_train_kafka: online training data and labels from Kafka
         """
-        logging.info("Starts receiving online training data from Kafka servers [%s] with topics [%s], group [%s], stream_timeout [%d] and message_poll_timeout [%d]", self.bootstrap_servers,  kafka_topic, self.result_id, self.stream_timeout, self.message_poll_timeout)
+        logging.info("Starts receiving online training data from Kafka servers [%s] with topics [%s], group [%s] and stream_timeout [%d]", self.bootstrap_servers, kafka_topic, self.result_id, self.stream_timeout)
         
         online_train_data = tfio.experimental.streaming.KafkaBatchIODataset(
             topics=[kafka_topic],
             group_id=self.result_id,
             servers=self.bootstrap_servers,
             stream_timeout=self.stream_timeout,
-            message_poll_timeout=self.message_poll_timeout,
             configuration=None,
             internal=True
         )
@@ -142,6 +141,29 @@ class MainTraining(object):
 
         return splits
     
+    def split_online_dataset(self, validation_rate, kafka_dataset):
+        """Splits the online dataset for training and validation"""
+
+        training_size = int((1-validation_rate)*len(kafka_dataset))
+        validation_size = int(validation_rate*len(kafka_dataset))
+        logging.info("Training batch size %d and validation batch size %d", training_size, validation_size)
+
+        train_dataset = kafka_dataset.take(training_size)
+        """Splits dataset for training"""
+
+        if validation_size > 0:
+            validation_dataset = kafka_dataset.skip(training_size)
+        else:
+            """If no validation is greater than 0, then split the dataset for training"""
+            validation_dataset = None
+
+        splits = {
+            'train_dataset': train_dataset,
+            'validation_dataset': validation_dataset
+        }
+
+        return splits
+
     def create_distributed_model(self):
         """Creates a distributed model"""
 
@@ -188,62 +210,82 @@ class MainTraining(object):
         model_trained = self.model.fit(splits['train_dataset'], validation_data=splits['validation_dataset'], **self.kwargs_fit, callbacks=[callback])
 
         training_results = {
-            'model_trained': model_trained,
-            'incremental_validation': {}
+            'model_trained': model_trained
         }
 
         return training_results
-        
-    def train_incremental_model(self, kafka_dataset, decoder, callback, start):
+
+    def train_incremental_model(self, kafka_dataset, decoder, validation_rate, callback, start):
         """Trains incremental model"""
 
-        incremental_validation = {}
-        test_dataset = None
-        test_size = 0
-        counter = 0
-
         for mini_ds in kafka_dataset:
-            mini_ds = mini_ds.map(lambda x, y: decoder.decode(x, y)).batch(self.batch)
             if len(mini_ds) > 0:
-                counter += 1
-                if counter < self.denominatorBatch - self.numeratorBatch:
-                    model_trained = self.model.fit(mini_ds, **self.kwargs_fit, callbacks=[callback])
-                elif counter < self.denominatorBatch:
-                    aux_val = self.model.evaluate(mini_ds, **self.kwargs_val, callbacks=[callback])
-                    if incremental_validation == {}:
-                        for k, i in zip(model_trained.history.keys(), range(len(model_trained.history.keys()))):
-                            incremental_validation[k] = [aux_val[i]]
-                        if self.stream_timeout == -1:
-                            reference = incremental_validation[self.monitoring_metric][0]
-                    else:
-                        for k, i in zip(incremental_validation.keys(), range(len(incremental_validation.keys()))):
-                            incremental_validation[k].append(aux_val[i])
-                        if self.stream_timeout == -1:
-                            if (self.change == 'up' and incremental_validation[self.monitoring_metric][-1] - reference >= self.improvement) or (self.change == 'down' and reference - incremental_validation[self.monitoring_metric][-1] >= self.improvement):
-                                dtime = time.time() - start
-                                reference = incremental_validation[self.monitoring_metric][-1]
-                                cf_generated, cf_matrix = self.createConfussionMatrix(test_dataset, test_size)
-                                epoch_training_metrics, epoch_validation_metrics, test_metrics = self.saveMetrics(model_trained, incremental_validation)
-                                self.sendMetrics(cf_generated, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, cf_matrix)
-                    if test_dataset == None:
-                        test_dataset = mini_ds
-                    else:
-                        test_dataset = test_dataset.concatenate(mini_ds)
-                elif counter == self.denominatorBatch:
-                    counter = 0
-                    model_trained = self.model.fit(mini_ds, **self.kwargs_fit, callbacks=[callback])
-        if test_dataset != None:
-            test_dataset = test_dataset.batch(self.batch)
-            test_size = len(test_dataset)
-            
+                mini_ds = mini_ds.map(lambda x, y: decoder.decode(x, y))
+                splits = self.split_online_dataset(validation_rate, mini_ds)
+                splits['train_dataset'] = splits['train_dataset'].batch(self.batch)
+                splits['validation_dataset'] = splits['validation_dataset'].batch(self.batch)
+                model_trained = self.model.fit(splits['train_dataset'], validation_data=splits['validation_dataset'], **self.kwargs_fit, callbacks=[callback])
+                if self.stream_timeout == -1:
+                    if 'reference' not in locals():
+                        reference = model_trained.history['val_'+self.monitoring_metric][-2]
+                    last = model_trained.history['val_'+self.monitoring_metric][-1]
+                    if (self.change == 'up' and last - reference >= self.improvement) or (self.change == 'down' and reference - last >= self.improvement):
+                        dtime = time.time() - start
+                        reference = last
+                        epoch_training_metrics, epoch_validation_metrics, test_metrics = self.saveMetrics(model_trained)
+                        self.sendMetrics(None, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, None)
+
         training_results = {
-                'model_trained': model_trained,
-                'incremental_validation': incremental_validation,
-                'test_dataset': test_dataset,
-                'test_size': test_size
+                'model_trained': model_trained
             }
 
         return training_results
+    
+    def saveSingleMetrics(self, model_trained):
+        """Saves the metrics of single models"""
+
+        epoch_training_metrics = {}
+        epoch_validation_metrics = {}
+
+        for k, v in model_trained.history.items():
+            if not k.startswith("val_"):
+                try:
+                    epoch_training_metrics[k].append(v)
+                except:
+                    epoch_training_metrics[k] = v
+            else:
+                try:
+                    epoch_validation_metrics[k[4:]].append(v)
+                except:
+                    epoch_validation_metrics[k[4:]] = v
+        
+        return epoch_training_metrics, epoch_validation_metrics, {}
+    
+    def saveDistributedMetrics(self, model_trained):
+        """Saves the metrics of distributed models"""
+        
+        epoch_training_metrics = []
+        epoch_validation_metrics = []
+
+        for m in self.tensorflow_models:
+            train_dic = {}
+            val_dic = {}
+            for k, v in model_trained.history.items():
+                if m.name in k:
+                    if not k.startswith("val_"):
+                        try:
+                            train_dic[k[len(m.name)+1:]].append(v)
+                        except:
+                            train_dic[k[len(m.name)+1:]] = v
+                    else:
+                        try:
+                            val_dic[k[4+len(m.name)+1:]].append(v)
+                        except:
+                            val_dic[k[4+len(m.name)+1:]] = v
+            epoch_training_metrics.append(train_dic)
+            epoch_validation_metrics.append(val_dic)
+        
+        return epoch_training_metrics, epoch_validation_metrics, []
     
     def test_model(self, splits):
         """Tests model"""

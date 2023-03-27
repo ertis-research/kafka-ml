@@ -55,29 +55,10 @@ class SingleTrackTrainingCallback(keras.callbacks.Callback):
         }
 
         self.__send_data(results, self.url)
-
-    def __prepare_test_data(self, logs):
-        for k, v in logs.items():
-            if not k in self.epoch_validation_metrics.keys():
-                self.epoch_validation_metrics[k] = [v]
-            else:
-                self.epoch_validation_metrics[k].append(v)
-        
-        results = {
-                'train_metrics': self.epoch_training_metrics,
-                'val_metrics': self.epoch_validation_metrics
-        }
-
-        self.__send_data(results, self.url)
   
     def on_epoch_end(self, epoch, logs=None):
-        logging.info("Updating training metrics from epoch {}".format(epoch))
+        logging.info("Updating training and validation metrics from epoch {}".format(epoch))
         self.__prepare_train_data(logs)
-
-    def on_test_end(self, logs=None):
-        if self.case == NOT_DISTRIBUTED_INCREMENTAL:
-            logging.info("Updating validation metrics")
-            self.__prepare_test_data(logs)
     
 class DistributedTrackTrainingCallback(keras.callbacks.Callback):
     """Callback for tracking the training of a distributed model"""
@@ -145,30 +126,6 @@ class DistributedTrackTrainingCallback(keras.callbacks.Callback):
 
         self.__send_data(results_list, self.url)
 
-    def __prepare_test_data(self, logs):
-        for i, m in zip(range(len(self.tensorflow_models)), self.tensorflow_models):
-            for k, v in logs.items():
-                if m.name in k:
-                    if not k[len(m.name)+1:] in self.epoch_validation_metrics[i].keys():
-                        self.epoch_validation_metrics[i][k[len(m.name)+1:]] = [v]
-                    else:
-                        self.epoch_validation_metrics[i][k[len(m.name)+1:]].append(v)
-        
-        results_list = []
-        for i in range(len(self.tensorflow_models)):
-            results = {
-                    'train_metrics': self.epoch_training_metrics[i],
-                    'val_metrics': self.epoch_validation_metrics[i]
-            }
-            results_list.append(results)
-
-        self.__send_data(results_list, self.url)
-
     def on_epoch_end(self, epoch, logs=None):
-        logging.info("Updating training metrics from epoch {}".format(epoch))
+        logging.info("Updating training and validation metrics from epoch {}".format(epoch))
         self.__prepare_train_data(logs)
-
-    def on_test_end(self, logs=None):
-        if self.case == DISTRIBUTED_INCREMENTAL:
-            logging.info("Updating validation metrics")
-            self.__prepare_test_data(logs)

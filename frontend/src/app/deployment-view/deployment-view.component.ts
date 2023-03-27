@@ -77,20 +77,8 @@ export class DeploymentViewComponent implements OnInit {
       delete deployment.learning_rate;
     }
 
-    if (deployment.numeratorBatch == null) {
-      delete deployment.numeratorBatch;
-    }
-
-    if (deployment.denominatorBatch == null) {
-      delete deployment.denominatorBatch;
-    }
-
     if (deployment.stream_timeout == null) {
       delete deployment.stream_timeout;
-    }
-
-    if (deployment.message_poll_timeout == null) {
-      delete deployment.message_poll_timeout;
     }
 
     if (deployment.optimizer == '') {

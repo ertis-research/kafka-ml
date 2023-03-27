@@ -53,38 +53,17 @@ class DistributedClassicTraining(MainTraining):
 
         super().create_distributed_model()
     
-    def train(self, splits, kafka_dataset, decoder, start):
+    def train(self, splits, kafka_dataset, decoder, validation_rate, start):
         """Trains the model"""
 
         callback = DistributedTrackTrainingCallback(DISTRIBUTED_NOT_INCREMENTAL, self.result_url, self.tensorflow_models)
 
         return super().train_classic_model(splits, callback)
     
-    def saveMetrics(self, model_trained, incremental_validation):
+    def saveMetrics(self, model_trained):
         """Saves the metrics of the model"""
         
-        epoch_training_metrics = []
-        epoch_validation_metrics = []
-
-        for m in self.tensorflow_models:
-            train_dic = {}
-            val_dic = {}
-            for k, v in model_trained.history.items():
-                if m.name in k:
-                    if not k.startswith("val_"):
-                        try:
-                            train_dic[k[len(m.name)+1:]].append(v)
-                        except:
-                            train_dic[k[len(m.name)+1:]] = v
-                    else:
-                        try:
-                            val_dic[k[4+len(m.name)+1:]].append(v)
-                        except:
-                            val_dic[k[4+len(m.name)+1:]] = v
-            epoch_training_metrics.append(train_dic)
-            epoch_validation_metrics.append(val_dic)
-        
-        return epoch_training_metrics, epoch_validation_metrics, []
+        return super().saveDistributedMetrics(model_trained)
     
     def test(self, splits, epoch_training_metrics, test_metrics):
         """Tests the model"""

@@ -465,17 +465,13 @@ class DeploymentList(generics.ListCreateAPIView):
                         if tf_resp.status_code != 200:
                             raise ValueError('Some TensorFlow arguments are not valid.')
                         
-                        if 'incremental' in data.keys() and data['incremental'] == True:
-                            if 'numeratorBatch' in data.keys() and 'denominatorBatch' in data.keys() and data['numeratorBatch'] >= data['denominatorBatch']:
-                                raise ValueError('Arguments numerator and denominator batch are not valid.')
-
-                            if 'indefinite' in data.keys() and data['indefinite'] == True:
-                                if Configuration.objects.filter(pk=data['configuration']).exists():
-                                    obj = Configuration.objects.get(pk=data['configuration'])
-                                    for m in obj.ml_models.all():
-                                        if not m.distributed:
-                                            if not data['monitoring_metric'] in m.code:
-                                                raise ValueError('Monitoring metric does not match.')
+                        if 'incremental' in data.keys() and data['incremental'] == True and 'indefinite' in data.keys() and data['indefinite'] == True:
+                            if Configuration.objects.filter(pk=data['configuration']).exists():
+                                obj = Configuration.objects.get(pk=data['configuration'])
+                                for m in obj.ml_models.all():
+                                    if not m.distributed:
+                                        if not data['monitoring_metric'] in m.code:
+                                            raise ValueError('Monitoring metric does not match.')
 
                     if not pth_kwargs_fit_empty:
                         # PyTorch Verification
@@ -572,12 +568,9 @@ class DeploymentList(generics.ListCreateAPIView):
                                                             {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                             {'name': 'CASE', 'value': str(case)},
                                                             {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
-                                                            {'name': 'MESSAGE_POLL_TIMEOUT', 'value': str(deployment.message_poll_timeout)},
                                                             {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
                                                             {'name': 'CHANGE', 'value': deployment.change},
-                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
-                                                            {'name': 'NUMERATOR_BATCH', 'value': str(deployment.numeratorBatch)},
-                                                            {'name': 'DENOMINATOR_BATCH', 'value': str(deployment.denominatorBatch)}
+                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                             ],
                                                     'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                 }],
@@ -678,10 +671,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                                             {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                             {'name': 'CASE', 'value': str(case)},
                                                             {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
-                                                            {'name': 'MESSAGE_POLL_TIMEOUT', 'value': str(deployment.message_poll_timeout)},
-                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
-                                                            {'name': 'NUMERATOR_BATCH', 'value': str(deployment.numeratorBatch)},
-                                                            {'name': 'DENOMINATOR_BATCH', 'value': str(deployment.denominatorBatch)}
+                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                             ],
                                                     'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                 }],

@@ -188,22 +188,16 @@ def load_distributed_environment_vars():
 
 def load_incremental_environment_vars():
     """Loads the incremental environment information received from dockers
-    stream_timeout, message_poll_timeout, monitoring_metric, change, improvement, numeratorBatch, denominatorBatch
+    stream_timeout, monitoring_metric, change, improvement
     Returns:
         stream_timeout (int): stream timeout to wait for new data
-        message_poll_timeout (int): window size to get new data
         monitoring_metric (str): metric to track for indefinite training
         change (str): direction in which monitoring metric improves
         improvement (decimal): how many the monitoring metric improves
-        numeratorBatch (int): number of batches to take for validation
-        denominatorBatch (int): total number of batches for validation
     """
     stream_timeout = int(os.environ.get('STREAM_TIMEOUT'))
-    message_poll_timeout = int(os.environ.get('MESSAGE_POLL_TIMEOUT'))
     monitoring_metric = os.environ.get('MONITORING_METRIC')
     change = os.environ.get('CHANGE')
     improvement = eval(os.environ.get('IMPROVEMENT'))
-    numeratorBatch = int(os.environ.get('NUMERATOR_BATCH'))
-    denominatorBatch = int(os.environ.get('DENOMINATOR_BATCH'))
 
-    return stream_timeout, message_poll_timeout, monitoring_metric, change, improvement, numeratorBatch, denominatorBatch
+    return stream_timeout, monitoring_metric, change, improvement

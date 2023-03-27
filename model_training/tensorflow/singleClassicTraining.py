@@ -35,32 +35,17 @@ class SingleClassicTraining(MainTraining):
         
         return super().split_dataset(data, kafka_dataset)
 
-    def train(self, splits, kafka_dataset, decoder, start):
+    def train(self, splits, kafka_dataset, decoder, validation_rate, start):
         """Trains the model"""
 
         callback = SingleTrackTrainingCallback(NOT_DISTRIBUTED_NOT_INCREMENTAL, self.result_url, self.tensorflow_models)
 
         return super().train_classic_model(splits, callback)
     
-    def saveMetrics(self, model_trained, incremental_validation):
+    def saveMetrics(self, model_trained):
         """Saves the metrics of the model"""
         
-        epoch_training_metrics = {}
-        epoch_validation_metrics = {}
-
-        for k, v in model_trained.history.items():
-            if not k.startswith("val_"):
-                try:
-                    epoch_training_metrics[k].append(v)
-                except:
-                    epoch_training_metrics[k] = v
-            else:
-                try:
-                    epoch_validation_metrics[k[4:]].append(v)
-                except:
-                    epoch_validation_metrics[k[4:]] = v
-        
-        return epoch_training_metrics, epoch_validation_metrics, {}
+        return super().saveSingleMetrics(model_trained)
 
     def test(self, splits, epoch_training_metrics, test_metrics):
         """Tests the model"""

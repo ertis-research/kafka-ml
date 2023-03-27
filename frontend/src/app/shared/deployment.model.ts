@@ -14,10 +14,7 @@ export class Deployment {
     incremental: boolean;
     indefinite: boolean;
     stream_timeout: number;
-    message_poll_timeout: number;
     monitoring_metric: string;
     change: string;
     improvement: number;
-    numeratorBatch: number;
-    denominatorBatch: number;
 }

@@ -168,7 +168,8 @@ class KafkaMLSink(object):
             'topic': self.topic,
             'input_format': self.input_format,
             'description' : self.description,
-            'input_config' : self.input_config
+            'input_config' : self.input_config,
+            'validation_rate' : self.validation_rate
         }
         key = self.__object_to_bytes(self.deployment_id)
         data = json.dumps(dic).encode('utf-8')
