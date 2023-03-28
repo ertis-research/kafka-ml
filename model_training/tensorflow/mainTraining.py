@@ -223,7 +223,8 @@ class MainTraining(object):
                 mini_ds = mini_ds.map(lambda x, y: decoder.decode(x, y))
                 splits = self.split_online_dataset(validation_rate, mini_ds)
                 splits['train_dataset'] = splits['train_dataset'].batch(self.batch)
-                splits['validation_dataset'] = splits['validation_dataset'].batch(self.batch)
+                if splits['validation_dataset'] is not None:
+                    splits['validation_dataset'] = splits['validation_dataset'].batch(self.batch)
                 model_trained = self.model.fit(splits['train_dataset'], validation_data=splits['validation_dataset'], **self.kwargs_fit, callbacks=[callback])
                 if self.stream_timeout == -1:
                     if 'reference' not in locals():
