@@ -1,5 +1,5 @@
 FROM node:14 as angular-builder
-COPY package.json pnpm-lock.yaml /build/
+COPY package.json *lock* /build/
 WORKDIR /build
 RUN npm install
 COPY . /build
