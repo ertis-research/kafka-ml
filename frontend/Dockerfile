@@ -3,7 +3,7 @@ COPY package.json *lock* /build/
 WORKDIR /build
 RUN npm install
 COPY . /build
-RUN npm run build
+RUN npx ng build --prod
 
 FROM nginx:1.18-alpine
 COPY --from=angular-builder /build/dist/autofront /usr/share/nginx/html
