@@ -10,7 +10,7 @@ on:
     types:
       - created
 jobs:
-  build-backend:
+  build-control-logger:
     uses: ./.github/workflows/build.yml
     with:
       context: kafka_control_logger
