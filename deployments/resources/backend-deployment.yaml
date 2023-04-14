@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-backend
+  template:
+    metadata:
+      labels:
+        name: pod-backend
+      name: backend
+    spec:
+      containers:
+        - image: ertis/kafka-ml-backend:master
+          name: backend
+          ports:
+            - containerPort: 8000
+          imagePullPolicy: Always
+          env:
+            - name: BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: brokers
+            - name: CONTROL_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: control.topic
+            - name: KUBE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TENSORFLOW_TRAINING_MODEL_IMAGE
+              value: ertis/kafka-ml-tensorflow_model_training:master
+            - name: TENSORFLOW_INFERENCE_MODEL_IMAGE
+              value: ertis/kafka-ml-tensorflow_model_inference:master
+            - name: PYTORCH_TRAINING_MODEL_IMAGE
+              value: ertis/kafka-ml-pytorch_model_training:master
+            - name: PYTORCH_INFERENCE_MODEL_IMAGE
+              value: ertis/kafka-ml-pytorch_model_inference:master
+            - name: FRONTEND_URL
+              value: http://localhost
+            - name: BACKEND_URL
+              value: http://backend:8000
+            - name: TFEXECUTOR_URL
+              value: http://tfexecutor:8001/
+            - name: PTHEXECUTOR_URL
+              value: http://pthexecutor:8002/
+            - name: ALLOWED_HOSTS
+              value: 127.0.0.1,localhost,backend
+          # - name: KUBE_TOKEN
+          #  value: ...
+          # - name: KUBE_HOST
+          #  value: https://...
+          # - name: SECRET_KEY
+          #  value: ...
+          # - name: DEBUG
+          #  value: 0

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: kafka-control-logger
+  name: kafka-control-logger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-control-logger
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kafka-control-logger
+      name: kafka-control-logger
+    spec:
+      containers:
+        - image: ertis/kafka-ml-kafka_control_logger:master
+          name: kafka-control-logger
+          imagePullPolicy: Always
+          env:
+            - name: BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: brokers
+            - name: CONTROL_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: control.topic
+            - name: BACKEND
+              value: backend:8000

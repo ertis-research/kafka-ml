@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: tfexecutor
+  name: tfexecutor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-tfexecutor
+  template:
+    metadata:
+      labels:
+        name: pod-tfexecutor
+      name: tfexecutor
+    spec:
+      containers:
+        - name: tfexecutor
+          image: ertis/kafka-ml-tfexecutor:master
+          ports:
+            - containerPort: 8001
+          imagePullPolicy: Always

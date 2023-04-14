@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-frontend
+  template:
+    metadata:
+      labels:
+        name: pod-frontend
+      name: frontend
+    spec:
+      containers:
+        - image: ertis/kafka-ml-frontend:master
+          name: frontend
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always
+          env:
+            - name: BACKEND_PROXY_URL
+              value: http://backend:8000

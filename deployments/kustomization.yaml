@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - resources/kafkaml-configmap.yaml
+  - resources/backend-deployment.yaml
+  - resources/backend-service.yaml
+  - resources/frontend-deployment.yaml
+  - resources/frontend-service.yaml
+  - resources/kafka-control-logger-deployment.yaml
+  - resources/pth-executor-deployment.yaml
+  - resources/pth-executor-service.yaml
+  - resources/role.yaml
+  - resources/tf-executor-deployment.yaml
+  - resources/tf-executor-service.yaml

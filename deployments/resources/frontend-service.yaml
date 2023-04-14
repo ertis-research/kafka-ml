@@ -7,6 +7,5 @@ spec:
     name: pod-frontend
   type: LoadBalancer
   ports:
-  - protocol: frontend-port
-    port: 80
-    protocol: TCP
+    - port: 80
+      protocol: TCP

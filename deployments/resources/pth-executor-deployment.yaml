@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: pthexecutor
+  name: pthexecutor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-pthexecutor
+  template:
+    metadata:
+      labels:
+        name: pod-pthexecutor
+      name: pthexecutor
+    spec:
+      containers:
+        - name: pthexecutor
+          image: ertis/kafka-ml-pthexecutor:master
+          ports:
+            - containerPort: 8002
+          imagePullPolicy: Always

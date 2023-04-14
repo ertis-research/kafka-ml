@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafkaml-configmap
+data:
+  # brokers: localhost:9092
+  brokers: 192.168.43.7:32001
+  control.topic: control
