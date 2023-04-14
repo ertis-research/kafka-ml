@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - backend/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-backend:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: backend
+      dockerfile: backend/Dockerfile
+      name: kafka-ml-backend
+      platforms: linux/amd64
+    secrets: inherit

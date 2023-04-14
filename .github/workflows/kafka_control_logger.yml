@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - kafka_control_logger/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-control-logger:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: kafka_control_logger
+      dockerfile: kafka_control_logger/Dockerfile
+      name: kafka-ml-kafka_control_logger
+      platforms: linux/amd64
+    secrets: inherit

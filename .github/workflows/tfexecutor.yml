@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - mlcode_executor/tfexecutor/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-tfexecutor:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: mlcode_executor/tfexecutor
+      dockerfile: mlcode_executor/tfexecutor/Dockerfile
+      name: kafka-ml-tfexecutor
+      platforms: linux/amd64
+    secrets: inherit

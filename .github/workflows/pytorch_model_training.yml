@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - model_training/pytorch/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-pthexecutor:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: model_training/pytorch
+      dockerfile: model_training/pytorch/Dockerfile
+      name: kafka-ml-pytorch_model_training
+      platforms: linux/amd64
+    secrets: inherit
