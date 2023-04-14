@@ -19,7 +19,6 @@ on:
 env:
   # REGISTRY: ghcr.io
   USERNAME: ertis
-  PASSWORD:  ${{ secrets.DOCKERHUB_TOKEN }}
   IMAGE_NAME: ${{ inputs.name }}
 jobs:
   build-and-push-image:
@@ -35,7 +34,7 @@ jobs:
         with:
           # registry: ${{ env.REGISTRY }}
           username: ${{ env.USERNAME }}
-          password: ${{ env.PASSWORD }}
+          password: ${{ secrets.DOCKERHUB_KEY }}
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
