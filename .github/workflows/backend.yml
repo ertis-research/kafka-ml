@@ -10,7 +10,7 @@ on:
     types:
       - created
 jobs:
-  build-tensorflow:
+  build-backend:
     uses: ./.github/workflows/build.yml
     with:
       context: backend
