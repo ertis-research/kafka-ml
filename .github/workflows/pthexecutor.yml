@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - mlcode_executor/pthexecutor/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-pthexecutor:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: mlcode_executor/pthexecutor
+      dockerfile: mlcode_executor/pthexecutor/Dockerfile
+      name: kafka-ml-pthexecutor
+      platforms: linux/amd64
+    secrets: inherit
