@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - model_inference/tensorflow/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-pthexecutor:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: model_inference/tensorflow
+      dockerfile: model_inference/tensorflow/Dockerfile
+      name: kafka-ml-tensorflow_model_inference
+      platforms: linux/amd64
+    secrets: inherit
