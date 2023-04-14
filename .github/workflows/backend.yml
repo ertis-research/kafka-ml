@@ -17,3 +17,4 @@ jobs:
       dockerfile: backend/Dockerfile
       name: kafka-ml-backend
       platforms: linux/amd64
+    secrets: inherit
