@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - model_inference/pytorch/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-pthexecutor:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: model_inference/pytorch
+      dockerfile: model_inference/pytorch/Dockerfile
+      name: kafka-ml-pytorch_model_inference
+      platforms: linux/amd64
+    secrets: inherit
