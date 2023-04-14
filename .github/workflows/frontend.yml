@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - frontend/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-frontend:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: frontend
+      dockerfile: frontend/Dockerfile
+      name: kafka-ml-frontend
+      platforms: linux/amd64
+    secrets: inherit

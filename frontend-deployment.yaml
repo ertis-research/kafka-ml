@@ -23,5 +23,5 @@ spec:
         - containerPort: 80
         imagePullPolicy: IfNotPresent
         env:
-          - name: BACKEND_URL
-            value: http://localhost:8000
+          - name: BACKEND_PROXY_URL
+            value: http://backend:8000
