@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - model_training/tensorflow/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-pthexecutor:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: model_training/tensorflow
+      dockerfile: model_training/tensorflow/Dockerfile
+      name: kafka-ml-tensorflow_model_training
+      platforms: linux/amd64
+    secrets: inherit
