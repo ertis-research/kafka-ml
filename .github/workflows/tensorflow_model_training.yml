@@ -10,7 +10,7 @@ on:
     types:
       - created
 jobs:
-  build-pthexecutor:
+  build-tf-model-training:
     strategy:
       matrix:
         include:

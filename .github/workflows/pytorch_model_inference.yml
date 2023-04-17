@@ -10,7 +10,7 @@ on:
     types:
       - created
 jobs:
-  build-pthexecutor:
+  build-pth-model-inference:
     uses: ./.github/workflows/build.yml
     with:
       context: model_inference/pytorch

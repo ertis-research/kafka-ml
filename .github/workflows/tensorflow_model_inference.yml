@@ -10,7 +10,7 @@ on:
     types:
       - created
 jobs:
-  build-tfmodel-inference:
+  build-tf-model-inference:
     strategy:
       matrix:
         include:
