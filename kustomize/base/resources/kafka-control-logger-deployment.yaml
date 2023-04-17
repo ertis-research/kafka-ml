@@ -18,7 +18,7 @@ spec:
       name: kafka-control-logger
     spec:
       containers:
-        - image: ertis/kafka-ml-kafka_control_logger:master
+        - image: kafka-ml-kafka_control_logger
           name: kafka-control-logger
           imagePullPolicy: Always
           env:
@@ -33,4 +33,7 @@ spec:
                   name: kafkaml-configmap
                   key: control.topic
             - name: BACKEND
-              value: backend:8000
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: backend.address

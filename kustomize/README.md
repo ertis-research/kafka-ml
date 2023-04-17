@@ -1,0 +1,36 @@
+# Kustomize for KafkaML
+
+This folder contains multiple Kustomize files to ease the deployment on
+Kubernetes. Notably the following versions are available:
+
+| Version  | Resource URL                                          |
+| -------- | ----------------------------------------------------- |
+| `master` | `github.com/ertis-research/kafka-ml/kustomize/master` |
+
+## Installation
+
+1. Create a `kustomize.yaml` file with the following contents:
+
+```yaml
+resources:
+  # Choose your kustomize version
+  - github.com/ertis-research/kafka-ml/kustomize/master
+
+# Namespace where KafkaML will be deployed
+namespace: kafkaml
+
+configMapGenerator:
+  - name: kafkaml-configmap
+    behavior: merge
+    literals:
+      # Comma separated list of Kafka brokers
+      - brokers=kafka1,kafka2,kafka3
+```
+
+2. Deploy using the following command
+
+```sh
+# Create the namespace first if it doesn't exists
+kubectl create namespace kafkaml
+kubectl apply -k .
+```

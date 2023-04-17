@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: pthexecutor
-          image: ertis/kafka-ml-pthexecutor:master
+          image: kafka-ml-pthexecutor
           ports:
             - containerPort: 8002
           imagePullPolicy: Always

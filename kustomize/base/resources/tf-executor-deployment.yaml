@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: tfexecutor
-          image: ertis/kafka-ml-tfexecutor:master
+          image: kafka-ml-tfexecutor
           ports:
             - containerPort: 8001
           imagePullPolicy: Always
