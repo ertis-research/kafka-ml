@@ -11,10 +11,17 @@ on:
       - created
 jobs:
   build-pthexecutor:
+    strategy:
+      matrix:
+        include:
+          - name: kafka-ml-tensorflow_model_training
+          - name: kafka-ml-tensorflow_model_training-gpu
+            build-args: "TFTAG=2.7.0-gpu"
     uses: ./.github/workflows/build.yml
     with:
       context: model_training/tensorflow
       dockerfile: model_training/tensorflow/Dockerfile
-      name: kafka-ml-tensorflow_model_training
+      name: ${{ matrix.name }}
       platforms: linux/amd64
+      build-args: ${{ matrix.build-args }}
     secrets: inherit
