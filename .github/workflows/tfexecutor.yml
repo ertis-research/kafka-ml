@@ -16,7 +16,7 @@ jobs:
         include:
           - name: kafka-ml-tfexecutor
           - name: kafka-ml-tfexecutor-gpu
-            build-args: "TFTAG=2.7.0"
+            build-args: "TFTAG=2.7.0-gpu"
     uses: ./.github/workflows/build.yml
     with:
       context: mlcode_executor/tfexecutor
