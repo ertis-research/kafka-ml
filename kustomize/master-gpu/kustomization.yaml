@@ -1,0 +1,17 @@
+resources:
+  - "../master"
+
+configMapGenerator:
+  - name: kafkaml-configmap
+    behavior: merge
+    literals:
+      - tensorflow.training.image=ertis/kafka-ml-tensorflow_model_training-gpu:master
+      - tensorflow.inference.image=ertis/kafka-ml-tensorflow_model_inference-gpu:master
+      - pytorch.training.image=ertis/kafka-ml-pytorch_model_training-gpu:master
+      - pytorch.inference.image=ertis/kafka-ml-pytorch_model_inference-gpu:master
+
+images:
+  - name: ertis/kafka-ml-pthexecutor
+    newName: ertis/kafka-ml-pthexecutor-gpu
+  - name: ertis/kafka-ml-tfexecutor
+    newName: ertis/kafka-ml-tfexecutor-gpu

@@ -3,9 +3,10 @@
 This folder contains multiple Kustomize files to ease the deployment on
 Kubernetes. Notably the following versions are available:
 
-| Version  | Resource URL                                          |
-| -------- | ----------------------------------------------------- |
-| `master` | `github.com/ertis-research/kafka-ml/kustomize/master` |
+| Version      | Resource URL                                              |
+| ------------ | --------------------------------------------------------- |
+| `master`     | `github.com/ertis-research/kafka-ml/kustomize/master`     |
+| `master-gpu` | `github.com/ertis-research/kafka-ml/kustomize/master-gpu` |
 
 ## Installation
 
