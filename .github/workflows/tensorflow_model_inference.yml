@@ -10,11 +10,18 @@ on:
     types:
       - created
 jobs:
-  build-pthexecutor:
+  build-tfmodel-inference:
+    strategy:
+      matrix:
+        include:
+          - name: kafka-ml-tensorflow_model_inference
+          - name: kafka-ml-tensorflow_model_inference-gpu
+            build-args: "TFTAG=2.7.0-gpu"
     uses: ./.github/workflows/build.yml
     with:
       context: model_inference/tensorflow
       dockerfile: model_inference/tensorflow/Dockerfile
-      name: kafka-ml-tensorflow_model_inference
+      name: ${{ matrix.name }}
       platforms: linux/amd64
+      build-args: ${{ matrix.build-args }}
     secrets: inherit
