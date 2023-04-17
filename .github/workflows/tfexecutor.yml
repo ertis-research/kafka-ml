@@ -11,10 +11,17 @@ on:
       - created
 jobs:
   build-tfexecutor:
+    strategy:
+      matrix:
+        include:
+          - name: kafka-ml-tfexecutor
+          - name: kafka-ml-tfexecutor-gpu
+            build-args: "TFTAG=2.7.0"
     uses: ./.github/workflows/build.yml
     with:
       context: mlcode_executor/tfexecutor
       dockerfile: mlcode_executor/tfexecutor/Dockerfile
-      name: kafka-ml-tfexecutor
+      name: ${{ matrix.name }}
       platforms: linux/amd64
+      build-args: ${{ matrix.build-args }}
     secrets: inherit

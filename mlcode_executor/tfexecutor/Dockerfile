@@ -1,8 +1,6 @@
-# GPU Accelerated
 # FROM tensorflow/tensorflow:2.7.0-gpu
-
-# CPU Only
-FROM tensorflow/tensorflow:2.7.0
+ARG TFTAG=2.7.0
+FROM tensorflow/tensorflow:${TFTAG}
 
 # set work directory
 WORKDIR /usr/src/app
