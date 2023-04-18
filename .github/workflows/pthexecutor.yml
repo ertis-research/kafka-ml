@@ -11,10 +11,17 @@ on:
       - created
 jobs:
   build-pthexecutor:
+    strategy:
+      matrix:
+        include:
+          - name: kafka-ml-pthexecutor
+          - name: kafka-ml-pthexecutor-gpu
+            build-args: "BASEIMG=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime"
     uses: ./.github/workflows/build.yml
     with:
       context: mlcode_executor/pthexecutor
       dockerfile: mlcode_executor/pthexecutor/Dockerfile
-      name: kafka-ml-pthexecutor
+      name: ${{ matrix.name }}
       platforms: linux/amd64
+      build-args: ${{ matrix.build-args }}
     secrets: inherit
