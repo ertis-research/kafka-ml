@@ -11,10 +11,17 @@ on:
       - created
 jobs:
   build-pth-model-training:
+    strategy:
+      matrix:
+        include:
+          - name: kafka-ml-pytorch_model_training
+          - name: kafka-ml-pytorch_model_training-gpu
+            build-args: "BASEIMG=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime"
     uses: ./.github/workflows/build.yml
     with:
       context: model_training/pytorch
       dockerfile: model_training/pytorch/Dockerfile
-      name: kafka-ml-pytorch_model_training
+      name: ${{ matrix.name }}
       platforms: linux/amd64
+      build-args: ${{ matrix.build-args }}
     secrets: inherit

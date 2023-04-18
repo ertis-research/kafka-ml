@@ -1,8 +1,6 @@
-# GPU Accelerated
-# FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
-
-# CPU Only
-FROM python:3.8.6
+# --build-arg BASEIMG=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime for GPU version
+ARG BASEIMG=python:3.8.6
+FROM ${BASEIMG}
 
 # set work directory
 WORKDIR /usr/src/app
