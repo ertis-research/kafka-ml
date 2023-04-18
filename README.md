@@ -29,21 +29,26 @@ If you wish to reuse Kafka-ML, please properly cite the above mentioned paper. B
 Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Future Generation Computer Systems](https://www.sciencedirect.com/journal/future-generation-computer-systems/about/editors-choice)! :blush: :book: :rocket:
 
 ## Table of Contents
-- [Changelog](#changelog)
-- [Deploy Kafka-ML in a fast way](#Deploy-Kafka-ML-in-a-fast-way)
-    - [Requirements](#Requirements)
-    - [Steps to run Kafka-ML](#Steps-to-run-Kafka-ML)
-    - [Troubleshooting](#Troubleshooting)
-- [Usage](#usage)
-    - [Single models](#Single-models)
-    - [Distributed models](#Distributed-models)
-    - [Incremental training](#Incremental-training)
-- [Installation and development](#Installation-and-development)
-    - [Requirements to build locally](#Requirements-to-build-locally) 
-    - [Steps to build Kafka-ML](#Steps-to-build-Kafka-ML)
-    - [GPU configuration](#GPU-configuration)
-- [Publications](#publications)
-- [License](#license)
+- [Kafka-ML: connecting the data stream with ML/AI frameworks](#kafka-ml-connecting-the-data-stream-with-mlai-frameworks)
+  - [Table of Contents](#table-of-contents)
+  - [Changelog](#changelog)
+  - [Deploy Kafka-ML in a fast way](#deploy-kafka-ml-in-a-fast-way)
+    - [Requirements](#requirements)
+    - [Steps to run Kafka-ML](#steps-to-run-kafka-ml)
+    - [Troubleshooting](#troubleshooting)
+  - [Usage](#usage)
+    - [Single models](#single-models)
+    - [Distributed models](#distributed-models)
+    - [Incremental training](#incremental-training)
+  - [Installation and development](#installation-and-development)
+    - [Requirements to build locally](#requirements-to-build-locally)
+    - [Steps to build Kafka-ML](#steps-to-build-kafka-ml)
+    - [Deploying Kafka-ML in a single node Kubernetes cluster (e.g., minikube, Docker desktop)](#deploying-kafka-ml-in-a-single-node-kubernetes-cluster-eg-minikube-docker-desktop)
+    - [Deploying Kafka-ML in a distributed Kubernetes cluster](#deploying-kafka-ml-in-a-distributed-kubernetes-cluster)
+      - [Configuring the back-end](#configuring-the-back-end)
+    - [GPU configuration](#gpu-configuration)
+  - [Publications](#publications)
+  - [License](#license)
 
 ## Changelog
 - [29/04/2021] Integration of distributed models.
@@ -62,26 +67,10 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 - [kubernetes>=v1.15.5](https://kubernetes.io/)
 
 ### Steps to run Kafka-ML 
-In this repository you can find the files to deploy Kafka-ML in a simple way. These are [_Build_Kafka_ML.sh_](Build_Kafka_ML.sh) and [_Build_Kafka_ML.bat_](Build_Kafka_ML.bat) for Linux and Windows respectively. These scripts will create the namespace where Kafka-ML will be deployed.
 
-To deploy Kafka-ML in a fast way, run the following script commands depending of your OS:
+Kafka-ML can be deployed using [`kustomize`](https://kustomize.io/). Follow the instructions described on the [`kustomize`](kustomize/README.md) folder to deploy Kafka-ML
 
-```bash
-# Linux-based
-chmod +x Build_Kafka_ML.sh
-./Build_Kafka_ML.sh
-```
-
-```bat
-REM Windows
-.\Build_Kafka_ML.bat
-```
-
-After deploying all Kafka-ML components (option 0 in the script) you will be able to access the Kafka-ML Web UI at http://localhost/. You can continue with the [Usage](#usage) section to see how you can use Kafka-ML!
-
-By default, Kafka-ML will be deployed on the namespace `kafkaml`. If you wish to change this, you can modify the variable that determines this at the start of the scripts. You should also modify the file `backend-deployment.yaml` specifying in which namespace you want to deploy the training and inference jobs.
-
-By default, Kafka-ML will be deployed using our images at DockerHub. These images have been built for CPU and GPU and you can choose the one you prefer from modifying `backend-deployment.yaml`, `pth-executor-deployment.yaml` and `tf-executor-deployment.yaml` files, being by default the CPU version.
+After deploying all Kafka-ML components you will be able to access the Kafka-ML Web UI at http://localhost/. You can continue with the [Usage](#usage) section to see how you can use Kafka-ML!
 
 ### Troubleshooting
 Depending of Kubernetes and Docker version, there is a possibility that some errors may be encountered due to lack of permissions during the deployment of models for training and inference. In order to solve this,  The `permissions-fix.yaml` file is given in the repository. You just need to create the new resources using `kubectl apply -f permissions-fix.yaml`, giving permissions in that namespace. (Default: `kafkaml`)
