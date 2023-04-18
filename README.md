@@ -653,5 +653,8 @@ Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup [documenta
 2. Martín, C., Langendoerfer, P., Zarrin, P. S., Díaz, M., & Rubio, B. (2022). [Kafka-ML: connecting the data stream with ML/AI frameworks](https://www.sciencedirect.com/science/article/pii/S0167739X21002995). Future Generation Computer Systems, 126, 15-33.
 
 3. Torres, D. R., Martín, C., Rubio, B., & Díaz, M. (2021). [An open source framework based on Kafka-ML for DDNN inference over the Cloud-to-Things continuum](https://www.sciencedirect.com/science/article/pii/S138376212100151X). Journal of Systems Architecture, 102214.
+
+4. Chaves, A. J., Martín, C., & Díaz, M. (2023). [The orchestration of Machine Learning frameworks with data streams and GPU acceleration in Kafka‐ML: A deep‐learning performance comparative](https://onlinelibrary.wiley.com/doi/10.1111/exsy.13287). Expert Systems, e13287.
+
 ## License
 MIT
