@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafkaml-configmap
+data:
+  # brokers: 192.168.43.7:32001
+  control.topic: control
+
+  frontend.url: http://localhost
+  backend.url: http://backend:8000
+  backend.address: backend:8000 # TODO replace this
+  backend.allowedhosts: 127.0.0.1,localhost,backend
+  tfexecutor.url: http://tfexecutor:8001/
+  pthexecutor.url: http://pthexecutor:8002/
+
+  # tensorflow.training.image: ertis/kafka-ml-tensorflow_model_training:master
+  # tensorflow.inference.image: ertis/kafka-ml-tensorflow_model_inference:master
+  # pytorch.training.image: ertis/kafka-ml-pytorch_model_training:master
+  # pytorch.inference.image: ertis/kafka-ml-pytorch_model_inference:master
+
+  # debug: "0"

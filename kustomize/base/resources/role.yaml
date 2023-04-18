@@ -1,19 +1,24 @@
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: crud-role
-  namespace: kafkaml
+  # namespace: test-kafkaml
 rules:
-- apiGroups: ["", "apps", "batch"]
-  resources: [  "deployments", "jobs", "pods", "replicasets", "services", "replicationcontrollers"]
-  verbs: [ "create", "get", "list", "delete", "watch"]
+  - apiGroups: ["", "apps", "batch"]
+    resources:
+      - deployments
+      - jobs
+      - pods
+      - replicasets
+      - services
+      - replicationcontrollers
+    verbs: ["create", "get", "list", "delete", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: crud-role-binding
-  namespace: kafkaml
+  # namespace: test-kafkaml
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -21,4 +26,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: kafkaml
+    # namespace: test-kafkaml

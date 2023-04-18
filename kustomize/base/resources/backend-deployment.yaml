@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-backend
+  template:
+    metadata:
+      labels:
+        name: pod-backend
+      name: backend
+    spec:
+      containers:
+        - image: kafka-ml-backend
+          name: backend
+          ports:
+            - containerPort: 8000
+          imagePullPolicy: Always
+          env:
+            - name: BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: brokers
+            - name: CONTROL_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: control.topic
+            - name: KUBE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TENSORFLOW_TRAINING_MODEL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: tensorflow.training.image
+            - name: TENSORFLOW_INFERENCE_MODEL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: tensorflow.inference.image
+            - name: PYTORCH_TRAINING_MODEL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: pytorch.training.image
+            - name: PYTORCH_INFERENCE_MODEL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: pytorch.inference.image
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: frontend.url
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: backend.url
+            - name: TFEXECUTOR_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: tfexecutor.url
+            - name: PTHEXECUTOR_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: pthexecutor.url
+            - name: ALLOWED_HOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: backend.allowedhosts
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: debug
+                  optional: true
+
+          # - name: KUBE_TOKEN
+          #  value: ...
+          # - name: KUBE_HOST
+          #  value: https://...
+          # - name: SECRET_KEY
+          #  value: ...
