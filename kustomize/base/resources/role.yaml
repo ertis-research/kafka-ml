@@ -1,8 +1,12 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafkaml
+--- 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: crud-role
-  # namespace: test-kafkaml
+  name: kafkaml-role
 rules:
   - apiGroups: ["", "apps", "batch"]
     resources:
@@ -17,13 +21,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: crud-role-binding
-  # namespace: test-kafkaml
+  name: kafkaml-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: crud-role
+  name: kafkaml-role
 subjects:
   - kind: ServiceAccount
-    name: default
-    # namespace: test-kafkaml
+    name: kafkaml

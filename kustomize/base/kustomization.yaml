@@ -4,6 +4,7 @@ kind: Kustomization
 buildMetadata: [managedByLabel, originAnnotations, transformerAnnotations]
 
 resources:
+  - resources/role.yaml
   - resources/kafkaml-configmap.yaml
   - resources/backend-deployment.yaml
   - resources/backend-service.yaml
@@ -12,6 +13,5 @@ resources:
   - resources/kafka-control-logger-deployment.yaml
   - resources/pth-executor-deployment.yaml
   - resources/pth-executor-service.yaml
-  - resources/role.yaml
   - resources/tf-executor-deployment.yaml
   - resources/tf-executor-service.yaml
