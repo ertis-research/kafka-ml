@@ -854,12 +854,13 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                 data = json.loads(request.data['data'])
                 obj = TrainingResult.objects.get(id=pk)
 
-                if data['indefinite'] == True:
+                if 'indefinite' in data.keys() and data['indefinite'] == True:
                     deployment = obj.deployment
                     model = obj.model
                     obj = TrainingResult.objects.create(deployment=deployment, model=model)
-                    
-                data.pop('indefinite')
+
+                    data.pop('indefinite')
+                
                 serializer = SimpleResultSerializer(obj, data = data, partial=True)
                 
                 if serializer.is_valid():
