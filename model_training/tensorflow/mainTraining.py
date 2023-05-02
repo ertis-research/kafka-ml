@@ -227,14 +227,15 @@ class MainTraining(object):
                     splits['validation_dataset'] = splits['validation_dataset'].batch(self.batch)
                 model_trained = self.model.fit(splits['train_dataset'], validation_data=splits['validation_dataset'], **self.kwargs_fit, callbacks=[callback])
                 if self.stream_timeout == -1:
-                    if 'reference' not in locals():
-                        reference = model_trained.history['val_'+self.monitoring_metric][-2]
+                    if 'reference' not in locals() and 'reference' not in globals():
+                        reference = model_trained.history['val_'+self.monitoring_metric][-1]
                     last = model_trained.history['val_'+self.monitoring_metric][-1]
-                    if (self.change == 'up' and last - reference >= self.improvement) or (self.change == 'down' and reference - last >= self.improvement):
-                        dtime = time.time() - start
-                        reference = last
-                        epoch_training_metrics, epoch_validation_metrics, test_metrics = self.saveMetrics(model_trained)
-                        self.sendMetrics(None, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, None)
+                    if reference != last:
+                        if (self.change == 'up' and last - reference >= self.improvement) or (self.change == 'down' and reference - last >= self.improvement):
+                            dtime = time.time() - start
+                            reference = last
+                            epoch_training_metrics, epoch_validation_metrics, test_metrics = self.saveMetrics(model_trained)
+                            self.sendMetrics(None, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, None)
 
         training_results = {
                 'model_trained': model_trained
