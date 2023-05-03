@@ -38,7 +38,7 @@ class Deployment(models.Model):
     stream_timeout = models.IntegerField(default=60000, blank=True, null=True)
     monitoring_metric = models.TextField(blank=True, null=True)
     change = models.TextField(blank=True, null=True)
-    improvement = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.01)
+    improvement = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.1)
     batch = models.IntegerField(default=1)
     tf_kwargs_fit = models.CharField(max_length=100, blank=True)
     tf_kwargs_val = models.CharField(max_length=100, blank=True)

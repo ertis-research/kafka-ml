@@ -50,7 +50,7 @@
 
       <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
         <mat-label>Improvement</mat-label>
-        <input matInput placeholder="0.05" name="improvement" id="improvement" #nameRef="ngModel" [ngModel]="deployment.improvement">
+        <input matInput placeholder="0.1" name="improvement" id="improvement" #nameRef="ngModel" [ngModel]="deployment.improvement">
       </mat-form-field>
       
       <mat-form-field class="full-width" *ngIf="detectedFrameworks.length > 0">
