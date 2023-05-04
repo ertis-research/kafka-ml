@@ -1,0 +1,18 @@
+resources:
+  - resources/namespace.yaml
+  - ../master
+
+helmCharts:
+  - name: kafka
+    repo: https://charts.bitnami.com/bitnami
+    valuesFile: kafka/values.yaml
+    releaseName: kafka
+    namespace: kafkaml
+
+namespace: kafkaml
+
+configMapGenerator:
+  - name: kafkaml-configmap
+    behavior: merge
+    literals:
+      - brokers=kafka:9092
