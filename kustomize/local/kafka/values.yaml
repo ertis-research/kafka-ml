@@ -1,6 +1,10 @@
 replicaCount: 1
 externalAccess:
-  enabled: false
+  enabled: true
+  service:
+    type: NodePort
+    nodePorts: [31900]
+    domain: localhost
 persistence:
   enabled: false
 zookeeper:
