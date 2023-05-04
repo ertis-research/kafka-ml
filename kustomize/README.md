@@ -1,4 +1,4 @@
-# Kustomize for KafkaML
+# Kustomize for Kafka-ML
 
 This folder contains multiple Kustomize files to ease the deployment on
 Kubernetes. Notably the following versions are available:
@@ -18,7 +18,7 @@ resources:
   # Choose your kustomize version
   - github.com/ertis-research/kafka-ml/kustomize/master
 
-# Namespace where KafkaML will be deployed
+# Namespace where Kafka-ML will be deployed
 namespace: kafkaml
 
 configMapGenerator:
