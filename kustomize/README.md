@@ -7,6 +7,7 @@ Kubernetes. Notably the following versions are available:
 | ------------ | --------------------------------------------------------- |
 | `master`     | `github.com/ertis-research/kafka-ml/kustomize/master`     |
 | `master-gpu` | `github.com/ertis-research/kafka-ml/kustomize/master-gpu` |
+| `local`      | `github.com/ertis-research/kafka-ml/kustomize/local`      |
 
 ## Installation
 

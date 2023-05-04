@@ -1,0 +1,8 @@
+replicaCount: 1
+externalAccess:
+  enabled: false
+persistence:
+  enabled: false
+zookeeper:
+  persistence:
+    enabled: false

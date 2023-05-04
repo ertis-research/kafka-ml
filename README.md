@@ -63,9 +63,17 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 
 ### Steps to run Kafka-ML 
 
-Kafka-ML can be deployed using [`kustomize`](https://kustomize.io/). Follow the instructions described on the [`kustomize`](kustomize/README.md) folder to deploy Kafka-ML
+For a basic local installation, use the following command:
 
-After deploying all Kafka-ML components you will be able to access the Kafka-ML Web UI at http://localhost/. You can continue with the [Usage](#usage) section to see how you can use Kafka-ML!
+```sh
+kubectl kustomize github.com/ertis-research/kafka-ml/kustomize/local --enable-helm | kubectl apply -f -
+```
+
+This will install all the required components of Kafka-ML, plus Kafka on the 
+namespace `kafkaml`. The UI will be available at http://localhost/ . You can 
+continue with the [Usage](#usage) section to see how you can use Kafka-ML!
+
+For a more advanced installation, please refer to the [installation guide](kustomize/README.md)
 
 ### Troubleshooting
 Depending of Kubernetes and Docker version, there is a possibility that some errors may be encountered due to lack of permissions during the deployment of models for training and inference. In order to solve this,  The `permissions-fix.yaml` file is given in the repository. You just need to create the new resources using `kubectl apply -f permissions-fix.yaml`, giving permissions in that namespace. (Default: `kafkaml`)
