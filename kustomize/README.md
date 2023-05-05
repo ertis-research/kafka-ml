@@ -54,6 +54,7 @@ The available keys are:
 | `tensorflow.inference.image` | Container image used for TensorFlow inference    | \*                          |
 | `pytorch.training.image`     | Container image used for PyTorch training        | \*                          |
 | `pytorch.inference.image`    | Container image used for PyTorch inference       | \*                          |
+| `brokers`                    | Comma separated list of Kafka brokers            | -                           |
 | `debug`                      | Enable debug mode. Possible values: `[0,1]`      | -                           |
 
 > \* value depends on the kustomize version used. See
