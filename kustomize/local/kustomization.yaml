@@ -1,13 +1,8 @@
 resources:
   - resources/namespace.yaml
+  - resources/kafka-deployment.yaml
+  - resources/kafka-service.yaml
   - ../master
-
-helmCharts:
-  - name: kafka
-    repo: https://charts.bitnami.com/bitnami
-    valuesFile: kafka/values.yaml
-    releaseName: kafka
-    namespace: kafkaml
 
 namespace: kafkaml
 
@@ -16,3 +11,7 @@ configMapGenerator:
     behavior: merge
     literals:
       - brokers=kafka:9092
+images:
+  - name: kafka
+    newName: docker.io/bitnami/kafka
+    newTag: "3.3"

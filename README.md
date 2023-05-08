@@ -66,7 +66,7 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 For a basic local installation, use the following command:
 
 ```sh
-kubectl kustomize github.com/ertis-research/kafka-ml/kustomize/local --enable-helm | kubectl apply -f -
+kubectl apply -k github.com/ertis-research/kafka-ml/kustomize/local
 ```
 
 This will install all the required components of Kafka-ML, plus Kafka on the 
