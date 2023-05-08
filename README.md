@@ -63,7 +63,12 @@ Kafka-ML article has been selected as [Spring 2022 Editor’s Choice Paper at Fu
 
 ### Steps to run Kafka-ML 
 
-For a basic local installation, use the following command:
+For a basic local installation, we recommend using Docker Desktop with Kubernetes
+enabled. Please follow the installation guide on 
+[Docker's website](https://docs.docker.com/desktop/). To enable Kubernetes, 
+refer to [Enable Kubernetes](https://docs.docker.com/desktop/kubernetes/#enable-kubernetes)
+
+Once Kubernetes is running, open a terminal and run the following command:
 
 ```sh
 kubectl apply -k github.com/ertis-research/kafka-ml/kustomize/local
@@ -73,10 +78,7 @@ This will install all the required components of Kafka-ML, plus Kafka on the
 namespace `kafkaml`. The UI will be available at http://localhost/ . You can 
 continue with the [Usage](#usage) section to see how you can use Kafka-ML!
 
-For a more advanced installation, please refer to the [kustomization guide](kustomize/README.md)
-
-### Troubleshooting
-Depending of Kubernetes and Docker version, there is a possibility that some errors may be encountered due to lack of permissions during the deployment of models for training and inference. In order to solve this,  The `permissions-fix.yaml` file is given in the repository. You just need to create the new resources using `kubectl apply -f permissions-fix.yaml`, giving permissions in that namespace. (Default: `kafkaml`)
+For a more advanced installation on Kubernetes, please refer to the [kustomization guide](kustomize/README.md)
 
 ## Usage
 To follow this tutorial, please deploy Kafka-ML as indicated in [Deploy Kafka-ML in a fast way](#Deploy-Kafka-ML-in-a-fast-way) or [Installation and development](#Installation-and-development).

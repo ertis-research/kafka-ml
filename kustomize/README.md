@@ -9,6 +9,9 @@ Kubernetes. Notably the following versions are available:
 | `master-gpu` | `github.com/ertis-research/kafka-ml/kustomize/master-gpu` |
 | `local`      | `github.com/ertis-research/kafka-ml/kustomize/local`      |
 
+These versions should work with any Kubernetes compatible cluster, such as K8s
+and K3s.
+
 ## Installation
 
 1. Create a `kustomize.yaml` file with the following contents:
