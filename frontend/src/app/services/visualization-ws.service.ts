@@ -23,7 +23,7 @@ export class VisualizationWsService {
   connected= true; 
 
   createObservableSocket(): Observable<any> {
-     this.ws = new WebSocket(this.url);
+     this.ws = new WebSocket(this.url.toString());
     return new Observable(
        observer => {
 
