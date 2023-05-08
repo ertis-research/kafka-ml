@@ -2,7 +2,7 @@ FROM node:14 as angular-builder
 COPY package.json *lock* /build/
 WORKDIR /build
 RUN npm install
-COPY src e2e browserslist *.json *.js /build
+COPY src browserslist *.json *.js /build/
 RUN npx ng build --prod
 
 FROM nginx:1.18-alpine
