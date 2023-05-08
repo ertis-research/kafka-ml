@@ -2,7 +2,8 @@ FROM node:14 as angular-builder
 COPY package.json *lock* /build/
 WORKDIR /build
 RUN npm install
-COPY src browserslist *.json *.js /build/
+COPY browserslist *.json *.js /build
+COPY src /build/src
 RUN npx ng build --prod
 
 FROM nginx:1.18-alpine
