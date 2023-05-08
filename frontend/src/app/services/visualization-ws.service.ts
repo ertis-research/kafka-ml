@@ -9,8 +9,8 @@ export class VisualizationWsService {
   baseUrl = environment.baseUrl;
 
   constructor() { }
-  url = new URL(this.baseUrl + "/ws",window.location.href)
-  url.protocol = url.protocol === "https" ? "wss" : "ws"
+  url = new URL(this.baseUrl + "/ws",window.location.href);
+  url.protocol = url.protocol === "https" ? "wss" : "ws";
 
   // url = 'ws'+this.baseUrl.replace('http','').replace('https','') + '/ws/';
 
