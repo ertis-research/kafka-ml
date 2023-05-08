@@ -7,14 +7,18 @@ import {Observable } from 'rxjs';
 })
 export class VisualizationWsService {
   baseUrl = environment.baseUrl;
-
-  constructor() { }
-  url = new URL(this.baseUrl + "/ws",window.location.href);
-  url.protocol = url.protocol === "https" ? "wss" : "ws";
-
-  // url = 'ws'+this.baseUrl.replace('http','').replace('https','') + '/ws/';
-
-  ws: WebSocket;
+  url: URL;
+  
+  constructor() {
+      this.url = new URL(this.baseUrl + '/ws', window.location.href);
+      if (this.url.protocol === 'https') {
+        this.url.protocol = 'wss';
+      } else {
+        this.url.protocol = 'ws';
+      }
+   }
+  
+   ws: WebSocket;
   socketIsOpen = 1;
   connected= true; 
 
