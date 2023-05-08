@@ -2,7 +2,7 @@ resources:
   - resources/namespace.yaml
   - resources/kafka-deployment.yaml
   - resources/kafka-service.yaml
-  - ../master
+  - "../v1.0"
 
 namespace: kafkaml
 

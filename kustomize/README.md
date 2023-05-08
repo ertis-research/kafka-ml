@@ -7,6 +7,8 @@ Kubernetes. Notably the following versions are available:
 | ------------ | --------------------------------------------------------- |
 | `master`     | `github.com/ertis-research/kafka-ml/kustomize/master`     |
 | `master-gpu` | `github.com/ertis-research/kafka-ml/kustomize/master-gpu` |
+| `v1.0`       | `github.com/ertis-research/kafka-ml/kustomize/v1.0`       |
+| `v1.0-gpu`   | `github.com/ertis-research/kafka-ml/kustomize/v1.0-gpu`   |
 | `local`      | `github.com/ertis-research/kafka-ml/kustomize/local`      |
 
 These versions should work with any Kubernetes compatible cluster, such as K8s

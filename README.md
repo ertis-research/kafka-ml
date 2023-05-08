@@ -71,7 +71,7 @@ refer to [Enable Kubernetes](https://docs.docker.com/desktop/kubernetes/#enable-
 Once Kubernetes is running, open a terminal and run the following command:
 
 ```sh
-kubectl apply -k github.com/ertis-research/kafka-ml/kustomize/local
+kubectl apply -k "github.com/ertis-research/kafka-ml/kustomize/local?rev=v1.0"
 ```
 
 This will install all the required components of Kafka-ML, plus Kafka on the 
