@@ -10,7 +10,7 @@ export class VisualizationWsService {
   url: URL;
   
   constructor() {
-      this.url = new URL(this.baseUrl + '/ws', window.location.href);
+      this.url = new URL(this.baseUrl + '/ws/', window.location.href);
       if (this.url.protocol === 'https') {
         this.url.protocol = 'wss';
       } else {
