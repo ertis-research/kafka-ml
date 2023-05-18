@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow_io as tfio
 from utils import *
+import json
 
 class DecoderFactory:
     """Factory class for the decoders"""
@@ -11,6 +12,8 @@ class DecoderFactory:
             return RawDecoder(configuration)
         elif input_format == 'AVRO':
             return AvroDecoder(configuration)
+        elif input_format == 'JSON':
+            return JsonDecoder()
         else:
             raise ValueError(input_format)
 
@@ -65,3 +68,14 @@ class AvroDecoder:
             res_y.append(decode_y.get(key))
 
         return (res_x, res_y)
+    
+class JsonDecoder:
+    """JSON class decoder implementation
+        ARGS:
+            configuration (dic): configuration properties
+        Attributes:
+            scheme(str): scheme of the JSON implementation
+
+    """
+    def decode(self, x):
+        return json.loads(x)

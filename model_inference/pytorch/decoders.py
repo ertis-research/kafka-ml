@@ -3,9 +3,11 @@ from utils import *
 import avro.schema
 import io
 from avro.io import DatumReader, BinaryDecoder
+import json
 
 class DecoderFactory:
     """Factory class for the decoders"""
+
 
     @staticmethod
     def get_decoder(input_format, configuration):
@@ -13,6 +15,8 @@ class DecoderFactory:
             return RawDecoder(configuration)
         elif input_format == 'AVRO':
             return AvroDecoder(configuration)
+        elif input_format == 'JSON':
+            return JsonDecoder()
         else:
             raise ValueError(input_format)
 
@@ -63,3 +67,14 @@ class AvroDecoder:
         
 
         return res
+    
+class JsonDecoder:
+    """JSON class decoder implementation
+        ARGS:
+            configuration (dic): configuration properties
+        Attributes:
+            scheme(str): scheme of the JSON implementation
+
+    """
+    def decode(self, x):
+        return json.loads(x)
