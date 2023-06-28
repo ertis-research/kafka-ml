@@ -4,7 +4,9 @@ metadata:
   name: kafkaml-configmap
 data:
   # brokers: 192.168.43.7:32001
-  control.topic: control
+  control.topic: KAFKA_ML_CONTROL_TOPIC
+  
+  federated.modelloggertopic: FEDERATED_MODEL_CONTROL_TOPIC
 
   frontend.url: http://localhost
   backend.url: http://backend:8000

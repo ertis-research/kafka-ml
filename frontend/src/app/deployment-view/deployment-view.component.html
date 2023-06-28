@@ -6,96 +6,153 @@
 
     <form class="create-deployment-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
 
-      <mat-form-field *ngIf="showDistributed" class="full-width">
-        <mat-label>Optimizer</mat-label>
-        <input matInput placeholder="adam" name="optimizer" id="optimizer" #nameRef="ngModel" [ngModel]="deployment.optimizer">
-      </mat-form-field>
+      <div class="selector">
+        <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">
+          Incremental training</mat-checkbox>
+        <mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>
+        <mat-checkbox name="federated" [ngModel]="deployment.federated" (change)="federatedControl($event)">Federated learning</mat-checkbox>
+      </div>
 
-      <mat-form-field *ngIf="showDistributed" class="full-width">
-        <mat-label>Learning rate</mat-label>
-        <input matInput placeholder="0.001" name="learning_rate" id="learning_rate" #nameRef="ngModel" [ngModel]="deployment.learning_rate">
-      </mat-form-field>
-
-      <mat-form-field *ngIf="showDistributed" class="full-width">
-        <mat-label>Loss function</mat-label>
-        <input matInput placeholder="sparse_categorical_crossentropy" name="loss" id="loss" #nameRef="ngModel" [ngModel]="deployment.loss">
-      </mat-form-field>
-
-      <mat-form-field *ngIf="showDistributed" class="full-width">
-        <mat-label>Metrics (splitted by comas)</mat-label>
-        <input matInput placeholder="sparse_categorical_accuracy" name="metrics" id="metrics" #nameRef="ngModel" [ngModel]="deployment.metrics">
-      </mat-form-field>
-      
-      <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">Incremental training</mat-checkbox>
-
-      <mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>
-      
       <br>
-      
-      <mat-form-field *ngIf="showIncremental && !hideTimeout" class="full-width">
-        <mat-label>Stream timeout (in milliseconds)</mat-label>
-        <input matInput type="number" placeholder="60000" name="stream_timeout" id="stream_timeout" #nameRef="ngModel" [ngModel]="deployment.stream_timeout">
-      </mat-form-field>
+      Model training settings
+      <br>
 
-      <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
-        <mat-label>Monitoring metric only for single models (must match with some previously defined metric)</mat-label>
-        <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel" [ngModel]="deployment.monitoring_metric">
-      </mat-form-field>
+      <div class="classic-training-settings">
+        <mat-form-field *ngIf="detectedFrameworks.length > 0">
+          <mat-label>Batch size for training</mat-label>
+          <input matInput required type="number" placeholder="10" name="batch" id="batch" #nameRef="ngModel"
+            [ngModel]="deployment.batch">
+        </mat-form-field>
 
-      <mat-label *ngIf="showIncremental && hideTimeout">If the monitoring metric improves, does it increase or decrease? </mat-label>
-      <mat-radio-group *ngIf="showIncremental && hideTimeout" matInput required name="change" [ngModel]="deployment.change">
-        <mat-radio-button value="up">Increase</mat-radio-button>
-        <mat-radio-button value="down">Decrease</mat-radio-button>
-      </mat-radio-group>
+        <div class="classic-tf-training-settings" *ngIf="detectedFrameworks.includes('tf')">
+          <mat-form-field>
+            <mat-label>TensorFlow Training configuration</mat-label>
+            <input matInput required placeholder="epochs=5"
+              pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+              name="tf_kwargs_fit" [ngModel]="deployment.tf_kwargs_fit">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>TensorFlow Validation configuration</mat-label>
+            <input matInput placeholder="" value=""
+              pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+              name="tf_kwargs_val" [ngModel]="deployment.tf_kwargs_val">
+          </mat-form-field>
+        </div>
 
-      <mat-form-field *ngIf="showIncremental && hideTimeout" class="full-width">
-        <mat-label>Improvement</mat-label>
-        <input matInput placeholder="0.1" name="improvement" id="improvement" #nameRef="ngModel" [ngModel]="deployment.improvement">
-      </mat-form-field>
-      
-      <mat-form-field class="full-width" *ngIf="detectedFrameworks.length > 0">
-        <mat-label>Batch size for training</mat-label>
-        <input matInput required type="number" placeholder="10" name="batch" id="batch" #nameRef="ngModel"
-          [ngModel]="deployment.batch">
-      </mat-form-field>
+        <div class="classic-pth-training-settings" *ngIf="detectedFrameworks.includes('pth')">
+          <mat-form-field>
+            <mat-label>PyTorch Training configuration</mat-label>
+            <input matInput required placeholder="max_epochs=5"
+              pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+              name="pth_kwargs_fit" [ngModel]="deployment.pth_kwargs_fit">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>PyTorch Validation configuration</mat-label>
+            <input matInput placeholder="" value=""
+              pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
+              name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
+          </mat-form-field>
+        </div>
+      </div>
 
-      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('tf')">
-        <mat-label>TensorFlow Training configuration</mat-label>
-        <input matInput required placeholder="epochs=5"
-          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
-          name="tf_kwargs_fit" [ngModel]="deployment.tf_kwargs_fit">
-      </mat-form-field>
+      <div class="distributed-training-settings" *ngIf="showDistributed">
+        <br>
+        Distributed models settings
+        <br>
+        <mat-form-field>
+          <mat-label>Optimizer</mat-label>
+          <input matInput placeholder="adam" name="optimizer" id="optimizer" #nameRef="ngModel"
+            [ngModel]="deployment.optimizer">
+        </mat-form-field>
 
-      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('tf')">
-        <mat-label>TensorFlow Validation configuration</mat-label>
-        <input matInput placeholder="" value=""
-          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
-          name="tf_kwargs_val" [ngModel]="deployment.tf_kwargs_val">
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Learning rate</mat-label>
+          <input matInput placeholder="0.001" name="learning_rate" id="learning_rate" #nameRef="ngModel"
+            [ngModel]="deployment.learning_rate">
+        </mat-form-field>
 
-      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('pth')">
-        <mat-label>PyTorch Training configuration</mat-label>
-        <input matInput required placeholder="max_epochs=5"
-          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
-          name="pth_kwargs_fit" [ngModel]="deployment.pth_kwargs_fit">
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Loss function</mat-label>
+          <input matInput placeholder="sparse_categorical_crossentropy" name="loss" id="loss" #nameRef="ngModel"
+            [ngModel]="deployment.loss">
+        </mat-form-field>
 
-      <mat-form-field class="full-width" *ngIf="detectedFrameworks.includes('pth')">
-        <mat-label>PyTorch Validation configuration</mat-label>
-        <input matInput placeholder="" value=""
-          pattern="^[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*(,[ ]*[A-Za-z0-9-_]*[ ]*=[ ]*[A-Za-z0-9-_]*[ ]*)*$"
-          name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Metrics (splitted by comas)</mat-label>
+          <input matInput placeholder="sparse_categorical_accuracy" name="metrics" id="metrics" #nameRef="ngModel"
+            [ngModel]="deployment.metrics">
+        </mat-form-field>
+      </div>
+
+      <div class="incremental-training-settings" *ngIf="showIncremental">
+        <br>
+        Incremental training settings
+        <br>
+        <mat-label *ngIf="hideTimeout">Configure inference parameters</mat-label>
+        
+        <mat-form-field *ngIf="!hideTimeout">
+          <mat-label>Stream timeout (in milliseconds)</mat-label>
+          <input matInput type="number" placeholder="60000" name="stream_timeout" id="stream_timeout" #nameRef="ngModel"
+            [ngModel]="deployment.stream_timeout">
+        </mat-form-field>
+
+        <mat-form-field *ngIf="hideTimeout">
+          <mat-label>Monitoring metric (must match with some previously defined metric)</mat-label>
+          <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel"
+            [ngModel]="deployment.monitoring_metric">
+        </mat-form-field>
+
+        <mat-label *ngIf="hideTimeout">If the monitoring metric improves, does it increase or decrease? </mat-label>
+        <mat-radio-group *ngIf="hideTimeout" matInput required name="change" [ngModel]="deployment.change">
+          <mat-radio-button value="up">Increase</mat-radio-button>
+          <mat-radio-button value="down">Decrease</mat-radio-button>
+        </mat-radio-group>
+
+        <mat-form-field *ngIf="hideTimeout">
+          <mat-label>Improvement</mat-label>
+          <input matInput placeholder="0.05" name="improvement" id="improvement" #nameRef="ngModel"
+            [ngModel]="deployment.improvement">
+        </mat-form-field>
 
       <mat-form-field *ngIf="detectedFrameworks.length > 0">
         <mat-label>GPU Memory usage estimation in GB (Kubernetes Scheduler)</mat-label>
         <input matInput required type="number" placeholder="0" name="gpumem" [ngModel]="deployment.gpumem">
       </mat-form-field>
 
-      <br>
-      
-      <mat-slide-toggle *ngIf="detectedFrameworks.length > 0 && !showIncremental" name="conf_mat_settings" [ngModel]="deployment.conf_mat_settings" value="false">Create confusion matrix at end (if test set is specified)</mat-slide-toggle>
-      
+      <div *ngIf="showFederated">
+        <br>
+        Federated strategy settings
+        <br>
+
+        <mat-form-field>
+          <mat-label>Number of aggregation rounds</mat-label>
+          <input matInput required type="number" placeholder="15" name="agg_rounds" [ngModel]="deployment.agg_rounds">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Minimun data entries per device</mat-label>
+          <input matInput required type="number" placeholder="1000" name="min_data" [ngModel]="deployment.min_data">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Data Restriction</mat-label>
+          <input matInput required placeholder="{}" name="data_restriction" [ngModel]="deployment.data_restriction">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Aggregation strategy</mat-label>
+          <mat-select required [(ngModel)]="deployment.agg_strategy" name="strategy">
+            <mat-option matInput *ngFor="let strategy of strategies" [value]="strategy.value">
+              {{strategy.viewValue}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-slide-toggle *ngIf="detectedFrameworks.length > 0 && (!showIncremental || !showFederated)" name="conf_mat_settings"
+        [ngModel]="deployment.conf_mat_settings" value="false">
+        Create confusion matrix at end (if test set is specified)
+      </mat-slide-toggle>
       <div class="row-buttons">
         <span class="spacer"></span>
         <a (click)="back()" class="form-btn" mat-button>Go Back</a>

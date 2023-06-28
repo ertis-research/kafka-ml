@@ -29,6 +29,7 @@ NOT_DISTRIBUTED_NOT_INCREMENTAL = 1
 NOT_DISTRIBUTED_INCREMENTAL = 2
 DISTRIBUTED_NOT_INCREMENTAL = 3
 DISTRIBUTED_INCREMENTAL = 4
+FEDERATED_LEARNING = 5
 
 def download_model(model_url, filename, retries, sleep_time):
   """Downloads the model from the URL received and saves it in the filesystem
@@ -201,3 +202,24 @@ def load_incremental_environment_vars():
     improvement = eval(os.environ.get('IMPROVEMENT'))
 
     return stream_timeout, monitoring_metric, change, improvement
+
+def load_federated_environment_vars():
+    """Loads the incremental environment information received from dockers
+    model_logger_topic, federated_string_id, agg_rounds, data_restriction, min_data, agg_strategy
+    Returns:
+        model_logger_topic (str): model control topic with the model information
+        federated_string_id (str): federated string id
+        agg_rounds (int): number of aggregation rounds
+        data_restriction (str): data restriction
+        min_data (int): minimum data to train
+        agg_strategy (str): aggregation strategy
+    """
+
+    model_logger_topic = os.environ.get('MODEL_LOGGER_TOPIC')
+    federated_string_id = os.environ.get('FEDERATED_STRING_ID')
+    agg_rounds = int(os.environ.get('AGGREGATION_ROUNDS'))
+    data_restriction = os.environ.get('DATA_RESTRICTION')
+    min_data = int(os.environ.get('MIN_DATA'))
+    agg_strategy = os.environ.get('AGG_STRATEGY')
+
+    return model_logger_topic, federated_string_id, agg_rounds, data_restriction, min_data, agg_strategy

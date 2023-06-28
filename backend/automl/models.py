@@ -48,6 +48,15 @@ class Deployment(models.Model):
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
     time = models.DateTimeField(default=now, editable=False)
 
+    # Federated Deployment Settings
+    federated = models.BooleanField(default=False)
+    agg_rounds = models.IntegerField(default=15, blank=True, null=True)
+    min_data = models.IntegerField(default=1000, blank=True, null=True)
+    AGGREGATION_STRATEGIES = Choices('FedAvg', 'FedOpt', 'FedAdagrad', 'FedAdam', 'FedYogi')
+    agg_strategy = StatusField(choices_name='AGGREGATION_STRATEGIES')
+    data_restriction = models.JSONField(default=dict, blank=True, null=True)
+    federated_string_id = models.TextField(blank=True, null=True)
+
     class Meta(object):
         ordering = ('-time', )
     

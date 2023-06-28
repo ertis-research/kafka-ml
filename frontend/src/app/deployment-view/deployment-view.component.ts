@@ -6,6 +6,12 @@ import { ConfigurationService } from '../services/configuration.service';
 import { DeploymentService } from '../services/deployment.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+
+interface AggStrategies {
+  value: string;
+  viewValue: string;
+}
+
 @Component({
   selector: 'app-deployment-view',
   templateUrl: './deployment-view.component.html',
@@ -26,8 +32,18 @@ export class DeploymentViewComponent implements OnInit {
   valid: boolean = false;
   detectedFrameworks: string[] = [];
   showIncremental: Boolean = false;
+  showFederated: Boolean = false;
   showDistributed: Boolean = false;
   hideTimeout: Boolean = false;
+
+  strategies: AggStrategies[] = [
+    {value: 'FedAvg',     viewValue: 'Federated Averaging strategy'},
+    // {value: 'FedOpt',     viewValue: 'Federated Optim strategy'},
+    // {value: 'FedAdagrad', viewValue: 'Federated Adagrad-based strategy'},
+    // {value: 'FedAdam',    viewValue: 'Federated Adam strategy'},
+    // {value: 'FedYogi',    viewValue: 'Federated Yogi strategy'},
+  ];
+  
   ngOnInit(): void {
     this.deployment.conf_mat_settings = false;
     if (this.route.snapshot.paramMap.has('id')) {
@@ -55,6 +71,14 @@ export class DeploymentViewComponent implements OnInit {
     }
   }
 
+  federatedControl(e: any) {
+    if (e.checked) {
+      this.showFederated = true;
+    } else {
+      this.showFederated = false;
+    }
+  }
+
   incrementalControl(e: any) {
     if (e.checked) {
       this.showIncremental = true;
@@ -72,17 +96,17 @@ export class DeploymentViewComponent implements OnInit {
     }
   }
   
-  onSubmit(deployment: Deployment) {
+  clearEmptyOrNullFields(deployment: Deployment): Deployment {
+    // Distributed settings
+    if (deployment.optimizer == '') {
+      delete deployment.optimizer;
+    }
     if (deployment.learning_rate && deployment.learning_rate.toString() == '') {
       delete deployment.learning_rate;
     }
 
     if (deployment.stream_timeout == null) {
       delete deployment.stream_timeout;
-    }
-
-    if (deployment.optimizer == '') {
-      delete deployment.optimizer;
     }
 
     if (deployment.loss == '') {
@@ -93,13 +117,37 @@ export class DeploymentViewComponent implements OnInit {
       delete deployment.metrics;
     }
 
-    deployment.configuration = this.configurationID;
+    // Incremental settings
+    if (deployment.stream_timeout == null) {
+      delete deployment.stream_timeout;
+    }
+
+    // Federated settings
+    if (deployment.agg_rounds == null) {
+      delete deployment.agg_rounds;
+    }
+    if (deployment.min_data == null) {
+      delete deployment.min_data;
+    }
+    if (deployment.agg_strategy == null) {
+      delete deployment.agg_strategy;
+    }
+    if (deployment.data_restriction == null) {
+      delete deployment.data_restriction;
+    }
 
     deployment.tf_kwargs_fit = deployment.tf_kwargs_fit || "";
     deployment.tf_kwargs_val = deployment.tf_kwargs_val || "";
     deployment.pth_kwargs_fit = deployment.pth_kwargs_fit || "";
-
     deployment.pth_kwargs_val = deployment.pth_kwargs_val || "";
+
+    return deployment;
+  }
+  
+  onSubmit(deployment: Deployment) {  
+    deployment = this.clearEmptyOrNullFields(deployment);
+
+    deployment.configuration = this.configurationID;
 
     this.deploymentService.deploy(deployment).subscribe(
       () => {

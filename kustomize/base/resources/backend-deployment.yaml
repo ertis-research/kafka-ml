@@ -89,6 +89,12 @@ spec:
                   name: kafkaml-configmap
                   key: debug
                   optional: true
+            - name: MODEL_LOGGER_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: federated.modelloggertopic
+                  optional: true
 
           # - name: KUBE_TOKEN
           #  value: ...

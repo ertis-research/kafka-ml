@@ -7,6 +7,8 @@ import copy
 import traceback
 import requests
 import re
+import random
+import string
 
 from django.http import HttpResponse
 from django.views import View
@@ -443,6 +445,11 @@ class DeploymentList(generics.ListCreateAPIView):
                 data.pop('pth_kwargs_fit') 
                 data.pop('pth_kwargs_val')
                 pth_kwargs_fit_empty, pth_kwargs_val_empty = True, True
+            
+            if data.get('federated', False) == True:
+                # Generate random string of 5 characters
+                random_string = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
+                data['federated_string_id'] = random_string
 
             serializer = DeployDeploymentSerializer(data=data)
             if serializer.is_valid():
@@ -465,7 +472,7 @@ class DeploymentList(generics.ListCreateAPIView):
                         if tf_resp.status_code != 200:
                             raise ValueError('Some TensorFlow arguments are not valid.')
                         
-                        if 'incremental' in data.keys() and data['incremental'] == True and 'indefinite' in data.keys() and data['indefinite'] == True:
+                        if data.get('incremental', False) == True and data.get('indefinite', False) == True:
                             if Configuration.objects.filter(pk=data['configuration']).exists():
                                 obj = Configuration.objects.get(pk=data['configuration'])
                                 for m in obj.ml_models.all():
@@ -497,22 +504,59 @@ class DeploymentList(generics.ListCreateAPIView):
 
                         if not result.model.distributed:
                             if not deployment.incremental:
-                                case = 1
+                                case = 1 # Case 1: Single Classic Training
+                            elif deployment.federated:
+                                case = 5 # Case 5: Single Federated Training
                             else:
-                                case = 2
+                                case = 2 # Case 2: Single Incremental Training
                         else:
                             if not deployment.incremental:
-                                case = 3
+                                case = 3 # Case 3: Distributed Classic Training
                             else:
-                                case = 4
+                                case = 4 # Case 4: Distributed Incremental Training
                         
                         if not result.model.distributed:
                             if not deployment.incremental:
-                                job_manifest = {
+                                if not deployment.federated:
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'model-training-'+str(result.id)
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
+                                                                {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
+                                            }
+                                        }
+                                    }
+                                else:
+                                    job_manifest = {
                                     'apiVersion': 'batch/v1',
                                     'kind': 'Job',
                                     'metadata': {
-                                        'name': 'model-training-'+str(result.id)
+                                        'name': 'federated-model-training-controller-'+str(result.id)
                                     },
                                     'spec': {
                                         'ttlSecondsAfterFinished' : 10,
@@ -524,14 +568,20 @@ class DeploymentList(generics.ListCreateAPIView):
                                                     'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
                                                             {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
                                                             {'name': 'RESULT_ID', 'value': str(result.id)},
-                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                             {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
                                                             {'name': 'BATCH', 'value': str(deployment.batch)},
                                                             {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                             {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                             {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                             {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
-                                                            {'name': 'CASE', 'value': str(case)}
+                                                            # Federated
+                                                            {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
+                                                            {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
+                                                            {'name': 'AGG_STRATEGY', 'value': str(deployment.agg_strategy)},
+                                                            {'name': 'DATA_RESTRICTION', 'value': str(deployment.data_restriction)},
+                                                            {'name': 'CASE', 'value': str(case)},                            
+                                                            {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
+                                                            {'name': 'FEDERATED_STRING_ID', 'value': str(deployment.federated_string_id)}
                                                             ],
                                                     'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                 }],
@@ -541,7 +591,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                         }
                                     }
                                 }
-                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                             else:
                                 job_manifest = {
                                     'apiVersion': 'batch/v1',
@@ -580,7 +629,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                         }
                                     }
                                 }
-                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                         
                         elif result.model.distributed and result.model.father == None:
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
@@ -640,7 +688,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                         }
                                     }
                                 }                                
-                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                             else:
                                 job_manifest = {
                                     'apiVersion': 'batch/v1',
@@ -681,7 +728,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                         }
                                     }
                                 }
-                                resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                        resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                        logging.info("Job created. status='%s'" % str(resp.status))
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
                     traceback.print_exc()
@@ -854,13 +902,13 @@ class TrainingResultID(generics.RetrieveUpdateDestroyAPIView):
                 data = json.loads(request.data['data'])
                 obj = TrainingResult.objects.get(id=pk)
 
-                if 'indefinite' in data.keys() and data['indefinite'] == True:
+                if data.get('indefinite', False) == True:
                     deployment = obj.deployment
                     model = obj.model
                     obj = TrainingResult.objects.create(deployment=deployment, model=model)
 
                     data.pop('indefinite')
-                
+
                 serializer = SimpleResultSerializer(obj, data = data, partial=True)
                 
                 if serializer.is_valid():

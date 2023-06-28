@@ -98,7 +98,10 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deployment
-        fields = ['optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'configuration']
+        fields = ['optimizer', 'learning_rate', 'loss', 'metrics']+[
+                'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
+                'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'configuration']+[
+                'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction', 'federated_string_id']
     
     def validate_batch(self, value):
         """Checks that batch size is greater than 0"""
@@ -137,7 +140,9 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement', 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'time']
+        fields = ['id', 'configuration', 'results', 'optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
+                'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'time']+[
+                'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction', 'federated_string_id']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""
