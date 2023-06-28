@@ -96,12 +96,6 @@
             [ngModel]="deployment.stream_timeout">
         </mat-form-field>
 
-        <mat-form-field>
-          <mat-label>Message poll timeout (in milliseconds)</mat-label>
-          <input matInput type="number" placeholder="60000" name="message_poll_timeout" id="message_poll_timeout"
-            #nameRef="ngModel" [ngModel]="deployment.message_poll_timeout">
-        </mat-form-field>
-
         <mat-form-field *ngIf="hideTimeout">
           <mat-label>Monitoring metric (must match with some previously defined metric)</mat-label>
           <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel"
