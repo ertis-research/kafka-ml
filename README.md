@@ -19,7 +19,7 @@ open-access publication below:
 
 > _C. Martín, P. Langendoerfer, P. Zarrin, M. Díaz and B. Rubio <br> >
 > **Kafka-ML: connecting the data stream with ML/AI frameworks** <br> Future
-> Generation Computer Systems, 2022, vol. 126, p. 15-33 <br>
+> Generation Computer Systems, 2022, vol. 126, p. 15-33 <br> >
 > [10.1016/j.future.2021.07.037](https://www.sciencedirect.com/science/article/pii/S0167739X21002995)_
 
 If you wish to reuse Kafka-ML, please properly cite the above mentioned paper.
@@ -95,6 +95,8 @@ refer to
 Once Kubernetes is running, open a terminal and run the following command:
 
 ```sh
+# Uncomment only if you are running Kafka-ML on Apple Silicon
+# export DOCKER_DEFAULT_PLATFORM=linux/amd64
 kubectl apply -k "github.com/ertis-research/kafka-ml/kustomize/local?ref=v1.0"
 ```
 
