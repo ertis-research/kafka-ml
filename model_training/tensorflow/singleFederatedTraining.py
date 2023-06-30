@@ -2,6 +2,7 @@ from mainTraining import *
 from callbacks import *
 
 
+import logging
 import re
 from confluent_kafka import Producer
 from confluent_kafka.admin import AdminClient, NewTopic

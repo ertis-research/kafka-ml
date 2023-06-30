@@ -2,6 +2,7 @@ from utils import *
 import json
 import traceback
 import requests
+import logging
 
 class SingleTrackTrainingCallback(keras.callbacks.Callback):
     """Callback for tracking the training of a single model"""

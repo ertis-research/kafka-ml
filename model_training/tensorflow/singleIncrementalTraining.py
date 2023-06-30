@@ -1,5 +1,6 @@
 from mainTraining import *
 from callbacks import *
+import logging
 
 class SingleIncrementalTraining(MainTraining):
     """Class for single models incremental training

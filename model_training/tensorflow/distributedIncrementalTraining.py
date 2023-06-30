@@ -1,5 +1,6 @@
 from mainTraining import *
 from callbacks import *
+import logging
 
 class DistributedIncrementalTraining(MainTraining):
     """Class for distributed models incremental training

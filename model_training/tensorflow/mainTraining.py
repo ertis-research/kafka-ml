@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import traceback
 import requests
+import logging
 
 class MainTraining(object):
     """Main class for training

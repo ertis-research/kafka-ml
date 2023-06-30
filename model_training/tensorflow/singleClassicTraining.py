@@ -1,5 +1,6 @@
 from mainTraining import *
 from callbacks import *
+import logging
 
 class SingleClassicTraining(MainTraining):
     """Class for single models training
