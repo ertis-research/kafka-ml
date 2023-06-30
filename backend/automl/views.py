@@ -504,9 +504,10 @@ class DeploymentList(generics.ListCreateAPIView):
 
                         if not result.model.distributed:
                             if not deployment.incremental:
-                                case = 1 # Case 1: Single Classic Training
-                            elif deployment.federated:
-                                case = 5 # Case 5: Single Federated Training
+                                if not deployment.federated:
+                                    case = 1 # Case 1: Single Classic Training
+                                else:
+                                    case = 5 # Case 5: Single Federated Training
                             else:
                                 case = 2 # Case 2: Single Incremental Training
                         else:
