@@ -1,0 +1,27 @@
+on:
+  push:
+    paths:
+      - federated-module/federated_model_training/tensorflow/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-tf-model-training:
+    strategy:
+      matrix:
+        include:
+          - name: federated-kafka-ml-tensorflow_model_training
+          - name: federated-kafka-ml-tensorflow_model_training-gpu
+            build-args: "TFTAG=2.7.0-gpu"
+    uses: ./.github/workflows/build.yml
+    with:
+      context: federated-module/federated_model_training/tensorflow
+      dockerfile: federated-module/federated_model_training/tensorflow/Dockerfile
+      name: ${{ matrix.name }}
+      platforms: linux/amd64
+      build-args: ${{ matrix.build-args }}
+    secrets: inherit
