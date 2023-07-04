@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: federated-backend
+spec:
+  selector:
+    name: pod-federated-backend
+  type: LoadBalancer
+  ports:
+  - protocol: "TCP"
+    port: 8085
+    targetPort: 8085

@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+buildMetadata: [managedByLabel, originAnnotations, transformerAnnotations]
+
+resources:
+  - resources/role.yaml
+  - resources/federated-kafkaml-configmap.yaml
+  - resources/federated-backend-deployment.yaml
+  - resources/federated-backend-service.yaml
+  - resources/federated-data-control-logger.yaml
+  - resources/federated-model-control-logger.yaml

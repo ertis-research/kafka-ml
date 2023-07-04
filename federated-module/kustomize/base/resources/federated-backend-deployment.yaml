@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: federated-backend
+  name: federated-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pod-federated-backend
+  template:
+    metadata:
+      labels:
+        name: pod-federated-backend
+      name: federated-backend
+    spec:
+      serviceAccountName: kafkaml
+      automountServiceAccountToken: true
+      containers:
+        - image: federated-kafka-ml-backend
+          name: federated-backend
+          ports:
+            - containerPort: 8085
+          imagePullPolicy: Always
+          env:
+            - name: KML_CLOUD_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: kml.cloud.brokers
+            - name: FEDERATED_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: federated.data.brokers
+            - name: DATA_CONTROL_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: federated.data.control.topic
+            - name: MODEL_CONTROL_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: federated.model.control.topic
+            - name: KUBE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: federated.backend.url
+            - name: ALLOWED_HOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: backend.allowedhosts
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: debug
+                  optional: true
+            - name: TENSORFLOW_FEDERATED_TRAINING_MODEL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: federated.tensorflow.training.image
+            - name: PYTORCH_FEDERATED_TRAINING_MODEL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: federated.pytorch.training.image

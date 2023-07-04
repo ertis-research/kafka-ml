@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: federated-data-control-logger
+  name: federated-data-control-logger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: federated-data-control-logger
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: federated-data-control-logger
+      name: federated-data-control-logger
+    spec:
+      containers:
+      - image: federated-kafka-ml-data_control_logger
+        name: federated-data-control-logger
+        imagePullPolicy: Always
+        env:
+          - name: BOOTSTRAP_SERVERS
+            valueFrom:
+              configMapKeyRef:
+                name: federated-kafkaml-configmap
+                key: federated.data.brokers
+          - name: CONTROL_TOPIC
+            valueFrom:
+              configMapKeyRef:
+                name: federated-kafkaml-configmap
+                key: federated.data.control.topic
+          - name: BACKEND
+            valueFrom:
+              configMapKeyRef:
+                name: federated-kafkaml-configmap
+                key: federated.backend.url

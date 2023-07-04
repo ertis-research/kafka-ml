@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: federated-kafkaml-configmap
+data:
+  federated.data.control.topic: DATA_CONTROL_TOPIC
+  federated.model.control.topic: MODEL_CONTROL_TOPIC
+  federated.backend.url: http://federated-backend:8085
+  backend.allowedhosts: 127.0.0.1,localhost,federated-backend
+
+  
+  # kml.cloud.brokers: cloud-kafka-broker:9092
+  # federated.data.brokers: data-kafka-broker:9092
+  # debug: "0"

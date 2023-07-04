@@ -1,0 +1,23 @@
+resources:
+  - "../base"
+
+configMapGenerator:
+  - name: kafkaml-configmap
+    behavior: merge
+    literals:
+      - federated.tensorflow.training.image=ertis/federated-kafka-ml-tensorflow_model_training:master
+      - federated.pytorch.training.image=ertis/federated-kafka-ml-pytorch_model_training:master # Non existing
+      # DELETE BROKERS!!!
+      - kml.cloud.brokers=192.168.43.7:32001
+      - federated.data.brokers=192.168.43.7:32002
+
+images:
+  - name: federated-kafka-ml-backend
+    newName: ertis/federated-kafka-ml-backend
+    newTag: master
+  - name: federated-kafka-ml-data_control_logger
+    newName: ertis/federated-kafka-ml-frontend
+    newTag: master
+  - name: federated-kafka-ml-model_control_logger
+    newName: ertis/federated-kafka-ml-kafka_control_logger
+    newTag: master
