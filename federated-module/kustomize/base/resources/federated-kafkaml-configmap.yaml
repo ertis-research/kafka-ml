@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: federated-kafkaml-configmap
 data:
-  federated.data.control.topic: DATA_CONTROL_TOPIC
-  federated.model.control.topic: MODEL_CONTROL_TOPIC
-  federated.backend.url: http://federated-backend:8085
+  federated.data.control.topic: FEDERATED_DATA_CONTROL_TOPIC
+  federated.model.control.topic: FEDERATED_MODEL_CONTROL_TOPIC
+  federated.backend.url: federated-backend:8085
   backend.allowedhosts: 127.0.0.1,localhost,federated-backend
 
   

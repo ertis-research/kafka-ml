@@ -26,7 +26,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: federated-kafkaml-configmap
-                key: federated.model.brokers
+                key: kml.cloud.brokers
           - name: CONTROL_TOPIC
             valueFrom:
               configMapKeyRef:
