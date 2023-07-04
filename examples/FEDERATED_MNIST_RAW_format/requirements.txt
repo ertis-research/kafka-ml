@@ -1,0 +1,2 @@
+tensorflow==2.7.0
+kafka-python==2.0.2
