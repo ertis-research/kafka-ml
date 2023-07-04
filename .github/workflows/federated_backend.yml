@@ -13,7 +13,7 @@ jobs:
   build-federated-backend:
     uses: ./.github/workflows/build.yml
     with:
-      context: federated-backend
+      context: federated-module/federated_backend
       dockerfile: federated-module/federated_backend/Dockerfile
       name: federated-kafka-ml-backend
       platforms: linux/amd64

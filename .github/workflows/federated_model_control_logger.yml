@@ -13,7 +13,7 @@ jobs:
   build-federated-model-control-logger:
     uses: ./.github/workflows/build.yml
     with:
-      context: federated-model_control_logger
+      context: federated-module/federated_model_control_logger
       dockerfile: federated-module/federated_model_control_logger/Dockerfile
       name: federated-kafka-ml-model_control_logger
       platforms: linux/amd64
