@@ -1,4 +1,4 @@
-# Model inference
+# Kafka Control Logger
 
 This module contains the Kafka control logger that consumes control Kafka-ML messages to send them to the Back-end. That's all. These messages will be used in the Back-end to reuse the data streams and send them to other deployed training tasks.
 
