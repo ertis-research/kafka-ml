@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - federated-module/federated_data_control_logger/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-federated-data-control-logger:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: federated-data_control_logger
+      dockerfile: federated-module/federated_data_control_logger/Dockerfile
+      name: federated-kafka-ml-data_control_logger
+      platforms: linux/amd64
+    secrets: inherit

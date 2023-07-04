@@ -1,0 +1,20 @@
+on:
+  push:
+    paths:
+      - federated-module/federated_backend/**/*
+    branches:
+      - "master"
+      - "main"
+      - "latest"
+  release:
+    types:
+      - created
+jobs:
+  build-federated-backend:
+    uses: ./.github/workflows/build.yml
+    with:
+      context: federated-backend
+      dockerfile: federated-module/federated_backend/Dockerfile
+      name: federated-kafka-ml-backend
+      platforms: linux/amd64
+    secrets: inherit
