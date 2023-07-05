@@ -9,7 +9,7 @@
       <div class="selector">
         <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">
           Incremental training</mat-checkbox>
-        <!--<mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>-->
+        <mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>
         <mat-checkbox name="federated" [ngModel]="deployment.federated" (change)="federatedControl($event)">Federated learning</mat-checkbox>
       </div>
 
