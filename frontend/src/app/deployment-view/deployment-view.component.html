@@ -7,10 +7,12 @@
     <form class="create-deployment-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
 
       <div class="selector">
-        <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">
-          Incremental training</mat-checkbox>
-        <mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training?</mat-checkbox>
+        <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">Incremental training</mat-checkbox>
         <mat-checkbox name="federated" [ngModel]="deployment.federated" (change)="federatedControl($event)">Federated learning</mat-checkbox>
+      </div>
+
+      <div class="selector">
+        <mat-checkbox *ngIf="showIncremental" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training</mat-checkbox>
       </div>
 
       <br>
@@ -87,8 +89,9 @@
       <div class="incremental-training-settings" *ngIf="showIncremental">
         <br>
         Incremental training settings
-        <br>
+        <br><br>
         <mat-label *ngIf="hideTimeout">Configure inference parameters</mat-label>
+        <br><br>
         
         <mat-form-field *ngIf="!hideTimeout">
           <mat-label>Stream timeout (in milliseconds)</mat-label>
@@ -97,16 +100,20 @@
         </mat-form-field>
 
         <mat-form-field *ngIf="hideTimeout">
-          <mat-label>Monitoring metric (must match with some previously defined metric)</mat-label>
+          <mat-label>Monitoring metric (must match with a predefined metric)</mat-label>
           <input matInput required name="monitoring_metric" id="monitoring_metric" #nameRef="ngModel"
             [ngModel]="deployment.monitoring_metric">
         </mat-form-field>
 
-        <mat-label *ngIf="hideTimeout">If the monitoring metric improves, does it increase or decrease? </mat-label>
-        <mat-radio-group *ngIf="hideTimeout" matInput required name="change" [ngModel]="deployment.change">
-          <mat-radio-button value="up">Increase</mat-radio-button>
-          <mat-radio-button value="down">Decrease</mat-radio-button>
-        </mat-radio-group>
+        <div *ngIf="hideTimeout">          
+          <mat-label>If the monitoring metric improves, does it increase or decrease?</mat-label>
+          <br><br>
+          <mat-radio-group *ngIf="hideTimeout" matInput required name="change" [ngModel]="deployment.change">
+            <mat-radio-button value="up">Increase</mat-radio-button>
+            <mat-radio-button value="down">Decrease</mat-radio-button>
+          </mat-radio-group>
+          <br><br>
+        </div>  
 
         <mat-form-field *ngIf="hideTimeout">
           <mat-label>Improvement</mat-label>
