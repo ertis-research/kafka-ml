@@ -90,10 +90,10 @@
         <br>
         Incremental training settings
         <br><br>
-        <mat-label *ngIf="hideTimeout">Configure inference parameters</mat-label>
-        <br><br>
         
         <mat-form-field *ngIf="!hideTimeout">
+          <mat-label *ngIf="hideTimeout">Configure inference parameters</mat-label>
+          <br><br>
           <mat-label>Stream timeout (in milliseconds)</mat-label>
           <input matInput type="number" placeholder="60000" name="stream_timeout" id="stream_timeout" #nameRef="ngModel"
             [ngModel]="deployment.stream_timeout">
