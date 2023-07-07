@@ -76,6 +76,7 @@ Kafka-ML article has been selected as
   parameters for the deployment of distributed models.
 - [02/09/2022] Added real-time display of training parameters.
 - [26/12/2022] Added indefinite incremental training support.
+- [07/07/2023] Added federated training support (currently only for Tensorflow/Keras models).
 
 ## Deploy Kafka-ML in a fast way
 
@@ -118,7 +119,7 @@ To follow this tutorial, please deploy Kafka-ML as indicated in
 #### 1. Define a ML/AI model in Kafka-ML
 
 Create a model in the Models tab with just a TF/Keras model source code and some
-imports/functions if needed. Maybe this model for the MINST dataset is a simple
+imports/functions if needed. Maybe this model for the MNIST dataset is a simple
 way to start:
 
 ```py
@@ -219,17 +220,17 @@ data.
 Now, it is time to ingest the model(s) with your data stream for training and
 maybe evaluation.
 
-If you have used the MINST model you can use the example
+If you have used the MNIST model you can use the example
 `mnist_dataset_training_example.py`. You only need to configure the
 _deployment_id_ attribute to the one generated in Kafka-ML, maybe it is still 1.
 This is the way to match data streams with configurations and models during
 training. You may need to install the Python libraries listed in
 datasources/requirements.txt.
 
-If so, please execute the MISNT example for training:
+If so, please execute the MNIST example for training:
 
 ```
-python examples/MINST_RAW_format/mnist_dataset_training_example.py
+python examples/MNIST_RAW_format/mnist_dataset_training_example.py
 ```
 
 You can use your own example using the AvroSink (for Apache Avro types) and
@@ -275,14 +276,14 @@ Finally, test the inference deployed using the MNIST example for inference in
 the topics deployed:
 
 ```
-python examples/MINST_RAW_format/mnist_dataset_inference_example.py
+python examples/MNIST_RAW_format/mnist_dataset_inference_example.py
 ```
 
 #### 8. Prediction (classification or regression) visualization
 
 In the visualization tab, you can easily visualize your deployed models. First
 thing, you need to configure how your model prediction data will be visualized.
-Here is the example for the MINST dataset:
+Here is the example for the MNIST dataset:
 
 ```json
 {
@@ -355,7 +356,7 @@ output as the second parameter of your model), and with 'color' and 'label' you
 can set a color and label to display for the param.
 
 Once you set the configuration, you must also set the output topic where the
-model is deployed, 'minst-out' in our last example. After this, visualization
+model is deployed, 'mnist-out' in our last example. After this, visualization
 displays your data.
 
 Here is an example in classification mode:
@@ -372,7 +373,7 @@ And in regression mode:
 
 Create a distributed model with just a TF/Keras model source code and some
 imports/functions if needed. Maybe this distributed model consisting of three
-sub-models for the MINST dataset is a simple way to start:
+sub-models for the MNIST dataset is a simple way to start:
 
 ```py
 edge_input = keras.Input(shape=(28,28,1), name='input_img')
@@ -442,17 +443,17 @@ trained and receive stream data.
 Now, it is time to ingest the distributed model with your data stream for
 training and maybe evaluation.
 
-If you have used the MINST distributed model you can use the example
+If you have used the MNIST distributed model you can use the example
 `mnist_dataset_training_example.py`. You only need to configure the
 _deployment_id_ attribute to the one generated in Kafka-ML, maybe it is still 1.
 This is the way to match data streams with configurations and models during
 training. You may need to install the Python libraries listed in
 datasources/requirements.txt.
 
-If so, please execute the MISNT example for training:
+If so, please execute the MNIST example for training:
 
 ```
-python examples/MINST_RAW_format/mnist_dataset_training_example.py
+python examples/MNIST_RAW_format/mnist_dataset_training_example.py
 ```
 
 #### 5. Model metrics visualization
@@ -488,7 +489,7 @@ Finally, test the inference deployed using the MNIST example for inference in
 the topics deployed:
 
 ```
-python examples/MINST_RAW_format/mnist_dataset_inference_example.py
+python examples/MNIST_RAW_format/mnist_dataset_inference_example.py
 ```
 
 ### Incremental training
@@ -520,17 +521,67 @@ Once the configuration is deployed, you will see one training result per model
 in the configuration. Models are now ready to be trained and receive stream
 data. Now, it is time to ingest the model(s) with your data stream for training.
 
-If you have used the MINST model you can use the example
-`mnist_dataset_online_training_example.py`. You only need to configure the
+If you have used the MNIST model you can use the example
+`mnist_dataset_federated_training_example.py`. You may need to install the Python
+libraries listed in datasources/requirements.txt.
+
+If so, please execute the incremental MNIST example for training:
+
+```
+python examples/MNIST_RAW_format/mnist_dataset_online_training_example.py
+```
+
+### Federated learning
+
+Federated learning is a privacy-preserving machine learning approach that enables
+collaborative model training across multiple decentralized devices without the
+need to transfer sensitive data to a central location. In federated learning,
+instead of sending raw data to a central server for training, local devices
+perform the training on their own data and only share model updates or gradients
+with the central server. These updates are then aggregated to create an improved
+global model, which is sent back to the devices for further training. 
+This distributed learning approach allows for the benefits of collective intelligence
+while ensuring data privacy and reducing the need for large-scale data transfers.
+Federated learning has gained popularity in scenarios where data is sensitive or
+resides in diverse locations, such as mobile devices, healthcare systems, and IoT networks.
+
+Currently, the only framework that supports federated learning is TensorFlow.
+In this case, the usage example will be the same as the one presented for the
+single models, only the configuration deployment form will change and will now
+contain more fields.
+
+As before, change the fields as desired. The new incremental fields are: aggregation_rounds,
+minimun_data, data_restriction and aggregation strategy. The aggregation_rounds parameter
+is used to configure the number of rounds that the model will be aggregated (an aggregation
+round is a round in which the model is trained with the data of the devices and then aggregated
+with the other models). The minimun_data parameter is the minimum number of data that a device
+must have to be able to participate in the training. The data_restriction parameter is the
+data pattern (such as input shape, labels, etc.) that the data must have to be able to participate.
+Finally, the aggregation strategy parameter is the strategy that will be used to aggregate the
+models. Currently, the only strategy available is the average strategy, which consists of averaging
+the weights of the models.
+
+<img src="images/deploy-federated-configuration.png" width="500">
+
+Once the configuration is deployed, you will see one training result per model
+in the configuration. Models are now ready to be aggregated and they are sent
+to the devices for training. Now, if the devices have data that meets the
+requirements, they will train the model and send the weights to the server for
+aggregation. Once the aggregation is finished, the new model will be sent to
+the devices for training again. This process will be repeated until the number
+of rounds specified in the configuration is reached.
+
+If you have used the MNIST model you can use the example
+`mnist_dataset_federated_training_example.py`. You only need to configure the
 _deployment_id_ attribute to the one generated in Kafka-ML, maybe it is still 1.
 This is the way to match data streams with configurations and models during
 training. You may need to install the Python libraries listed in
 datasources/requirements.txt.
 
-If so, please execute the incremental MISNT example for training:
+If so, please execute the incremental MNIST example for training:
 
 ```
-python examples/MINST_RAW_format/mnist_dataset_online_training_example.py
+python examples/FEDERATED_MNIST_RAW_format/mnist_dataset_federated_training_example.py
 ```
 
 ## Installation and development
