@@ -1,0 +1,13 @@
+resources:
+  - "../master"
+
+# namespace: kafkaml
+
+configMapGenerator:
+  - name: federated-kafkaml-configmap
+    behavior: merge
+    literals:
+      - federated.tensorflow.training.image=ertis/federated-kafka-ml-tensorflow_model_training-gpu:master
+      - federated.pytorch.training.image=ertis/federated-kafka-ml-pytorch_model_training-gpu:master # Non existing
+      # - kml.cloud.brokers=kafka-cloud.broker:9092
+      # - federated.data.brokers=kafka-federated.broker:9092
