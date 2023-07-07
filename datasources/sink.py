@@ -42,7 +42,7 @@ class KafkaMLSink(object):
         validation_rate (float): rate of the training data for evaluation. Defaults 0.2
         test_rate (float): rate of the training data for test. Defaults 0.1
         control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
-            Defaults to control
+            Defaults to KAFKA_ML_CONTROL_TOPIC
         group_id (str): Group ID of the Kafka consumer. Defaults to sink
         __partitions (:obj:dic): list of partitions and offssets of the self.topic received
         __consumer (:obj:KafkaConsumer): Kafka consumer
@@ -50,14 +50,15 @@ class KafkaMLSink(object):
     """
 
     def __init__(self, boostrap_servers, topic, deployment_id,
-        input_format, description='', 
-        validation_rate=0, test_rate=0, control_topic='control', group_id='sink'):
+        input_format, description='', dataset_restrictions={},
+        validation_rate=0, test_rate=0, control_topic='KAFKA_ML_CONTROL_TOPIC', group_id='sink'):
 
         self.boostrap_servers = boostrap_servers
         self.topic = topic
         self.deployment_id = deployment_id
         self.input_format = input_format
         self.description = description
+        self.dataset_restrictions = dataset_restrictions
         self.validation_rate = validation_rate
         self.test_rate = test_rate
         self.control_topic = control_topic
@@ -150,6 +151,7 @@ class KafkaMLSink(object):
             'topic': self.__stringify_partitions(),
             'input_format': self.input_format,
             'description' : self.description,
+            'dataset_restrictions': self.dataset_restrictions,
             'input_config' : self.input_config,
             'validation_rate' : self.validation_rate,
             'test_rate' : self.test_rate,
@@ -243,6 +245,10 @@ class KafkaMLSink(object):
         """Sends data to Apache Kafka"""
         
         self.__send(data, None)
+
+    def send_control_msg(self):
+        """Sends control message to Apache Kafka with the information"""
+        self.__send_control_msg()
 
     def online_close(self):
         """Closes the connection with Kafka"""

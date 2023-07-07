@@ -15,7 +15,7 @@ class OnlineRawSink(KafkaMLSink):
                 Defaults '' for no dimension.
             validation_rate (float): rate of the training data for validation. Defaults 0
             control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
-                Defaults to control
+                Defaults to KAFKA_ML_CONTROL_TOPIC
             group_id (str): Group ID of the Kafka consumer. Defaults to sink
 
         Attributes:
@@ -29,11 +29,11 @@ class OnlineRawSink(KafkaMLSink):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         data_type=None, label_type=None, description='', data_reshape=None, label_reshape=None, 
-        validation_rate=0, control_topic='control', group_id='sink'):
+        validation_rate=0, control_topic='KAFKA_ML_CONTROL_TOPIC', group_id='sink'):
         
         input_format = 'RAW'
         test_rate = 0
-        super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
+        super().__init__(boostrap_servers, topic, deployment_id, input_format, description, {}, # {} = no data_restrictions
             validation_rate, test_rate, control_topic, group_id)
         
         self.data_type = data_type

@@ -16,7 +16,7 @@ class FederatedRawSink(KafkaMLSink):
             validation_rate (float): rate of the training data for validation. Defaults 0
             test_rate (float): rate of the training data for test. Defaults 0
             control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
-                Defaults to control
+                Defaults to FEDERATED_DATA_CONTROL_TOPIC
             group_id (str): Group ID of the Kafka consumer. Defaults to sink
 
         Attributes:
@@ -31,7 +31,7 @@ class FederatedRawSink(KafkaMLSink):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         data_type=None, label_type=None, description='', dataset_restrictions='{}', data_reshape=None, label_reshape=None, 
-        validation_rate=0, test_rate=0, control_topic='control', group_id='sink'):
+        validation_rate=0, test_rate=0, control_topic='FEDERATED_DATA_CONTROL_TOPIC', group_id='sink'):
         
         input_format='RAW'
         super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
