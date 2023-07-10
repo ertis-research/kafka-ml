@@ -7,6 +7,7 @@ import copy
 import traceback
 import requests
 import re
+from uuid import uuid4
 
 from django.http import HttpResponse
 from django.views import View
@@ -106,8 +107,8 @@ def deploy_on_kubernetes(datasource_item, model_item, framework):
         job_manifest = {
                         'apiVersion': 'batch/v1',
                         'kind': 'Job',
-                        'metadata': {
-                            'name': f'federated-training-{federated_string_id}-worker'
+                        'metadata': { # random id
+                            'name': f'federated-training-{federated_string_id}-worker-{uuid4().hex[:8]}',
                         },
                         'spec': {
                             'ttlSecondsAfterFinished' : 10,
