@@ -12,6 +12,8 @@ import json
 import time
 import datetime
 
+from uuid import uuid4
+
 RETRIES = 10
 '''Number of retries for requests'''
 
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     logging.info("Received environment information (bootstrap_servers, backend, control_topic) ([%s], [%s], [%s])", 
               bootstrap_servers, backend, control_topic)
     
-    consumer = KafkaConsumer(control_topic, enable_auto_commit=False, bootstrap_servers=bootstrap_servers, group_id='federated_data_control_logger')
+    consumer = KafkaConsumer(control_topic, enable_auto_commit=False, bootstrap_servers=bootstrap_servers, group_id=f'federated_data_control_logger-{uuid4().hex[:8]}')
     """Starts a Kafka consumer to receive the datasource information from the control topic"""
     
     url = 'http://'+backend+'/federated-datasources/' 
