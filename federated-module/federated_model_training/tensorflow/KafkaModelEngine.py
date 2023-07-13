@@ -71,6 +71,8 @@ class KafkaModelEngine():
         consumer = KafkaConsumer(bootstrap_servers = self.bootstrap_servers,
                         enable_auto_commit = False,
                         group_id = self.group_id,
+                        max_poll_records = 2**31-1,
+                        max_partition_fetch_bytes = 2**31-1
                         )
         # consumer.poll()
         consumer.assign([TopicPartition(topic[0], int(topic[1]))])
