@@ -53,7 +53,8 @@ class FederatedKafkaMLModelSink(object):
             enable_auto_commit=False            
         )
         self.__producer = KafkaProducer(
-            bootstrap_servers=self.bootstrap_servers
+            bootstrap_servers=self.bootstrap_servers,
+            max_request_size= 2**31-1
         )
 
         self.__init_partitions()
