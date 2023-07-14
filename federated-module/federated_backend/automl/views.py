@@ -102,13 +102,14 @@ def deploy_on_kubernetes(datasource_item, model_item, framework):
         else:
             raise NotImplementedError("Framework/metodology not implemented")
         
-        federated_string_id = str(model_item['federated_string_id'])
+        federated_model_id  = str(model_item['federated_string_id'])
+        federated_client_id = str(uuid4().hex[:8])
 
         job_manifest = {
                         'apiVersion': 'batch/v1',
                         'kind': 'Job',
                         'metadata': { # random id
-                            'name': f'federated-training-{federated_string_id}-worker-{uuid4().hex[:8]}',
+                            'name': f'federated-training-{federated_model_id}-worker-{federated_client_id}',
                         },
                         'spec': {
                             'ttlSecondsAfterFinished' : 10,
@@ -125,7 +126,8 @@ def deploy_on_kubernetes(datasource_item, model_item, framework):
                                                 {'name': 'VALIDATION_RATE', 'value': str(datasource_item['validation_rate'])},
                                                 {'name': 'TEST_RATE', 'value': str(datasource_item['test_rate'])},
                                                 {'name': 'TOTAL_MSG', 'value': str(datasource_item['total_msg'])},                                                
-                                                {'name': 'FEDERATED_MODEL_ID', 'value': federated_string_id},
+                                                {'name': 'FEDERATED_MODEL_ID', 'value': federated_model_id},
+                                                {'name': 'FEDERATED_CLIENT_ID', 'value': federated_client_id},
                                                 {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},
                                                 ],
                                     }],

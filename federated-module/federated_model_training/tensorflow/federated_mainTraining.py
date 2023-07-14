@@ -1,9 +1,12 @@
 from utils import *
 import json
-import tensorflow_io.kafka as kafka_io
 import traceback
 import requests
 import random, string, time
+
+import tensorflow_io.kafka as kafka_io
+from confluent_kafka.admin import AdminClient, NewTopic
+
 from KafkaModelEngine import KafkaModelEngine
 
 from decoders import *
@@ -29,6 +32,7 @@ class MainTraining(object):
         self.data_bootstrap_server = os.environ.get('DATA_BOOTSTRAP_SERVERS')
 
         self.federated_model_id = os.environ.get('FEDERATED_MODEL_ID')
+        self.federated_client_id = os.environ.get('FEDERATED_CLIENT_ID')
 
         self.input_data_topic = os.environ.get('DATA_TOPIC')
         self.input_format = os.environ.get('INPUT_FORMAT')
@@ -48,8 +52,21 @@ class MainTraining(object):
         self.model_control_topic = f'FED-{self.federated_model_id}-model_control_topic'
         self.model_data_topic = f'FED-{self.federated_model_id}-model_data_topic'
         self.aggregation_control_topic = f'FED-{self.federated_model_id}-agg_control_topic'
-        self.aggregation_data_topic = f'FED-{self.federated_model_id}-agg_data_topic'
-        self.group_id = 'federated-'+self.federated_model_id+'-'.join(random.choice(string.ascii_lowercase) for _ in range(5))
+        self.aggregation_data_topic = f'FED-{self.federated_model_id}-agg_data_topic-{self.federated_client_id}'
+        self.group_id = f'FED-MODEL-{self.federated_model_id}-CLIENT-{self.federated_client_id}'
+
+        # Set up the admin client
+        admin_client = AdminClient({'bootstrap.servers': self.kml_cloud_bootstrap_server})
+
+        topics_to_create = []
+        topics_to_create.append(NewTopic(self.aggregation_data_topic, 1, config={'max.message.bytes': '10000000'}))   # 10 MB
+
+        # Wait for the topic to be created
+        topic_created = False
+        while not topic_created:
+            topic_metadata = admin_client.list_topics(timeout=5)
+            if self.aggregation_data_topic in topic_metadata.topics: 
+                topic_created = True
 
 
 

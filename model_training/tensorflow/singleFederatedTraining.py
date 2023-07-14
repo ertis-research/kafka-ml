@@ -79,7 +79,6 @@ class SingleFederatedTraining(MainTraining):
         self.model_control_topic = f'FED-{self.federated_string_id}-model_control_topic'
         self.model_data_topic = f'FED-{self.federated_string_id}-model_data_topic'
         self.aggregation_control_topic = f'FED-{self.federated_string_id}-agg_control_topic'
-        self.aggregation_data_topic = f'FED-{self.federated_string_id}-agg_data_topic'
 
         # Set up the admin client
         admin_client = AdminClient({'bootstrap.servers': self.bootstrap_servers})
@@ -90,7 +89,6 @@ class SingleFederatedTraining(MainTraining):
         topics_to_create.append(NewTopic(self.model_control_topic, 1, config={'max.message.bytes': '50000'}))         # 50 KB    
         topics_to_create.append(NewTopic(self.aggregation_control_topic, 1, config={'max.message.bytes': '50000'}))   # 50 KB
         topics_to_create.append(NewTopic(self.model_data_topic, 1, config={'max.message.bytes': '10000000'}))         # 10 MB
-        topics_to_create.append(NewTopic(self.aggregation_data_topic, 1, config={'max.message.bytes': '10000000'}))   # 10 MB
 
         admin_client.create_topics(topics_to_create)
 
@@ -100,13 +98,12 @@ class SingleFederatedTraining(MainTraining):
             topic_metadata = admin_client.list_topics(timeout=5)
             if self.model_control_topic in topic_metadata.topics and \
                     self.aggregation_control_topic in topic_metadata.topics and \
-                    self.model_data_topic in topic_metadata.topics and \
-                    self.aggregation_data_topic in topic_metadata.topics:
+                    self.model_data_topic in topic_metadata.topics:
                 
                 topic_created = True
         
-        logging.info("Federated topics created: (model_control_topic, aggregation_control_topic, model_data_topic, aggregation_data_topic) = ({}, {}, {}, {})".format(
-                                self.model_control_topic, self.aggregation_control_topic, self.model_data_topic, self.aggregation_data_topic))
+        logging.info("Federated topics created: (model_control_topic, aggregation_control_topic, model_data_topic) = ({}, {}, {})".format(
+                                self.model_control_topic, self.aggregation_control_topic, self.model_data_topic))
 
     
     def parse_metrics(self, model_metrics):
