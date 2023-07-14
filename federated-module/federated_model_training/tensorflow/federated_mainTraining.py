@@ -61,6 +61,8 @@ class MainTraining(object):
         topics_to_create = []
         topics_to_create.append(NewTopic(self.aggregation_data_topic, 1, config={'max.message.bytes': '10000000'}))   # 10 MB
 
+        admin_client.create_topics(topics_to_create)
+
         # Wait for the topic to be created
         topic_created = False
         while not topic_created:
