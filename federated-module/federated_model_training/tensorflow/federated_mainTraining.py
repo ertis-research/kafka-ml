@@ -66,7 +66,7 @@ class MainTraining(object):
         # Wait for the topic to be created
         topic_created = False
         while not topic_created:
-            topic_metadata = admin_client.list_topics(timeout=5)
+            topic_metadata = admin_client.list_topics(timeout=-1)
             if self.aggregation_data_topic in topic_metadata.topics: 
                 topic_created = True
 
