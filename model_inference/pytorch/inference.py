@@ -171,7 +171,7 @@ if __name__ == '__main__':
         """Encodes the object response"""
 
   
-        output_producer.produce(output_topic, response_to_kafka)
+        output_producer.produce(output_topic, response_to_kafka, headers=msg.headers())
         output_producer.flush()
         """Flush the message to be sent now"""
         """Sends the message to Kafka"""

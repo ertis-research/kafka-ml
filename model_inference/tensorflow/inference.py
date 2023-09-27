@@ -166,12 +166,12 @@ if __name__ == '__main__':
         commitedMessages += 1
 
         if distributed and max(prediction_value) < limit:
-          upper_producer.produce(output_upper, prediction_to_upper.tobytes())
+          upper_producer.produce(output_upper, prediction_to_upper.tobytes(), headers=msg.headers())
           if commitedMessages >= MAX_MESSAGES_TO_COMMIT:  
             upper_producer.flush()
           """Flush the message to be sent now"""
         else:
-          output_producer.produce(output_topic, response_to_kafka)
+          output_producer.produce(output_topic, response_to_kafka, headers=msg.headers())
           if commitedMessages >= MAX_MESSAGES_TO_COMMIT:  
             output_producer.flush()
           """Flush the message to be sent now"""
