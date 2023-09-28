@@ -1,9 +1,8 @@
 from utils import *
 import json
-import traceback
-import requests
-import random, string, time
+import time
 
+import tensorflow_io as tfio
 import tensorflow_io.kafka as kafka_io
 from confluent_kafka.admin import AdminClient, NewTopic
 
@@ -39,13 +38,14 @@ class MainTraining(object):
         self.input_config = json.loads(os.environ.get('INPUT_CONFIG'))
 
         self.validation_rate = float(os.environ.get('VALIDATION_RATE'))
-        self.total_msg = int(os.environ.get('TOTAL_MSG'))
+        self.total_msg = -1 if os.environ.get('TOTAL_MSG') == 'None' else int(os.environ.get('TOTAL_MSG'))
 
         logging.info("Received main environment information (KML_CLOUD_BOOTSTRAP_SERVERS, DATA_BOOTSTRAP_SERVERS, FEDERATED_MODEL_ID, DATA_TOPIC, INPUT_FORMAT, INPUT_CONFIG, VALIDATION_RATE, TOTAL_MSG) ([%s], [%s], [%s], [%s], [%s], [%s], [%f], [%d])",
                         self.kml_cloud_bootstrap_server, self.data_bootstrap_server, self.federated_model_id, self.input_data_topic, self.input_format, self.input_config, self.validation_rate, self.total_msg)
 
-        # Syntetic data        
-        self.training_size = int((1-(float(self.validation_rate)))*(int(self.total_msg)))
+        # Syntetic data
+        if self.total_msg != -1:
+            self.training_size = int((1-(float(self.validation_rate)))*(int(self.total_msg)))
         self.kafka_dataset = None
 
         # Create Kafka-related variables
@@ -70,8 +70,6 @@ class MainTraining(object):
             if self.aggregation_data_topic in topic_metadata.topics: 
                 topic_created = True
 
-
-
     def get_kafka_dataset(self, training_settings):
         logging.info("Fetching dataset from Kafka Topic [%s], with bootstrap server [%s]", self.input_data_topic, self.data_bootstrap_server)  
 
@@ -82,18 +80,71 @@ class MainTraining(object):
 
         logging.info("Dataset fetched successfully")
 
+    def get_online_kafka_dataset(self, training_settings):
+        logging.info("Fetching online dataset from Kafka Topic [%s], with bootstrap server [%s]", self.input_data_topic, self.data_bootstrap_server)  
+
+        self.kafka_dataset = tfio.experimental.streaming.KafkaBatchIODataset(topics=[self.input_data_topic], servers=self.data_bootstrap_server, group_id=self.group_id+'-2', stream_timeout=training_settings['stream_timeout'], configuration=None, internal=True)
+
+        logging.info("Dataset fetched successfully")
+
+    def split_online_dataset(self, kafka_dataset):
+        """Splits the online dataset for training and validation"""
+
+        training_size = int((1-self.validation_rate)*len(kafka_dataset))
+        validation_size = int(self.validation_rate*len(kafka_dataset))
+        logging.info("Training batch size %d and validation batch size %d", training_size, validation_size)
+
+        train_dataset = kafka_dataset.take(training_size)
+        """Splits dataset for training"""
+
+        if validation_size > 0:
+            validation_dataset = kafka_dataset.skip(training_size)
+        else:
+            """If no validation is greater than 0, then split the dataset for training"""
+            validation_dataset = None
+
+        splits = {
+            'train_dataset': train_dataset,
+            'validation_dataset': validation_dataset
+        }
+
+        return splits
+    
     def load_model(self, message):
-        model_reader = KafkaModelEngine(self.kml_cloud_bootstrap_server, self.group_id)  
+        model_reader = KafkaModelEngine(self.kml_cloud_bootstrap_server, self.group_id)
         model = model_reader.getModel(message)
 
         return model
-     
     
     def train_classic_model(self, model, training_settings):
         """Trains classic model"""
 
         start = time.time()
         model_trained = model.fit(self.train_dataset, validation_data=self.validation_dataset, **training_settings['kwargs_fit'], **training_settings['kwargs_val'])
+        end = time.time()
+
+        logging.info("Model trained successfully. Elapsed time: [%f]", end - start)
+        logging.info("Loss: %s", str(model_trained.history['loss'][-1]))
+        
+        return model_trained
+    
+    def train_incremental_model(self, model, training_settings):
+        """Trains incremental model"""
+
+        decoder = DecoderFactory.get_decoder(self.input_format, self.input_config)
+
+        start = time.time()
+
+        while 'model_trained' not in locals() and 'model_trained' not in globals():
+            for mini_ds in self.kafka_dataset:
+                if len(mini_ds) > 0:
+                    mini_ds = mini_ds.map(lambda x, y: decoder.decode(x, y))
+                    splits = self.split_online_dataset(mini_ds)
+                    splits['train_dataset'] = splits['train_dataset'].batch(training_settings['batch'])
+                    if splits['validation_dataset'] is not None:
+                        splits['validation_dataset'] = splits['validation_dataset'].batch(training_settings['batch'])
+                    model_trained = model.fit(splits['train_dataset'], validation_data=splits['validation_dataset'], **training_settings['kwargs_fit'], **training_settings['kwargs_val'])
+        
         end = time.time()
 
         logging.info("Model trained successfully. Elapsed time: [%f]", end - start)

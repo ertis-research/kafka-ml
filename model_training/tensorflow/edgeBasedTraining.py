@@ -11,6 +11,10 @@ from decoders import *
 from FederatedKafkaMLModelSink import FederatedKafkaMLModelSink
 from KafkaModelEngine import KafkaModelEngine
 
+from singleFederatedIncrementalTraining import SingleFederatedIncrementalTraining
+from distributedFederatedTraining import DistributedFederatedTraining
+from distributedFederatedIncrementalTraining import DistributedFederatedIncrementalTraining
+
 def aggregate_model(model, trained_model, aggregation_strategy, control_msg, model_metrics):
   """Aggregates the model with the trained model"""
 
@@ -40,26 +44,51 @@ def aggregate_model(model, trained_model, aggregation_strategy, control_msg, mod
 
 def EdgeBasedTraining(training):
     training.get_models()
-    """Downloads the models from the URLs received, saves and loads them from the filesystem to Tensorflow models"""    
+    """Downloads the models from the URLs received, saves and loads them from the filesystem to Tensorflow models"""
 
+    if isinstance(training, DistributedFederatedTraining) or isinstance(training, DistributedFederatedIncrementalTraining):
+      training.configure_distributed_models()
+    """Distributed models configuration"""
+    
     training.generate_and_send_data_standardization()
     """Generates the data standardization and sends it to the model control topic"""
 
     training.generate_federated_kafka_topics()
     """Generates the federated Kafka topics to receive the data from the federated nodes"""
   
-    logging.info("Started Kafka consumer in [%s] topic", training.model_control_topic)    
+    logging.info("Started Kafka consumer in [%s] topic", training.model_control_topic)
     consumer = Consumer({'bootstrap.servers': training.bootstrap_servers, 'group.id': 'group_id_'+training.federated_string_id ,'auto.offset.reset': 'earliest','enable.auto.commit': False})
     consumer.subscribe([training.aggregation_control_topic])
-    """Starts a Kafka consumer to receive control information"""  
+    """Starts a Kafka consumer to receive control information"""
 
     training_settings = {'batch': training.batch, 'kwargs_fit': training.kwargs_fit, 'kwargs_val': training.kwargs_val}
+
+    if isinstance(training, SingleFederatedIncrementalTraining):
+      training_settings['stream_timeout'] = training.stream_timeout
+      training_settings['monitoring_metric'] = training.monitoring_metric
+      training_settings['change'] = training.change
+      training_settings['improvement'] = training.improvement
+    elif isinstance(training, DistributedFederatedTraining):
+      training_settings['optimizer'] = training.optimizer
+      training_settings['learning_rate'] = training.learning_rate
+      training_settings['loss'] = training.loss
+      training_settings['metrics'] = training.metrics
+    elif isinstance(training, DistributedFederatedIncrementalTraining):
+      training_settings['stream_timeout'] = training.stream_timeout
+      training_settings['monitoring_metric'] = training.monitoring_metric
+      training_settings['change'] = training.change
+      training_settings['improvement'] = training.improvement
+      training_settings['optimizer'] = training.optimizer
+      training_settings['learning_rate'] = training.learning_rate
+      training_settings['loss'] = training.loss
+      training_settings['metrics'] = training.metrics
+
     version, rounds, model_metrics, start_time = 0, 0, [], time.time()
     """Initializes the version, rounds, model metrics and start time"""
 
     sink = FederatedKafkaMLModelSink(bootstrap_servers=training.bootstrap_servers, topic=training.model_data_topic, control_topic=training.model_control_topic, federated_id=training.result_id, training_settings=training_settings)
     
-    while rounds < training.agg_rounds:  
+    while rounds < training.agg_rounds:
       logging.info("Round: {}".format(rounds))
 
       sink.send_model(training.model, version if rounds < training.agg_rounds - 1 else -1)
@@ -74,16 +103,16 @@ def EdgeBasedTraining(training):
             logging.info("Consumer error: {}".format(message.error()))
             continue
 
-        try:          
+        try:
           control_msg = json.loads(message.value().decode('utf-8'))
           logging.info("Message received for prediction")
 
-          model_reader = KafkaModelEngine(training.bootstrap_servers, 'server')  
+          model_reader = KafkaModelEngine(training.bootstrap_servers, 'server')
           trained_model = model_reader.setWeights(training.model, control_msg)
           logging.info("Model received from Federated devices")
 
           training.model, version, model_metrics = aggregate_model(training.model, trained_model, training.agg_strategy, control_msg, model_metrics)
-          logging.info("Aggregation completed. New model version: {}".format(version))     
+          logging.info("Aggregation completed. New model version: {}".format(version))
 
           rounds += 1
 
@@ -111,7 +140,6 @@ def EdgeBasedTraining(training):
     train_metrics, val_metrics = training.parse_metrics(model_metrics)
     logging.info("Epoch training metrics: %s", str(train_metrics))
     logging.info("Epoch validation metrics: %s", str(val_metrics))
-
 
     training.sendFinalMetrics(False, train_metrics, val_metrics, [], elapsed_time, None)
     logging.info("Sending final model and metrics to Kafka-ML Cloud")

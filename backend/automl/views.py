@@ -445,11 +445,6 @@ class DeploymentList(generics.ListCreateAPIView):
                 data.pop('pth_kwargs_fit') 
                 data.pop('pth_kwargs_val')
                 pth_kwargs_fit_empty, pth_kwargs_val_empty = True, True
-            
-            if data.get('federated', False) == True:
-                # Generate random string of 5 characters
-                random_string = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
-                data['federated_string_id'] = random_string
 
             serializer = DeployDeploymentSerializer(data=data)
             if serializer.is_valid():
@@ -509,12 +504,21 @@ class DeploymentList(generics.ListCreateAPIView):
                                 else:
                                     case = 5 # Case 5: Single Federated Training
                             else:
-                                case = 2 # Case 2: Single Incremental Training
+                                if not deployment.federated:
+                                    case = 2 # Case 2: Single Incremental Training
+                                else:
+                                    case = 6 # Case 6: Single Federated Incremental Training
                         else:
                             if not deployment.incremental:
-                                case = 3 # Case 3: Distributed Classic Training
+                                if not deployment.federated:
+                                    case = 3 # Case 3: Distributed Classic Training
+                                else:
+                                    case = 7 # Case 7: Federated Distributed Training
                             else:
-                                case = 4 # Case 4: Distributed Incremental Training
+                                if not deployment.federated:
+                                    case = 4 # Case 4: Distributed Incremental Training
+                                else:
+                                    case = 8 # Case 8: Federated Distributed Incremental Training
                         
                         if not result.model.distributed:
                             if not deployment.incremental:
@@ -552,84 +556,144 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
                                 else:
+                                    # Generate random string of 5 characters
+                                    federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
+                                    
                                     job_manifest = {
-                                    'apiVersion': 'batch/v1',
-                                    'kind': 'Job',
-                                    'metadata': {
-                                        'name': 'federated-model-training-controller-'+str(result.id)
-                                    },
-                                    'spec': {
-                                        'ttlSecondsAfterFinished' : 10,
-                                        'template' : {
-                                            'spec': {
-                                                'containers': [{
-                                                    'image': image,
-                                                    'name': 'training',
-                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                            {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
-                                                            {'name': 'RESULT_ID', 'value': str(result.id)},
-                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
-                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
-                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
-                                                            # Federated
-                                                            {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
-                                                            {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
-                                                            {'name': 'AGG_STRATEGY', 'value': str(deployment.agg_strategy)},
-                                                            {'name': 'DATA_RESTRICTION', 'value': str(deployment.data_restriction)},
-                                                            {'name': 'CASE', 'value': str(case)},                            
-                                                            {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
-                                                            {'name': 'FEDERATED_STRING_ID', 'value': str(deployment.federated_string_id)}
-                                                            ],
-                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                }],
-                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                'restartPolicy': 'OnFailure'
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'federated-model-training-controller-'+str(result.id)
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
+                                                                {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                # Federated
+                                                                {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
+                                                                {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
+                                                                {'name': 'AGG_STRATEGY', 'value': str(deployment.agg_strategy)},
+                                                                {'name': 'DATA_RESTRICTION', 'value': str(deployment.data_restriction)},                            
+                                                                {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
+                                                                {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
                                             }
                                         }
                                     }
-                                }
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
                             else:
-                                job_manifest = {
-                                    'apiVersion': 'batch/v1',
-                                    'kind': 'Job',
-                                    'metadata': {
-                                        'name': 'incremental-model-training-'+str(result.id)
-                                    },
-                                    'spec': {
-                                        'ttlSecondsAfterFinished' : 10,
-                                        'template' : {
-                                            'spec': {
-                                                'containers': [{
-                                                    'image': image,
-                                                    'name': 'training',
-                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                            {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
-                                                            {'name': 'RESULT_ID', 'value': str(result.id)},
-                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
-                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
-                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
-                                                            {'name': 'CASE', 'value': str(case)},
-                                                            {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
-                                                            {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
-                                                            {'name': 'CHANGE', 'value': deployment.change},
-                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
-                                                            ],
-                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                }],
-                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                'restartPolicy': 'OnFailure'
+                                if not deployment.federated:
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'incremental-model-training-'+str(result.id)
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
+                                                                {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
+                                                                {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
+                                                                {'name': 'CHANGE', 'value': deployment.change},
+                                                                {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
                                             }
                                         }
                                     }
-                                }
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                else:
+                                    # Generate random string of 5 characters
+                                    federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
+                                    
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'federated-incremental-model-training-controller-'+str(result.id)
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(os.environ.get('BACKEND_URL'))+'/results/'+str(result.id)},
+                                                                {'name': 'RESULT_ID', 'value': str(result.id)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
+                                                                {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
+                                                                {'name': 'CHANGE', 'value': deployment.change},
+                                                                {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
+                                                                # Federated
+                                                                {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
+                                                                {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
+                                                                {'name': 'AGG_STRATEGY', 'value': str(deployment.agg_strategy)},
+                                                                {'name': 'DATA_RESTRICTION', 'value': str(deployment.data_restriction)},                           
+                                                                {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
+                                                                {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
+                                            }
+                                        }
+                                    }
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
                         
                         elif result.model.distributed and result.model.father == None:
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
@@ -652,85 +716,191 @@ class DeploymentList(generics.ListCreateAPIView):
                             result_ids.reverse()
 
                             if not deployment.incremental:
-                                job_manifest = {
-                                    'apiVersion': 'batch/v1',
-                                    'kind': 'Job',
-                                    'metadata': {
-                                        'name': 'model-distributed-training'+n
-                                    },
-                                    'spec': {
-                                        'ttlSecondsAfterFinished' : 10,
-                                        'template' : {
-                                            'spec': {
-                                                'containers': [{
-                                                    'image': image,
-                                                    'name': 'training',
-                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                            {'name': 'RESULT_URL', 'value': str(result_urls)},
-                                                            {'name': 'RESULT_ID', 'value': str(result_ids)},
-                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                            {'name': 'OPTIMIZER', 'value': deployment.optimizer},
-                                                            {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
-                                                            {'name': 'LOSS', 'value': deployment.loss},
-                                                            {'name': 'METRICS', 'value': deployment.metrics},
-                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
-                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
-                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
-                                                            {'name': 'CASE', 'value': str(case)}
-                                                            ],
-                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                }],
-                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                'restartPolicy': 'OnFailure'
+                                if not deployment.federated:
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'distributed-model-training'+n
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                                {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
                                             }
                                         }
                                     }
-                                }                                
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                else:
+                                    # Generate random string of 5 characters
+                                    federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
+                                    
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'federated-distributed-model-training-controller'+n
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                                {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                # Federated
+                                                                {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
+                                                                {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
+                                                                {'name': 'AGG_STRATEGY', 'value': str(deployment.agg_strategy)},
+                                                                {'name': 'DATA_RESTRICTION', 'value': str(deployment.data_restriction)},                           
+                                                                {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
+                                                                {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
+                                            }
+                                        }
+                                    }
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
                             else:
-                                job_manifest = {
-                                    'apiVersion': 'batch/v1',
-                                    'kind': 'Job',
-                                    'metadata': {
-                                        'name': 'incremental-model-distributed-training'+n
-                                    },
-                                    'spec': {
-                                        'ttlSecondsAfterFinished' : 10,
-                                        'template' : {
-                                            'spec': {
-                                                'containers': [{
-                                                    'image': image,
-                                                    'name': 'training',
-                                                    'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
-                                                            {'name': 'RESULT_URL', 'value': str(result_urls)},
-                                                            {'name': 'RESULT_ID', 'value': str(result_ids)},
-                                                            {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
-                                                            {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                            {'name': 'OPTIMIZER', 'value': deployment.optimizer},
-                                                            {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
-                                                            {'name': 'LOSS', 'value': deployment.loss},
-                                                            {'name': 'METRICS', 'value': deployment.metrics},
-                                                            {'name': 'BATCH', 'value': str(deployment.batch)},
-                                                            {'name': 'KWARGS_FIT', 'value': kwargs_fit},
-                                                            {'name': 'KWARGS_VAL', 'value': kwargs_val},
-                                                            {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                            {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
-                                                            {'name': 'CASE', 'value': str(case)},
-                                                            {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
-                                                            {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
-                                                            ],
-                                                    'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                }],
-                                                'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                'restartPolicy': 'OnFailure'
+                                if not deployment.federated:
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'distributed-incremental-model-training'+n
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                                {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
+                                                                {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
                                             }
                                         }
                                     }
-                                }
-                        resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                        logging.info("Job created. status='%s'" % str(resp.status))
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                else:
+                                    # Generate random string of 5 characters
+                                    federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
+                                    
+                                    job_manifest = {
+                                        'apiVersion': 'batch/v1',
+                                        'kind': 'Job',
+                                        'metadata': {
+                                            'name': 'fed-dist-incremental-model-training-controller'+n
+                                        },
+                                        'spec': {
+                                            'ttlSecondsAfterFinished' : 10,
+                                            'template' : {
+                                                'spec': {
+                                                    'containers': [{
+                                                        'image': image,
+                                                        'name': 'training',
+                                                        'env': [{'name': 'BOOTSTRAP_SERVERS', 'value': settings.BOOTSTRAP_SERVERS},
+                                                                {'name': 'RESULT_URL', 'value': str(result_urls)},
+                                                                {'name': 'RESULT_ID', 'value': str(result_ids)},
+                                                                {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
+                                                                {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                {'name': 'BATCH', 'value': str(deployment.batch)},
+                                                                {'name': 'KWARGS_FIT', 'value': kwargs_fit},
+                                                                {'name': 'KWARGS_VAL', 'value': kwargs_val},
+                                                                {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
+                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
+                                                                {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
+                                                                # Federated
+                                                                {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
+                                                                {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
+                                                                {'name': 'AGG_STRATEGY', 'value': str(deployment.agg_strategy)},
+                                                                {'name': 'DATA_RESTRICTION', 'value': str(deployment.data_restriction)},                           
+                                                                {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
+                                                                {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
+                                                                ],
+                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                    }],
+                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
+                                                    'restartPolicy': 'OnFailure'
+                                                }
+                                            }
+                                        }
+                                    }
+                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    logging.info("Job created. status='%s'" % str(resp.status))
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
                     traceback.print_exc()

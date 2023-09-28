@@ -11,6 +11,9 @@ from distributedClassicTraining import DistributedClassicTraining
 from singleIncrementalTraining import SingleIncrementalTraining
 from distributedIncrementalTraining import DistributedIncrementalTraining
 from singleFederatedTraining import SingleFederatedTraining
+from singleFederatedIncrementalTraining import SingleFederatedIncrementalTraining
+from distributedFederatedTraining import DistributedFederatedTraining
+from distributedFederatedIncrementalTraining import DistributedFederatedIncrementalTraining
 
 from edgeBasedTraining import EdgeBasedTraining
 from cloudBasedTraining import CloudBasedTraining
@@ -36,6 +39,12 @@ if __name__ == '__main__':
       CloudBasedTraining(DistributedIncrementalTraining())
     elif case == FEDERATED_LEARNING:
       EdgeBasedTraining(SingleFederatedTraining())
+    elif case == FEDERATED_INCREMENTAL_LEARNING:
+      EdgeBasedTraining(SingleFederatedIncrementalTraining())
+    elif case == FEDERATED_DISTRIBUTED_LEARNING:
+      EdgeBasedTraining(DistributedFederatedTraining())
+    elif case == FEDERATED_DISTRIBUTED_INCREMENTAL_LEARNING:
+      EdgeBasedTraining(DistributedFederatedIncrementalTraining())
     else:
       raise ValueError(case)
     """Get the training class"""

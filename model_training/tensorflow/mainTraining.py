@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import traceback
 import requests
 import logging
+import re
+from confluent_kafka import Producer
+from confluent_kafka.admin import AdminClient, NewTopic
 
 class MainTraining(object):
     """Main class for training
@@ -65,6 +68,119 @@ class MainTraining(object):
 
         self.tensorflow_models = tensorflow_models
 
+    def generate_and_send_data_standardization(self, model_logger_topic, federated_string_id, data_restriction, min_data, distributed, incremental):
+        """Generates and sends the data standardization"""
+        
+        input_shape = str(self.model.input_shape)
+        output_shape = str(self.model.output_shape)
+
+        input_shape_sub = (re.search(', (.+?)\)', input_shape))
+        output_shape_sub = (re.search(', (.+?)\)', output_shape))
+
+        if input_shape_sub:
+            input_shape = input_shape_sub.group(1)
+            input_shape = input_shape.replace(',','')
+        if output_shape_sub:
+            output_shape = output_shape_sub.group(1)
+            output_shape = output_shape.replace(',','')
+        
+        model_data_standard = {
+                'model_format':{'input_shape': input_shape,
+                                'output_shape': output_shape,
+                            },
+                'federated_params': {
+                            'federated_string_id': federated_string_id,
+                            'data_restriction': data_restriction,
+                            'min_data': min_data
+                            },
+                'framework': 'tf',
+                'distributed': distributed,
+                'incremental': incremental
+                }
+        
+        logging.info("Model data standard: %s", model_data_standard)
+
+        # Send model info to Kafka to notify that a new model is available
+        prod = Producer({'bootstrap.servers': self.bootstrap_servers})
+
+        # Send expected data standardization to Kafka
+        prod.produce(model_logger_topic, json.dumps(model_data_standard))
+        prod.flush()
+        logging.info("Send the untrained model to Kafka Model Topic")
+    
+    def generate_federated_kafka_topics(self):
+        # Generate the topics for the federated training
+        self.model_control_topic = f'FED-{self.federated_string_id}-model_control_topic'
+        self.model_data_topic = f'FED-{self.federated_string_id}-model_data_topic'
+        self.aggregation_control_topic = f'FED-{self.federated_string_id}-agg_control_topic'
+        
+        # Set up the admin client
+        admin_client = AdminClient({'bootstrap.servers': self.bootstrap_servers})
+
+        topics_to_create = []
+
+        # Create the new topics
+        topics_to_create.append(NewTopic(self.model_control_topic, 1, config={'max.message.bytes': '50000'}))         # 50 KB    
+        topics_to_create.append(NewTopic(self.aggregation_control_topic, 1, config={'max.message.bytes': '50000'}))   # 50 KB
+        topics_to_create.append(NewTopic(self.model_data_topic, 1, config={'max.message.bytes': '10000000'}))         # 10 MB
+
+        admin_client.create_topics(topics_to_create)
+
+        # Wait for the topic to be created
+        topic_created = False
+        while not topic_created:
+            topic_metadata = admin_client.list_topics(timeout=5)
+            if self.model_control_topic in topic_metadata.topics and \
+                    self.aggregation_control_topic in topic_metadata.topics and \
+                    self.model_data_topic in topic_metadata.topics:
+                
+                topic_created = True
+        
+        logging.info("Federated topics created: (model_control_topic, aggregation_control_topic, model_data_topic) = ({}, {}, {})".format(
+                                self.model_control_topic, self.aggregation_control_topic, self.model_data_topic))
+    
+    def parse_metrics(self, model_metrics):
+        """Parse the metrics from the model"""
+
+        epoch_training_metrics = {}
+        epoch_validation_metrics = {}
+
+        for agg_metrics in model_metrics:
+            for keys in agg_metrics['training']:
+                if keys not in epoch_training_metrics:
+                    epoch_training_metrics[keys] = []
+                epoch_training_metrics[keys].append(agg_metrics['training'][keys][-1])
+
+                if keys not in epoch_validation_metrics:
+                    epoch_validation_metrics[keys] = []
+                epoch_validation_metrics[keys].append(agg_metrics['validation'][keys][-1])
+
+        return epoch_training_metrics, epoch_validation_metrics
+    
+    def parse_distributed_metrics(self, model_metrics):
+        """Parse the metrics from the model"""
+
+        epoch_training_metrics = []
+        epoch_validation_metrics = []
+        
+        for m in self.tensorflow_models:
+            train_dic = {}
+            val_dic = {}
+            for agg_metrics in model_metrics:
+                for keys in agg_metrics['training']:
+                    if m.name in keys:
+                        if keys[len(m.name)+1:] not in train_dic:
+                            train_dic[keys[len(m.name)+1:]] = []
+                        train_dic[keys[len(m.name)+1:]].append(agg_metrics['training'][keys][-1])
+
+                        if keys[len(m.name)+1:] not in val_dic:
+                            val_dic[keys[len(m.name)+1:]] = []
+                        val_dic[keys[len(m.name)+1:]].append(agg_metrics['validation'][keys][-1])
+            epoch_training_metrics.append(train_dic)
+            epoch_validation_metrics.append(val_dic)
+
+        return epoch_training_metrics, epoch_validation_metrics
+    
     def get_train_data(self, kafka_topic, group, decoder):
         """Obtains the data and labels for training from Kafka
 
@@ -343,6 +459,72 @@ class MainTraining(object):
 
         return cf_generated, cf_matrix
     
+    def sendTempMetrics(self, train_metrics, val_metrics):
+        """Send the metrics to the backend"""
+        
+        results = {
+            'train_metrics': train_metrics,
+            'val_metrics': val_metrics
+        }
+
+        url = self.result_url.replace('results', 'results_metrics')
+
+        retry = 0
+        finished = False
+        while not finished and retry < RETRIES:
+            try:
+                data = {'data': json.dumps(results)}
+                r = requests.post(url, data=data)
+                if r.status_code == 200:
+                    finished = True
+                    logging.info("Metrics updated!")
+                else:
+                    time.sleep(SLEEP_BETWEEN_REQUESTS)
+                    retry += 1
+            except Exception as e:
+                traceback.print_exc()
+                retry += 1
+                logging.error("Error sending the metrics to the backend [%s].", str(e))
+                time.sleep(SLEEP_BETWEEN_REQUESTS)
+    
+    def sendDistributedTempMetrics(self, train_metrics, val_metrics):
+        """Send the metrics to the backend"""
+
+        results_list = []
+        for i in range (len(self.tensorflow_models)):
+            results = {
+                      'train_metrics': train_metrics[i],
+                      'val_metrics': val_metrics[i]
+            }
+            results_list.append(results)
+
+        new_urls = []
+        for url in self.result_url:
+            new_urls.append(url.replace('results', 'results_metrics'))
+
+        retry = 0
+        finished = False
+        while not finished and retry < RETRIES:
+            try:
+                responses = []
+                for (result, url) in zip(results_list, new_urls):
+                    data = {'data' : json.dumps(result)}
+                    logging.info("Sending result data to backend")
+                    r = requests.post(url, data=data)
+                    responses.append(r.status_code)
+
+                if responses[0] == 200 and len(set(responses)) == 1:
+                    finished = True
+                    logging.info("Metrics updated!")
+                else:
+                    time.sleep(SLEEP_BETWEEN_REQUESTS)
+                    retry += 1
+            except Exception as e:
+                traceback.print_exc()
+                retry += 1
+                logging.error("Error sending the metrics to the backend [%s].", str(e))
+                time.sleep(SLEEP_BETWEEN_REQUESTS)
+
     def sendSingleMetrics(self, cf_generated, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, cf_matrix):
       """Sends single metrics to backend"""
 

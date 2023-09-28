@@ -101,7 +101,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         fields = ['optimizer', 'learning_rate', 'loss', 'metrics']+[
                 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
                 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'configuration']+[
-                'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction', 'federated_string_id']
+                'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction']
     
     def validate_batch(self, value):
         """Checks that batch size is greater than 0"""
@@ -142,7 +142,7 @@ class DeploymentSerializer(serializers.ModelSerializer):
         model = Deployment
         fields = ['id', 'configuration', 'results', 'optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
                 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'time']+[
-                'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction', 'federated_string_id']
+                'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction']
 
 class RoundingDecimalField(serializers.DecimalField):
     """Used to automatically round decimals to the model's accepted value."""

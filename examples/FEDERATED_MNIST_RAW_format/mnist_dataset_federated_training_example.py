@@ -3,14 +3,13 @@ sys.path.append(sys.path[0] + "/../..")
 """To allow importing datasources"""
 
 from datasources.federated_raw_sink import FederatedRawSink
-from datasources.raw_sink import RawSink
 import tensorflow as tf
 import logging
 import json
 
 logging.basicConfig(level=logging.INFO)
 
-with open('examples/MNIST_RAW_format/mnist_sample_input_format.json') as json_file:
+with open('mnist_sample_input_format.json') as json_file:
     data_res = json.load(json_file)
 
 mnist = FederatedRawSink(boostrap_servers='localhost:9094', topic='mnist_fed', deployment_id=1, description='Mnist dataset', 

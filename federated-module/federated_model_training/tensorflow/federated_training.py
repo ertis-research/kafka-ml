@@ -2,17 +2,18 @@ __author__ = 'Antonio J. Chaves'
 
 from kafka import KafkaConsumer
 
-import time
 import os
 import logging
 import json
-import time
 import traceback
 
 from config import *
 from utils import *
 from FederatedKafkaMLAggregationSink import FederatedKafkaMLAggregationSink
 from federated_singleClassicTraining import SingleClassicTraining
+from federated_singleIncrementalTraining import SingleIncrementalTraining
+from federated_distributedClassicTraining import DistributedClassicTraining
+from federated_distributedIncrementalTraining import DistributedIncrementalTraining
 
 RETRIES = 10
 '''Number of retries for requests'''
@@ -28,30 +29,35 @@ def main():
     select_gpu()
     """Configures the GPU"""
 
-    case = int(os.environ.get('CASE')) if os.environ.get('CASE') else 1 # Actually there is only one case, so CASE does not exist as an environment variable
+    case = int(os.environ.get('CASE')) if os.environ.get('CASE') else 1
 
     if case == FEDERATED_NOT_DISTRIBUTED_NOT_INCREMENTAL:
-       training = SingleClassicTraining()
+      training = SingleClassicTraining()
+    elif case == FEDERATED_NOT_DISTRIBUTED_INCREMENTAL:
+      training = SingleIncrementalTraining()
+    elif case == FEDERATED_DISTRIBUTED_NOT_INCREMENTAL:
+      training = DistributedClassicTraining()
+    elif case == FEDERATED_DISTRIBUTED_INCREMENTAL:
+      training = DistributedIncrementalTraining()
     else:
-       raise ValueError(case) 
+      raise ValueError(case) 
     """Gets type of training"""
       
     consumer_control = KafkaConsumer(training.model_control_topic, bootstrap_servers=training.kml_cloud_bootstrap_server,
                                     enable_auto_commit=False, group_id=training.group_id, auto_offset_reset='earliest')
     
     
-    """Starts a Kafka consumer to receive control information"""    
+    """Starts a Kafka consumer to receive control information"""
     logging.info("Started Kafka consumer in [%s] topic", training.model_control_topic)
     
     sink = FederatedKafkaMLAggregationSink(bootstrap_servers=training.kml_cloud_bootstrap_server, topic=training.aggregation_data_topic,
                                      control_topic=training.aggregation_control_topic, federated_id=training.group_id)
-    
 
     """Read model from Kafka"""
     for msg in consumer_control:
       logging.info("Received message from control topic")
 
-      try:                
+      try:
         consumer_control.commit()
         consumer_control.poll()
         consumer_control.seek_to_end()

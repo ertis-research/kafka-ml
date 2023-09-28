@@ -55,7 +55,6 @@ class Deployment(models.Model):
     AGGREGATION_STRATEGIES = Choices('FedAvg', 'FedOpt', 'FedAdagrad', 'FedAdam', 'FedYogi')
     agg_strategy = StatusField(choices_name='AGGREGATION_STRATEGIES')
     data_restriction = models.JSONField(default=dict, blank=True, null=True)
-    federated_string_id = models.TextField(blank=True, null=True)
 
     class Meta(object):
         ordering = ('-time', )

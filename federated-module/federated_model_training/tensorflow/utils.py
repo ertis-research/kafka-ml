@@ -7,8 +7,11 @@ import sys
 from config import *
 import numpy as np
 
-"""CONSTANTS FOR TYPES OF TRAINING"""
+"""CONSTANTS FOR TYPES OF FEDERATED TRAINING"""
 FEDERATED_NOT_DISTRIBUTED_NOT_INCREMENTAL = 1
+FEDERATED_NOT_DISTRIBUTED_INCREMENTAL = 2
+FEDERATED_DISTRIBUTED_NOT_INCREMENTAL = 3
+FEDERATED_DISTRIBUTED_INCREMENTAL = 4
 
 def string_to_numpy_type(out_type):
     """Converts a string with the same name to a Numpy type.
@@ -45,7 +48,6 @@ def string_to_numpy_type(out_type):
         return np.bool
     else:
         raise Exception('string_to_numpy_type: Unsupported type')
-
 
 def decode_raw(x, output_type, output_reshape):
     """Decodes the raw data received from Kafka and reshapes it if needed.

@@ -112,7 +112,7 @@ steps:
    ```bash
    cd federated_model_training/tensorflow
    docker build --tag localhost:5000/federated_tensorflow_model_training .
-   docker push localhost:5000/tensorflow_model_training
+   docker push localhost:5000/federated_tensorflow_model_training
    ```
 
 4. Build the federated_model_control_logger component and push the image into the local
@@ -133,7 +133,7 @@ steps:
    docker push localhost:5000/federated_data_control_logger
    ```
 
-Once built the images, you can deploy the system components in Kubernetes mofiying
+Once built the images, you can deploy the system components in Kubernetes modifying
 the `image` field of the `deployment.yaml` files in the `kustomize/local` folder.
 
 ### GPU configuration

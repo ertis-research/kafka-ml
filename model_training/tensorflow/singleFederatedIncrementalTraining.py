@@ -1,8 +1,8 @@
 from mainTraining import *
 from callbacks import *
 
-class SingleIncrementalTraining(MainTraining):
-    """Class for single models incremental training
+class SingleFederatedIncrementalTraining(MainTraining):
+    """Class for single models federated and incremental training
     
     Attributes:
         boostrap_servers (str): list of boostrap server for the Kafka connection
@@ -24,34 +24,45 @@ class SingleIncrementalTraining(MainTraining):
 
         super().__init__()
 
+        self.distributed = False
+        self.incremental = True
+
         self.stream_timeout, self.monitoring_metric, self.change, self.improvement = load_incremental_environment_vars()
 
         logging.info("Received incremental environment information (stream_timeout, monitoring_metric, change, improvement) ([%d], [%s], [%s], [%s])",
                 self.stream_timeout, self.monitoring_metric, self.change, str(self.improvement))
+        
+        self.model_logger_topic, self.federated_string_id, self.agg_rounds, self.data_restriction, self.min_data, self.agg_strategy = load_federated_environment_vars()
+
+        logging.info("Received federated environment information (model_logger_topic, federated_string_id, agg_rounds, data_restriction, min_data, agg_strategy) ([%s], [%s], [%d], [%s], [%d], [%s])",
+                self.model_logger_topic, self.federated_string_id, self.agg_rounds, self.data_restriction, self.min_data, self.agg_strategy)
     
     def get_models(self):
         """Downloads the model and loads it"""
 
         super().get_single_model()
 
-    def get_data(self, kafka_topic, decoder):
-        """Gets the incremental data from Kafka"""
-
-        return super().get_online_train_data(kafka_topic)
-    
-    def train(self, splits, kafka_dataset, decoder, validation_rate, start):
-        """Trains the model"""
-
-        callback = SingleTrackTrainingCallback(NOT_DISTRIBUTED_INCREMENTAL, self.result_url, self.tensorflow_models)
-
-        return super().train_incremental_model(kafka_dataset, decoder, validation_rate, callback, start)
-    
-    def saveMetrics(self, model_trained):
-        """Saves the metrics of the model"""
+    def generate_and_send_data_standardization(self):
+        """Generates and sends the data standardization"""
         
-        return super().saveSingleMetrics(model_trained)
+        super().generate_and_send_data_standardization(self.model_logger_topic, self.federated_string_id, self.data_restriction, self.min_data, self.distributed, self.incremental)
+
+    def generate_federated_kafka_topics(self):
+        """Generates the Kafka topics for the federated training"""
+
+        super().generate_federated_kafka_topics()
     
-    def sendMetrics(self, cf_generated, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, cf_matrix):
+    def parse_metrics(self, model_metrics):
+        """Parse the metrics from the model"""
+
+        return super().parse_metrics(model_metrics)
+
+    def sendTempMetrics(self, train_metrics, val_metrics):
+        """Send the metrics to the backend"""
+        
+        super().sendTempMetrics(train_metrics, val_metrics)
+    
+    def sendFinalMetrics(self, cf_generated, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, cf_matrix):
         """Sends the metrics to the control topic"""
 
         return super().sendSingleMetrics(cf_generated, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, cf_matrix)

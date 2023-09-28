@@ -77,6 +77,7 @@ Kafka-ML article has been selected as
 - [02/09/2022] Added real-time display of training parameters.
 - [26/12/2022] Added indefinite incremental training support.
 - [07/07/2023] Added federated training support (currently only for Tensorflow/Keras models).
+- [28/09/2023] Federated learning enabled for distributed neural networks and incremental training.
 
 ## Deploy Kafka-ML in a fast way
 

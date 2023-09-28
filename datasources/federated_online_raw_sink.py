@@ -1,6 +1,6 @@
 from .sink import KafkaMLSink
 
-class FederatedRawSink(KafkaMLSink):
+class OnlineFederatedRawSink(KafkaMLSink):
     """Class representing a sink of RAW training data to Apache Kafka.
 
         Args:
@@ -31,9 +31,10 @@ class FederatedRawSink(KafkaMLSink):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         data_type=None, label_type=None, description='', dataset_restrictions='{}', data_reshape=None, label_reshape=None, 
-        validation_rate=0, test_rate=0, control_topic='FEDERATED_DATA_CONTROL_TOPIC', group_id='sink'):
+        validation_rate=0, control_topic='FEDERATED_DATA_CONTROL_TOPIC', group_id='sink'):
         
         input_format='RAW'
+        test_rate=0
         super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
             dataset_restrictions, validation_rate, test_rate, control_topic, group_id)
 
@@ -47,22 +48,24 @@ class FederatedRawSink(KafkaMLSink):
             'data_reshape' : self.data_reshape,
             'label_reshape' : self.label_reshape,
         }
-        self._configured_format = self.data_type is not None
 
+    def send_online_control_msg(self, data, label):
+        """Sends online control message to Apache Kafka"""
+
+        self.data_reshape = super().shape_to_string(data)
+        self.label_reshape = super().shape_to_string(label)
+        self.data_type = super().type_to_string(data)
+        self.label_type = super().type_to_string(label)
+        self.input_config = {
+            'data_type' : self.data_type,
+            'label_type': self.label_type,
+            'data_reshape' : self.data_reshape,
+            'label_reshape' : self.label_reshape,
+        }
+
+        super().send_online_control_msg()
+    
     def send(self, data, label):
         """Sends data and label to Apache Kafka"""
-    
-        if not self._configured_format:
-            self.data_reshape = super().shape_to_string(data)
-            self.label_reshape = super().shape_to_string(label)
-            self.data_type = super().type_to_string(data)
-            self.label_type = super().type_to_string(label)
-            self._configured_format = True
-            self.input_config = {
-                'data_type' : self.data_type,
-                'label_type': self.label_type,
-                'data_reshape' : self.data_reshape,
-                'label_reshape' : self.label_reshape,
-            }    
         
         super().send(data.tobytes(), label.tobytes())

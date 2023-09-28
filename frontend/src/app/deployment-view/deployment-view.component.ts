@@ -74,6 +74,7 @@ export class DeploymentViewComponent implements OnInit {
   federatedControl(e: any) {
     if (e.checked) {
       this.showFederated = true;
+      this.hideTimeout = false;
     } else {
       this.showFederated = false;
     }

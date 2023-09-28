@@ -72,19 +72,24 @@ def parse_kwargs_fit(kwargs_fit):
     
     return json.dumps(dic)
 
-def check_colission(datasource_item, model_item):
+def check_colission(datasource_item, model_item, case):
     """Checks if the datasource and the model are compatible"""
 
     ds_input_config = json.loads(datasource_item['input_config'])
 
-    if ds_input_config['data_reshape'] == model_item['input_shape'] and \
-        json.loads(datasource_item['dataset_restrictions']) == json.loads(model_item['data_restriction']) and \
-        datasource_item['total_msg'] >= model_item['min_data']:
-        return True
+    # Distributed models input shape conversion
+    aux_array = model_item['input_shape'].split()
+    if (case == 3 or case == 4) and len(aux_array) > 2:
+        delimiter = ' '
+        model_item['input_shape'] = delimiter.join(aux_array[:-1])
+
+    if ds_input_config['data_reshape'] == model_item['input_shape'] and json.loads(datasource_item['dataset_restrictions']) == json.loads(model_item['data_restriction']):
+        if ((case == 1 or case == 3) and datasource_item['total_msg'] >= model_item['min_data']) or (case == 2 or case == 4):
+            return True
     
     return False
 
-def deploy_on_kubernetes(datasource_item, model_item, framework):
+def deploy_on_kubernetes(datasource_item, model_item, framework, case):
     try:
         """KUBERNETES code goes here"""
         config.load_incluster_config() # To run inside the container
@@ -129,6 +134,7 @@ def deploy_on_kubernetes(datasource_item, model_item, framework):
                                                 {'name': 'FEDERATED_MODEL_ID', 'value': federated_model_id},
                                                 {'name': 'FEDERATED_CLIENT_ID', 'value': federated_client_id},
                                                 {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},
+                                                {'name': 'CASE', 'value': str(case)}
                                                 ],
                                     }],
                                     'imagePullPolicy': 'Always', #'IfNotPresent', # TODO: Remove this when the image is in DockerHub
@@ -144,8 +150,7 @@ def deploy_on_kubernetes(datasource_item, model_item, framework):
     except Exception as e:
         traceback.print_exc()
         logging.error(str(e))
-        return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)     
-
+        return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 class DatasourceList(generics.ListCreateAPIView):
     """View to get the list of datasources and create a new datasource
@@ -157,11 +162,10 @@ class DatasourceList(generics.ListCreateAPIView):
     serializer_class = DatasourceSerializer
 
     def post(self, request, format=None):
-        try:            
-
+        try:
             data = json.loads(request.body)
 
-            logging.info("Received data: %s", data)            
+            logging.info("Received data: %s", data)
             ds_serializer = DatasourceSerializer(data=data)
             
             if ds_serializer.is_valid():
@@ -170,16 +174,30 @@ class DatasourceList(generics.ListCreateAPIView):
                 logging.info("Data received is valid. Saving to database...")
                 ds_serializer.save()
 
+                incremental = True if ds_serializer.data['total_msg'] == None else False
+
                 """Checks for all datasources if there is a model that can be trained"""
                 modelsources = ModelSource.objects.all()
                 logging.info("Checking for models that can be trained...")
                 for modelsource in modelsources:
-                    ms_serializer = ModelSourceSerializer(modelsource)                    
-                    has_collided = check_colission(ds_serializer.data, ms_serializer.data)
+                    ms_serializer = ModelSourceSerializer(modelsource)
+
+                    if not ms_serializer.data['distributed']:
+                        if not incremental:
+                            case = 1
+                        else:
+                            case = 2
+                    else:
+                        if not incremental:
+                            case = 3
+                        else:
+                            case = 4
+
+                    has_collided = check_colission(ds_serializer.data, ms_serializer.data, case)
 
                     if has_collided:
                         logging.info("Datasource and model are compatible. Deploying model...")
-                        deploy_on_kubernetes(ds_serializer.data, ms_serializer.data, ms_serializer.data['framework'])
+                        deploy_on_kubernetes(ds_serializer.data, ms_serializer.data, ms_serializer.data['framework'], case)
 
                 return HttpResponse(status=status.HTTP_201_CREATED)
             return HttpResponse('Deployment not valid', status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -189,8 +207,6 @@ class DatasourceList(generics.ListCreateAPIView):
             logging.error(str(e))
             return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
 
-
-        
 class ModelFromControlLogger(generics.ListCreateAPIView):
     """View to create a new datasource and send it to kafka
         
@@ -201,17 +217,21 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
 
     def post(self, request, format=None):
         try:
+            data = json.loads(request.body)
 
-            data = json.loads(request.body)         
+            incremental = data['incremental']
+            data.pop('incremental')
 
             parsed_data = {'federated_string_id': data['federated_params']['federated_string_id'],
                             'data_restriction': data['federated_params']['data_restriction'],
                             'min_data': data['federated_params']['min_data'],
                             'input_shape': data['model_format']['input_shape'],
                             'output_shape': data['model_format']['output_shape'],
+                            'framework': data['framework'],
+                            'distributed': data['distributed']
                         }
-            
-            logging.info("Received data: %s", parsed_data)               
+
+            logging.info("Received data: %s", parsed_data)
             ms_serializer = ModelSourceSerializer(data=parsed_data)
             
             if ms_serializer.is_valid():
@@ -220,6 +240,8 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
                 logging.info("Data received is valid. Saving to database...")
                 ms_serializer.save()
 
+                case = 1 if ms_serializer.data['distributed'] == False else 3
+
                 """Checks for all datasources if there is a model that can be trained"""
                 datasources = Datasource.objects.all()
                 logging.info("Checking for datasources that can be used to train the model...")
@@ -227,10 +249,11 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
                     # Parse to JSON
                     ds_serializer = DatasourceSerializer(datasource)
                     
-                    has_collided = check_colission(ds_serializer.data, ms_serializer.data)
-                    if has_collided:
-                        logging.info("Datasource and model are compatible. Deploying model...")
-                        deploy_on_kubernetes(ds_serializer.data, ms_serializer.data, ms_serializer.data['framework'])
+                    if not incremental and ds_serializer.data['total_msg'] != None:
+                        has_collided = check_colission(ds_serializer.data, ms_serializer.data, case)
+                        if has_collided:
+                            logging.info("Datasource and model are compatible. Deploying model...")
+                            deploy_on_kubernetes(ds_serializer.data, ms_serializer.data, ms_serializer.data['framework'], case)
 
                 return HttpResponse(status=status.HTTP_201_CREATED)
             return HttpResponse('Deployment not valid', status=status.HTTP_406_NOT_ACCEPTABLE)
