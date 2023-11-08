@@ -14,4 +14,4 @@ configMapGenerator:
 images:
   - name: kafka
     newName: docker.io/bitnami/kafka
-    newTag: "3.3"
+    newTag: "3.4.0-debian-11-r22"
