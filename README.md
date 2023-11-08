@@ -99,7 +99,7 @@ Once Kubernetes is running, open a terminal and run the following command:
 ```sh
 # Uncomment only if you are running Kafka-ML on Apple Silicon
 # export DOCKER_DEFAULT_PLATFORM=linux/amd64
-kubectl apply -k "github.com/ertis-research/kafka-ml/kustomize/local?ref=v1.0"
+kubectl apply -k "github.com/ertis-research/kafka-ml/kustomize/local?ref=v1.2"
 ```
 
 This will install all the required components of Kafka-ML, plus Kafka on the
