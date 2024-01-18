@@ -1,0 +1,28 @@
+resources:
+  - "../base"
+
+configMapGenerator:
+  - name: kafkaml-configmap
+    behavior: merge
+    literals:
+      - tensorflow.training.image=ertis/kafka-ml-tensorflow_model_training:v1.3
+      - tensorflow.inference.image=ertis/kafka-ml-tensorflow_model_inference:v1.3
+      - pytorch.training.image=ertis/kafka-ml-pytorch_model_training:v1.3
+      - pytorch.inference.image=ertis/kafka-ml-pytorch_model_inference:v1.3
+
+images:
+  - name: kafka-ml-backend
+    newName: ertis/kafka-ml-backend
+    newTag: v1.3
+  - name: kafka-ml-frontend
+    newName: ertis/kafka-ml-frontend
+    newTag: v1.3
+  - name: kafka-ml-kafka_control_logger
+    newName: ertis/kafka-ml-kafka_control_logger
+    newTag: v1.3
+  - name: kafka-ml-pthexecutor
+    newName: ertis/kafka-ml-pthexecutor
+    newTag: v1.3
+  - name: kafka-ml-tfexecutor
+    newName: ertis/kafka-ml-tfexecutor
+    newTag: v1.3
