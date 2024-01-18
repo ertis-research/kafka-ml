@@ -548,10 +548,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -593,10 +594,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -634,10 +636,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'CHANGE', 'value': deployment.change},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -684,10 +687,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -746,10 +750,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -796,10 +801,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -839,10 +845,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -891,10 +898,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
+                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
-                                                    'imagePullPolicy': 'IfNotPresent', # TODO: Remove this when the image is in DockerHub
-                                                    'restartPolicy': 'OnFailure'
+                                                    'imagePullPolicy': 'Always',
+                                                    'restartPolicy': 'OnFailure',
+                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -1540,10 +1548,10 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)},
                                                         {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
-                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
+                                                'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                             }],
-                                            'imagePullPolicy': 'IfNotPresent' # TODO: Remove this when the image is in DockerHub
+                                            'imagePullPolicy': 'Always',
+                                            'runtimeClassName': 'nvidia'
                                         }
                                     }
                                 }
@@ -1593,10 +1601,10 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         {'name': 'LIMIT', 'value': str(inference.limit)},
                                                         {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
-                                                'resources': {'limits':{'aliyun.com/gpu-mem': gpu_mem_to_allocate}} ##  (Sharing GPU)
-                                                #'resources': {'limits':{'nvidia.com/gpu': 1}} ##  (Greedy GPU)
+                                                'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                             }],
-                                            'imagePullPolicy': 'IfNotPresent' # TODO: Remove this when the image is in DockerHub
+                                            'imagePullPolicy': 'Always',
+                                            'runtimeClassName': 'nvidia'
                                         }
                                     }
                                 }

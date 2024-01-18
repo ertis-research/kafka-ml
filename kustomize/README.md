@@ -3,15 +3,16 @@
 This folder contains multiple Kustomize files to ease the deployment on
 Kubernetes. Notably the following versions are available:
 
-| Version      | Resource URL                                              |
-| ------------ | --------------------------------------------------------- |
-| `master`     | `github.com/ertis-research/kafka-ml/kustomize/master`     |
-| `master-gpu` | `github.com/ertis-research/kafka-ml/kustomize/master-gpu` |
-| `v1.0`       | `github.com/ertis-research/kafka-ml/kustomize/v1.0`       |
-| `v1.0-gpu`   | `github.com/ertis-research/kafka-ml/kustomize/v1.0-gpu`   |
-| `v1.1`       | `github.com/ertis-research/kafka-ml/kustomize/v1.1`       |
-| `v1.1-gpu`   | `github.com/ertis-research/kafka-ml/kustomize/v1.1-gpu`   |
-| `local`      | `github.com/ertis-research/kafka-ml/kustomize/local`      |
+| Version             | Resource URL                                                     |
+| ------------------- | ---------------------------------------------------------------- |
+| `master`            | `github.com/ertis-research/kafka-ml/kustomize/master`            |
+| `master-gpu`        | `github.com/ertis-research/kafka-ml/kustomize/master-gpu`        |
+| `v1.0`              | `github.com/ertis-research/kafka-ml/kustomize/v1.0`              |
+| `v1.0-gpu`          | `github.com/ertis-research/kafka-ml/kustomize/v1.0-gpu`          |
+| `v1.1`              | `github.com/ertis-research/kafka-ml/kustomize/v1.1`              |
+| `v1.1-gpu`          | `github.com/ertis-research/kafka-ml/kustomize/v1.1-gpu`          |
+| `v1.1-gpu-nvidia`   | `github.com/ertis-research/kafka-ml/kustomize/v1.1-gpu-nvidia`   |
+| `local`             | `github.com/ertis-research/kafka-ml/kustomize/local`             |
 
 These versions should work with any Kubernetes compatible cluster, such as K8s
 and K3s.
