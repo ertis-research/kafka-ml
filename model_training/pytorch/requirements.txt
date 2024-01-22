@@ -16,6 +16,6 @@ requests==2.31.0
 
 
 kafka-python==2.0.2
-scikit-learn==1.4.2
+scikit-learn==1.4.0
 seaborn==0.13.1
 requests==2.32.0
