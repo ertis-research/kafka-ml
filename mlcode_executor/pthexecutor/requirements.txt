@@ -1,13 +1,12 @@
--f https://download.pytorch.org/whl/torch_stable.html
-
-# GPU Accelerated
-# torchvision==0.11.1+cu113
+# -f https://download.pytorch.org/whl/torch_stable.html
+-f https://download.pytorch.org/whl/cpu
+# https://download.pytorch.org/whl/cu121
 
 # CPU Only
-torch==1.10.0+cpu
-torchvision==0.11.1+cpu
+# torch==2.1.2
+# torchvision==0.16.2
 
 torchinfo==1.6.3
-pytorch-ignite==0.4.7
-Flask==2.0.2
-gunicorn==20.0.4 
+pytorch-ignite==0.4.13
+Flask==3.0.1
+gunicorn==21.2.0

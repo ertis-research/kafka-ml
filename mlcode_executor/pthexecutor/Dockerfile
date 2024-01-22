@@ -1,5 +1,5 @@
 # --build-arg BASEIMG=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime for GPU version
-ARG BASEIMG=python:3.8.6
+ARG BASEIMG=python:3.11.7
 FROM ${BASEIMG}
 
 # set work directory
