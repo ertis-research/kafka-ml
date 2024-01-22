@@ -17,7 +17,7 @@ jobs:
         include:
           - name: kafka-ml-pytorch_model_inference
           - name: kafka-ml-pytorch_model_inference-gpu
-            build-args: "BASEIMG=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime"
+            build-args: "BASEIMG=pytorch/pytorch:2.1.2-cuda12.1-cudnn8-runtime"
     uses: ./.github/workflows/build.yml
     with:
       context: model_inference/pytorch

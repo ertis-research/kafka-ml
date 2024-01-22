@@ -17,7 +17,7 @@ jobs:
         include:
           - name: kafka-ml-tensorflow_model_training
           - name: kafka-ml-tensorflow_model_training-gpu
-            build-args: "TFTAG=2.7.0-gpu"
+            build-args: "TFTAG=2.15.0-gpu"
     uses: ./.github/workflows/build.yml
     with:
       context: model_training/tensorflow

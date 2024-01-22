@@ -1,5 +1,5 @@
 # --build-arg TFTAG=2.7.0-gpu for GPU version
-ARG TFTAG=2.7.0 
+ARG TFTAG=2.15.0 
 FROM tensorflow/tensorflow:${TFTAG}
 
 # set work directory

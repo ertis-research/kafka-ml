@@ -1,4 +1,4 @@
-# --build-arg BASEIMG=pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime for GPU version
+# --build-arg BASEIMG=pytorch/pytorch:2.1.2-cuda12.1-cudnn8-runtime for GPU version
 ARG BASEIMG=python:3.11.7
 FROM ${BASEIMG}
 
