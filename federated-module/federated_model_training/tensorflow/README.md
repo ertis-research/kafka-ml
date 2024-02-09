@@ -7,7 +7,7 @@ A brief introduction of its files:
 - File `KafkaModelEngine.py` class contains all the necesary functions to read and load Tensorflow models from Apache Kafka in cloud.
 - File `FederatedKafkaMLAggregationSink.py` class contains all the necesary functions to send the trained model and metrics to Apache Kafka in cloud.
 - File `federated_mainTraining.py` and `federated_singleClassicTraining.py` contains the functions for each kind of federated training.
-- File `decoders.py` decoders (RAW, Avro, JSON) used to decode data streams.
+- File `decoders.py` decoders (RAW, Avro, JSON, TELEGRAF_STR_JSON) used to decode data streams.
 - File `config.py` to configure debug.
 - File `utils.py` common functions used by other files.
 

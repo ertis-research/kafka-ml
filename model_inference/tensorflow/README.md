@@ -4,7 +4,7 @@ This module contains the inference task that will be executed when a TensorFlow 
 
 A brief introduction of its files:
 - File `inference.py` main file of this module that will be executed when executed the inference Job.
-- File `decoders.py` decoders (RAW, Avro) used to decode data streams.
+- File `decoders.py` decoders (RAW, Avro, JSON, TELEGRAF_STR_JSON) used to decode data streams.
 - File `config.py` to configure debug.
 - File `utils.py` common functions used by other files.
 
