@@ -82,7 +82,7 @@ class TrainingResult(models.Model):
 class Datasource(models.Model):
     """Datasource used for training a deployed model"""
 
-    INPUT_FORMAT = Choices('RAW', 'AVRO', 'JSON')
+    INPUT_FORMAT = Choices('RAW', 'AVRO', 'JSON', 'TELEGRAF_STR_JSON')
     """Sets its default value to the first item in the STATUS choices:"""
     input_format = StatusField(choices_name='INPUT_FORMAT')
     deployment = models.TextField() 
@@ -99,7 +99,7 @@ class Datasource(models.Model):
 
 class Inference(models.Model):
     """Training result information obtained once deployed a model"""
-    INPUT_FORMAT = Choices('RAW', 'AVRO', 'JSON')
+    INPUT_FORMAT = Choices('RAW', 'AVRO', 'JSON', 'TELEGRAF_STR_JSON')
     STATUS = Choices('deployed', 'stopped')
     """Sets its default value to the first item in the STATUS choices:"""
     
