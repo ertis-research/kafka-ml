@@ -15,6 +15,8 @@ class DecoderFactory:
             return AvroDecoder(configuration)
         elif input_format == 'JSON':
             return JsonDecoder()
+        elif input_format == 'TELEGRAF_STR_JSON':
+            return TelegrafStringJsonDecoder()
         else:
             raise ValueError(input_format)
 
@@ -57,12 +59,13 @@ class AvroDecoder:
         return res
 
 class JsonDecoder:
-    """JSON class decoder implementation
-        ARGS:
-            configuration (dic): configuration properties
-        Attributes:
-            scheme(str): scheme of the JSON implementation
+    """JSON class decoder implementation"""
 
-    """
     def decode(self, x):
         return json.loads(x)
+    
+class TelegrafStringJsonDecoder:
+    """TELEGRAF_STR_JSON class decoder implementation"""
+    
+    def decode(self, x):
+        return json.loads(json.loads(x)["fields"]["value"])
