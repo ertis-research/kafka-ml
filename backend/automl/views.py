@@ -545,14 +545,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -584,7 +581,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)},
                                                                 # Federated
                                                                 {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
@@ -594,11 +590,9 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -629,18 +623,15 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)},
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
                                                                 {'name': 'CHANGE', 'value': deployment.change},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -673,7 +664,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)},
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
@@ -687,11 +677,9 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -747,14 +735,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -791,7 +776,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)},
                                                                 # Federated
                                                                 {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
@@ -801,11 +785,9 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -840,16 +822,13 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)},
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
@@ -886,7 +865,6 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"},  ##  (Sharing GPU)
                                                                 {'name': 'CASE', 'value': str(case)},
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
@@ -898,15 +876,19 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'MODEL_LOGGER_TOPIC', 'value': str(settings.MODEL_LOGGER_TOPIC)},
                                                                 {'name': 'FEDERATED_STRING_ID', 'value': str(federated_string_id)}
                                                                 ],
-                                                        'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                                     }],
                                                     'imagePullPolicy': 'Always',
                                                     'restartPolicy': 'OnFailure',
-                                                    'runtimeClassName': 'nvidia'
                                                 }
                                             }
                                         }
                                     }
+
+                                    if gpu_mem_to_allocate > 0:
+                                        job_manifest['spec']['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = gpu_mem_to_allocate
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
+                                        job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
+
                                     resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                                     logging.info("Job created. status='%s'" % str(resp.status))
                     return HttpResponse(status=status.HTTP_201_CREATED)
@@ -1546,12 +1528,9 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         {'name': 'INPUT_TOPIC', 'value': inference.input_topic},
                                                         {'name': 'OUTPUT_TOPIC', 'value': inference.output_topic},
                                                         {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)},
-                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
-                                                'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                             }],
                                             'imagePullPolicy': 'Always',
-                                            'runtimeClassName': 'nvidia'
                                         }
                                     }
                                 }
@@ -1599,17 +1578,21 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         {'name': 'OUTPUT_UPPER', 'value': inference.output_upper},
                                                         {'name': 'GROUP_ID', 'value': 'inf'+str(result.id)},
                                                         {'name': 'LIMIT', 'value': str(inference.limit)},
-                                                        {'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"}  ##  (Sharing GPU)
                                                         ],
-                                                'resources': {'limits':{'nvidia.com/gpu': gpu_mem_to_allocate}} ##  (Sharing GPU)
                                             }],
                                             'imagePullPolicy': 'Always',
-                                            'runtimeClassName': 'nvidia'
                                         }
                                     }
                                 }
                             }
                         inference.save()
+
+                        
+                        if gpu_mem_to_allocate > 0:
+                            manifest['spec']['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = gpu_mem_to_allocate
+                            manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
+                            manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
+
                         resp = api_instance.create_namespaced_replication_controller(body=manifest, namespace=settings.KUBE_NAMESPACE) # create_namespaced_deployment
                         return HttpResponse(status=status.HTTP_200_OK)
                     except Exception as e:
