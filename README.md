@@ -912,6 +912,10 @@ Thanks to Sven Degroote from ML6team for the GPU and Kubernetes setup
    [The orchestration of Machine Learning frameworks with data streams and GPU acceleration in Kafka‐ML: A deep‐learning performance comparative](https://onlinelibrary.wiley.com/doi/10.1111/exsy.13287).
    Expert Systems, e13287.
 
+5. Chaves, A. J., Martín, C., & Díaz, M. (2024).
+   [Towards flexible data stream collaboration: Federated Learning in Kafka-ML](https://doi.org/10.1016/j.iot.2023.101036).
+   Internet of Things, 101036.
+
 ## License
 
 MIT
