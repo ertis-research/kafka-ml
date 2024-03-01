@@ -286,6 +286,11 @@ class MainTraining(object):
 
         metrics = self.metrics.replace(' ', '')
         metrics = metrics.split(',')
+        for m in metrics:
+            if m == 'tf.keras.metrics.Precision()':
+                m = tf.keras.metrics.Precision()
+            elif m == 'tf.keras.metrics.Recall()':
+                m = tf.keras.metrics.Recall()
         """Formats metrics"""
 
         outputs = []
