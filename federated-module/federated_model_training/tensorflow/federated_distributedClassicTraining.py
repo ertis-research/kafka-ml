@@ -23,6 +23,11 @@ class DistributedClassicTraining(MainTraining):
         """Gets the data from Kafka"""
 
         return super().get_kafka_dataset(training_settings)
+    
+    def get_unsupervised_data(self, training_settings):
+        """Gets the unsupervised data from Kafka"""
+
+        return super().get_unsupervised_kafka_dataset(training_settings)
 
     def load_model(self, message):
         """Downloads the model and loads it"""
@@ -33,6 +38,11 @@ class DistributedClassicTraining(MainTraining):
         """Trains the model"""
         
         return super().train_classic_model(model, training_settings)
+    
+    def unsupervised_train(self, model, training_settings):
+        """Trains the model in unsupervised mode"""
+        
+        return super().train_classic_semi_supervised_model(model, training_settings)
     
     def save_metrics(self, model_trained):
         """Saves the metrics of the model"""

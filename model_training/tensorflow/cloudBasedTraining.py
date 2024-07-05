@@ -54,17 +54,37 @@ def CloudBasedTraining(training):
             kafka_topic = data['topic']
             logging.info("Received control confirmation of data from Kafka for deployment ID %s. Ready to receive data from topic %s with batch %d", training.deployment_id, str(kafka_topic), training.batch)
             
+            if training.unsupervised:
+              if data['unsupervised_topic'] is not None:
+                unsupervised = True
+                unsupervised_kafka_topic = data['unsupervised_topic']
+                logging.info("Also received unsupervised topic %s for unlabeled data", str(unsupervised_kafka_topic))
+              else:
+                unsupervised = False
+                logging.info("User deployed semi-supervised training but no unsupervised topic was received for unlabeled data. Performing standard supervised training with labeled data.")
+            else:
+              unsupervised = False
+              logging.info("User deployed supervised training with labeled data.")
+
             decoder = DecoderFactory.get_decoder(data['input_format'], data['input_config'])
             """Gets the decoder from the information received"""
 
-            kafka_dataset = training.get_data(kafka_topic, decoder)
+            if unsupervised and isinstance(training, (SingleIncrementalTraining, DistributedIncrementalTraining)):
+              result_id = str(training.result_id) if isinstance(training, DistributedIncrementalTraining) else training.result_id
+              kafka_dataset = training.get_train_data(kafka_topic, result_id, decoder)
+            else:
+              kafka_dataset = training.get_data(kafka_topic, decoder)
             """Gets the dataset from kafka"""
+
+            if unsupervised:
+              unsupervised_kafka_dataset = training.get_data(unsupervised_kafka_topic, decoder)
+            """Gets the unlabeled dataset from kafka"""
 
             logging.info("Model ready to be trained with configuration %s", str(training.kwargs_fit))
                         
             splits = None
             
-            if isinstance(training, SingleClassicTraining) or isinstance(training, DistributedClassicTraining):
+            if isinstance(training, (SingleClassicTraining, DistributedClassicTraining)) or (unsupervised and isinstance(training, (SingleIncrementalTraining, DistributedIncrementalTraining))):
               splits = training.get_splits(data, kafka_dataset)
             """Splits the dataset for training"""
 
@@ -72,11 +92,14 @@ def CloudBasedTraining(training):
             
             start = time.time()
 
-            if isinstance(training, DistributedClassicTraining) or isinstance(training, DistributedIncrementalTraining):
+            if isinstance(training, (DistributedClassicTraining, DistributedIncrementalTraining)):
               training.configure_distributed_models()
             """Distributed models configuration"""
 
-            training_results = training.train(splits, kafka_dataset, decoder, data['validation_rate'], start)
+            if not unsupervised:
+              training_results = training.train(splits, kafka_dataset, None, decoder, data['validation_rate'], start)
+            else:
+              training_results = training.train(splits, kafka_dataset, unsupervised_kafka_dataset, decoder, data['validation_rate'], start)
             """Trains the model"""
 
             end = time.time()
@@ -86,7 +109,7 @@ def CloudBasedTraining(training):
             epoch_training_metrics, epoch_validation_metrics, test_metrics = training.saveMetrics(training_results['model_trained'])
             """Saves training metrics"""
 
-            if isinstance(training, SingleClassicTraining) or isinstance(training, DistributedClassicTraining):
+            if isinstance(training, (SingleClassicTraining, DistributedClassicTraining)) and data['test_rate'] > 0:
               test_metrics = training.test(splits, epoch_training_metrics, test_metrics)
             """Tests the model"""
             
@@ -110,5 +133,4 @@ def CloudBasedTraining(training):
         traceback.print_exc()
         logging.error("Error with the received datasource [%s]. Waiting for new data.", str(e))
 
-  
     logging.info("Cloud-based training (%s) finished", type(training).__name__)

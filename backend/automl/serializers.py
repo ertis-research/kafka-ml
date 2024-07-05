@@ -100,6 +100,7 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         model = Deployment
         fields = ['optimizer', 'learning_rate', 'loss', 'metrics']+[
                 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
+                'unsupervised', 'unsupervised_rounds', 'confidence']+[
                 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'configuration']+[
                 'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction']
     
@@ -140,7 +141,10 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deployment
-        fields = ['id', 'configuration', 'results', 'optimizer', 'learning_rate', 'loss', 'metrics', 'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
+        fields = ['id', 'configuration', 'results']+[
+                'optimizer', 'learning_rate', 'loss', 'metrics']+[
+                'incremental', 'indefinite', 'stream_timeout', 'monitoring_metric', 'change', 'improvement']+[
+                'unsupervised', 'unsupervised_rounds', 'confidence']+[
                 'batch', 'tf_kwargs_fit', 'tf_kwargs_val', 'pth_kwargs_fit', 'pth_kwargs_val', 'conf_mat_settings', 'time']+[
                 'federated', 'agg_rounds', 'min_data', 'agg_strategy', 'data_restriction']
 

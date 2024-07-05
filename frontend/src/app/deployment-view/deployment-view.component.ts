@@ -34,6 +34,7 @@ export class DeploymentViewComponent implements OnInit {
   showIncremental: Boolean = false;
   showFederated: Boolean = false;
   showDistributed: Boolean = false;
+  showUnsupervised: Boolean = false;
   hideTimeout: Boolean = false;
 
   strategies: AggStrategies[] = [
@@ -96,18 +97,29 @@ export class DeploymentViewComponent implements OnInit {
       this.hideTimeout = false;
     }
   }
+
+  unsupervisedControl(e: any) {
+    if (e.checked) {
+      this.showUnsupervised = true;
+    } else {
+      this.showUnsupervised = false;
+    }
+  }
   
   clearEmptyOrNullFields(deployment: Deployment): Deployment {
+    if (deployment.unsupervised_rounds == null) {
+      delete deployment.unsupervised_rounds;
+    }
+    if (deployment.confidence == null) {
+      delete deployment.confidence;
+    }
+
     // Distributed settings
     if (deployment.optimizer == '') {
       delete deployment.optimizer;
     }
     if (deployment.learning_rate && deployment.learning_rate.toString() == '') {
       delete deployment.learning_rate;
-    }
-
-    if (deployment.stream_timeout == null) {
-      delete deployment.stream_timeout;
     }
 
     if (deployment.loss == '') {
@@ -121,6 +133,10 @@ export class DeploymentViewComponent implements OnInit {
     // Incremental settings
     if (deployment.stream_timeout == null) {
       delete deployment.stream_timeout;
+    }
+
+    if (deployment.improvement == null) {
+      delete deployment.improvement;
     }
 
     // Federated settings

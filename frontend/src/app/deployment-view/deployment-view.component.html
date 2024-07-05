@@ -7,6 +7,10 @@
     <form class="create-deployment-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
 
       <div class="selector">
+        <mat-checkbox name="unsupervised" [ngModel]="deployment.unsupervised" (change)="unsupervisedControl($event)">Semi-supervised training</mat-checkbox>
+      </div>
+
+      <div class="selector">
         <mat-checkbox name="incremental" [ngModel]="deployment.incremental" (change)="incrementalControl($event)">Incremental training</mat-checkbox>
         <mat-checkbox name="federated" [ngModel]="deployment.federated" (change)="federatedControl($event)">Federated learning</mat-checkbox>
       </div>
@@ -55,6 +59,23 @@
               name="pth_kwargs_val" [ngModel]="deployment.pth_kwargs_val">
           </mat-form-field>
         </div>
+      </div>
+
+      <div class="unsupervised-training-settings" *ngIf="showUnsupervised">
+        <br>
+        Unsupervised models settings
+        <br>
+        <mat-form-field *ngIf="!showIncremental">
+          <mat-label>Unsupervised rounds</mat-label>
+          <input matInput type="number" placeholder="5" name="unsupervised_rounds" id="unsupervised_rounds" #nameRef="ngModel"
+            [ngModel]="deployment.unsupervised_rounds">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Confidence</mat-label>
+          <input matInput type="number" placeholder="0.9" name="confidence" id="confidence" #nameRef="ngModel"
+            [ngModel]="deployment.confidence">
+        </mat-form-field>
       </div>
 
       <div class="distributed-training-settings" *ngIf="showDistributed">

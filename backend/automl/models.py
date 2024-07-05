@@ -29,16 +29,7 @@ class Configuration(models.Model):
 class Deployment(models.Model):
     """Deployment of a configuration of models for training"""
 
-    optimizer = models.TextField(default='adam', blank=True)
-    learning_rate = models.DecimalField(max_digits=7, decimal_places=6, default=0.001, blank=True)
-    loss = models.TextField(default='sparse_categorical_crossentropy', blank=True)
-    metrics = models.TextField(default='sparse_categorical_accuracy', blank=True)
-    incremental = models.BooleanField(default=False)
-    indefinite = models.BooleanField(default=False)
-    stream_timeout = models.IntegerField(default=60000, blank=True, null=True)
-    monitoring_metric = models.TextField(blank=True, null=True)
-    change = models.TextField(blank=True, null=True)
-    improvement = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.1)
+    # General Deployment Settings
     batch = models.IntegerField(default=1)
     tf_kwargs_fit = models.CharField(max_length=100, blank=True)
     tf_kwargs_val = models.CharField(max_length=100, blank=True)
@@ -47,6 +38,25 @@ class Deployment(models.Model):
     conf_mat_settings = models.BooleanField(default=False, blank=True, null=True)
     configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
     time = models.DateTimeField(default=now, editable=False)
+
+    # Distributed Deployment Settings
+    optimizer = models.TextField(default='adam', blank=True)
+    learning_rate = models.DecimalField(max_digits=7, decimal_places=6, default=0.001, blank=True)
+    loss = models.TextField(default='sparse_categorical_crossentropy', blank=True)
+    metrics = models.TextField(default='sparse_categorical_accuracy', blank=True)
+
+    # Incremental Deployment Settings
+    incremental = models.BooleanField(default=False)
+    indefinite = models.BooleanField(default=False)
+    stream_timeout = models.IntegerField(default=60000, blank=True, null=True)
+    monitoring_metric = models.TextField(blank=True, null=True)
+    change = models.TextField(blank=True, null=True)
+    improvement = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.05)
+
+    # Unsupervised Deployment Settings
+    unsupervised = models.BooleanField(default=False)
+    unsupervised_rounds = models.IntegerField(default=5, blank=True, null=True)
+    confidence = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.9)
 
     # Federated Deployment Settings
     federated = models.BooleanField(default=False)

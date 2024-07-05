@@ -545,7 +545,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'CASE', 'value': str(case)}
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)}
                                                                 ],
                                                     }],
                                                     'imagePullPolicy': 'Always',
@@ -582,6 +586,10 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                                 {'name': 'CASE', 'value': str(case)},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)},
                                                                 # Federated
                                                                 {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
                                                                 {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
@@ -624,6 +632,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                                 {'name': 'CASE', 'value': str(case)},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)},
+                                                                # Incremental
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
                                                                 {'name': 'CHANGE', 'value': deployment.change},
@@ -665,6 +678,11 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                                 {'name': 'CASE', 'value': str(case)},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)},
+                                                                # Incremental
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'MONITORING_METRIC', 'value': deployment.monitoring_metric},
                                                                 {'name': 'CHANGE', 'value': deployment.change},
@@ -727,15 +745,20 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'RESULT_ID', 'value': str(result_ids)},
                                                                 {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                                 {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
-                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
-                                                                {'name': 'LOSS', 'value': deployment.loss},
-                                                                {'name': 'METRICS', 'value': deployment.metrics},
                                                                 {'name': 'BATCH', 'value': str(deployment.batch)},
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
-                                                                {'name': 'CASE', 'value': str(case)}
+                                                                {'name': 'CASE', 'value': str(case)},
+                                                                # Distributed
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)}
                                                                 ],
                                                     }],
                                                     'imagePullPolicy': 'Always',
@@ -768,15 +791,20 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'RESULT_ID', 'value': str(result_ids)},
                                                                 {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                                 {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
-                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
-                                                                {'name': 'LOSS', 'value': deployment.loss},
-                                                                {'name': 'METRICS', 'value': deployment.metrics},
                                                                 {'name': 'BATCH', 'value': str(deployment.batch)},
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                                 {'name': 'CASE', 'value': str(case)},
+                                                                # Distributed
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)},
                                                                 # Federated
                                                                 {'name': 'AGGREGATION_ROUNDS', 'value': str(deployment.agg_rounds)},
                                                                 {'name': 'MIN_DATA', 'value': str(deployment.min_data)},
@@ -814,15 +842,21 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'RESULT_ID', 'value': str(result_ids)},
                                                                 {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                                 {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
-                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
-                                                                {'name': 'LOSS', 'value': deployment.loss},
-                                                                {'name': 'METRICS', 'value': deployment.metrics},
                                                                 {'name': 'BATCH', 'value': str(deployment.batch)},
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                                 {'name': 'CASE', 'value': str(case)},
+                                                                # Distributed
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)},
+                                                                # Incremental
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)}
                                                                 ],
@@ -857,15 +891,21 @@ class DeploymentList(generics.ListCreateAPIView):
                                                                 {'name': 'RESULT_ID', 'value': str(result_ids)},
                                                                 {'name': 'CONTROL_TOPIC', 'value': settings.CONTROL_TOPIC},
                                                                 {'name': 'DEPLOYMENT_ID', 'value': str(deployment.id)},
-                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
-                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
-                                                                {'name': 'LOSS', 'value': deployment.loss},
-                                                                {'name': 'METRICS', 'value': deployment.metrics},
                                                                 {'name': 'BATCH', 'value': str(deployment.batch)},
                                                                 {'name': 'KWARGS_FIT', 'value': kwargs_fit},
                                                                 {'name': 'KWARGS_VAL', 'value': kwargs_val},
                                                                 {'name': 'CONF_MAT_CONFIG', 'value': json.dumps(deployment.conf_mat_settings)},
                                                                 {'name': 'CASE', 'value': str(case)},
+                                                                # Distributed
+                                                                {'name': 'OPTIMIZER', 'value': deployment.optimizer},
+                                                                {'name': 'LEARNING_RATE', 'value': str(deployment.learning_rate)},
+                                                                {'name': 'LOSS', 'value': deployment.loss},
+                                                                {'name': 'METRICS', 'value': deployment.metrics},
+                                                                # Unsupservised
+                                                                {'name': 'UNSUPERVISED', 'value': str(deployment.unsupervised)},
+                                                                {'name': 'UNSUPERVISED_ROUNDS', 'value': str(deployment.unsupervised_rounds)},
+                                                                {'name': 'CONFIDENCE', 'value': str(deployment.confidence)},
+                                                                # Incremental
                                                                 {'name': 'STREAM_TIMEOUT', 'value': str(deployment.stream_timeout) if not deployment.indefinite else str(-1)},
                                                                 {'name': 'IMPROVEMENT', 'value': str(deployment.improvement)},
                                                                 # Federated
@@ -883,14 +923,14 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-
-                                    if gpu_mem_to_allocate > 0:
-                                        job_manifest['spec']['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = gpu_mem_to_allocate
-                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
-                                        job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
-
                                     resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                                     logging.info("Job created. status='%s'" % str(resp.status))
+                    
+                    if gpu_mem_to_allocate > 0:
+                        job_manifest['spec']['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = gpu_mem_to_allocate
+                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
+                        job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
+                    
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
                     traceback.print_exc()

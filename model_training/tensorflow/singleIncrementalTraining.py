@@ -39,12 +39,20 @@ class SingleIncrementalTraining(MainTraining):
 
         return super().get_online_train_data(kafka_topic)
     
-    def train(self, splits, kafka_dataset, decoder, validation_rate, start):
+    def get_splits(self, data, kafka_dataset):
+        """Gets the splits for training, validation and test"""
+        
+        return super().split_dataset(data, kafka_dataset)
+    
+    def train(self, splits, kafka_dataset, unsupervised_kafka_dataset, decoder, validation_rate, start):
         """Trains the model"""
 
         callback = SingleTrackTrainingCallback(NOT_DISTRIBUTED_INCREMENTAL, self.result_url, self.tensorflow_models)
 
-        return super().train_incremental_model(kafka_dataset, decoder, validation_rate, callback, start)
+        if unsupervised_kafka_dataset is None:
+            return super().train_incremental_model(kafka_dataset, decoder, validation_rate, callback, start)
+        else:
+            return super().train_incremental_semi_supervised_model(splits, unsupervised_kafka_dataset, decoder, callback, start)
     
     def saveMetrics(self, model_trained):
         """Saves the metrics of the model"""

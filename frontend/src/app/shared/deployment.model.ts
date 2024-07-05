@@ -20,6 +20,10 @@ export class Deployment {
     monitoring_metric: string;
     change: string;
     improvement: number;
+    // Unsupervised Deployment Settings
+    unsupervised: boolean;
+    unsupervised_rounds: number;
+    confidence: number;
     // Federated Deployment Settings
     federated: boolean;
     agg_rounds: number;

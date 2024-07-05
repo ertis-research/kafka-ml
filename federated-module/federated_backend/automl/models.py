@@ -29,9 +29,12 @@ class Datasource(models.Model):
     INPUT_FORMAT = Choices('RAW', 'AVRO')
     """Sets its default value to the first item in the STATUS choices:"""
     input_format = StatusField(choices_name='INPUT_FORMAT')
-    input_config = models.TextField(blank=True) 
+    input_config = models.TextField(blank=True)
+
+    incremental = models.BooleanField(default=False)
 
     topic = models.TextField()
+    unsupervised_topic = models.TextField(blank=True, null=True)
 
     total_msg = models.IntegerField(blank=True, null=True)
     validation_rate = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True)

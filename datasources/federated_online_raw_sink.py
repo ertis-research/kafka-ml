@@ -31,12 +31,12 @@ class OnlineFederatedRawSink(KafkaMLSink):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         data_type=None, label_type=None, description='', dataset_restrictions='{}', data_reshape=None, label_reshape=None, 
-        validation_rate=0, control_topic='FEDERATED_DATA_CONTROL_TOPIC', group_id='sink'):
+        validation_rate=0, control_topic='FEDERATED_DATA_CONTROL_TOPIC', group_id='sink', unsupervised_topic=None):
         
         input_format='RAW'
         test_rate=0
         super().__init__(boostrap_servers, topic, deployment_id, input_format, description,
-            dataset_restrictions, validation_rate, test_rate, control_topic, group_id)
+            dataset_restrictions, validation_rate, test_rate, control_topic, group_id, unsupervised_topic)
 
         self.data_type = data_type
         self.label_type = label_type
@@ -69,3 +69,8 @@ class OnlineFederatedRawSink(KafkaMLSink):
         """Sends data and label to Apache Kafka"""
         
         super().send(data.tobytes(), label.tobytes())
+    
+    def unsupervised_send(self, data):
+        """Sends data to Apache Kafka"""
+        
+        super().unsupervised_send(data.tobytes())

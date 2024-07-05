@@ -17,6 +17,9 @@ mnist = FederatedRawSink(boostrap_servers='localhost:9094', topic='mnist_fed', d
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
+for (x, y) in zip(x_train, y_train):
+    mnist.send(data=x, label=y)
+
 for (x, y) in zip(x_test, y_test):
     mnist.send(data=x, label=y)
 

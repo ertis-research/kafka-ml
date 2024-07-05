@@ -40,9 +40,14 @@ class MainTraining(object):
         self.confussion_matrix = json.loads(os.environ.get('CONF_MAT_CONFIG').replace("'", '"'))
         self.model = None
         self.tensorflow_models = None
+        # Unsupervised training
+        self.unsupervised = eval(os.environ.get('UNSUPERVISED'))
+        if self.unsupervised:
+            self.unsupervised_rounds = int(os.environ.get('UNSUPERVISED_ROUNDS'))
+            self.confidence = eval(os.environ.get('CONFIDENCE'))
 
-        logging.info("Received main environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val) ([%s], [%s], [%s], [%s], [%d], [%d], [%s], [%s])",
-                self.bootstrap_servers, str(self.result_url), str(self.result_id), self.control_topic, self.deployment_id, self.batch, str(self.kwargs_fit), str(self.kwargs_val))
+        logging.info("Received main environment information (bootstrap_servers, result_url, result_id, control_topic, deployment_id, batch, kwargs_fit, kwargs_val, unsupervised_training) ([%s], [%s], [%s], [%s], [%d], [%d], [%s], [%s], [%s])",
+                self.bootstrap_servers, str(self.result_url), str(self.result_id), self.control_topic, self.deployment_id, self.batch, str(self.kwargs_fit), str(self.kwargs_val), str(self.unsupervised))
 
     def get_single_model(self):
         """Downloads the model and loads it"""
@@ -331,6 +336,83 @@ class MainTraining(object):
         }
 
         return training_results
+    
+    def train_classic_semi_supervised_model(self, splits, unsupervised_kafka_dataset, callback):
+        """Trains semi-supervised model"""
+
+        x_train = np.concatenate([x for x, y in splits['train_dataset']], axis=0)
+        y_train = np.concatenate([y for x, y in splits['train_dataset']], axis=0)
+
+        x_val = np.concatenate([x for x, y in splits['validation_dataset']], axis=0)
+        y_val = np.concatenate([y for x, y in splits['validation_dataset']], axis=0)
+
+        logging.info("Training model with labeled data")
+
+        if not hasattr(self, 'N'):
+            model_trained = self.model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), **self.kwargs_fit, callbacks=[callback])
+        else:
+            y_training = []
+            y_validation = []
+            for i in range(self.N):
+                y_training.append(y_train)
+                y_validation.append(y_val)
+            model_trained = self.model.fit(x=x_train, y=y_training, validation_data=(x_val, y_validation), **self.kwargs_fit, callbacks=[callback])
+
+        unsupervised_kafka_dataset = unsupervised_kafka_dataset.batch(self.batch)
+        x_unlabeled = np.concatenate([x for x, y in unsupervised_kafka_dataset], axis=0)
+
+        for round in range(self.unsupervised_rounds):
+            if len(x_unlabeled) > 0:
+                predictions = self.model.predict(x_unlabeled)
+                
+                if not hasattr(self, 'N'):
+                    confidence_scores = np.max(predictions, axis=1)
+                    pseudo_labels = np.argmax(predictions, axis=1)
+                else:
+                    confidence_scores = np.max(predictions[-1], axis=1)
+                    pseudo_labels = np.argmax(predictions[-1], axis=1)
+
+                high_confidence_indices = confidence_scores >= self.confidence
+                high_confidence_pseudo_labels = pseudo_labels[high_confidence_indices]
+                high_confidence_unlabeled_data = x_unlabeled[high_confidence_indices]
+
+                if len(high_confidence_pseudo_labels) == 0:
+                    logging.info("No high-confidence pseudo-labels found. Stopping.")
+                    break
+                else:
+                    logging.info("Round %d: Found %d high-confidence pseudo-labels", round, len(high_confidence_pseudo_labels))
+
+                high_confidence_pseudo_labels = np.expand_dims(high_confidence_pseudo_labels, axis=1)
+
+                x_combined = np.concatenate([x_train, high_confidence_unlabeled_data])
+                y_combined = np.concatenate([y_train, high_confidence_pseudo_labels])
+
+                logging.info("Training model with labeled and pseudo-labeled data")
+
+                if not hasattr(self, 'N'):
+                    unsupervised_model_trained = self.model.fit(x_combined, y_combined, validation_data=(x_val, y_val), **self.kwargs_fit, callbacks=[callback])
+                else:
+                    y_training = []
+                    for i in range(self.N):
+                        y_training.append(y_combined)
+                    unsupervised_model_trained = self.model.fit(x_combined, y_training, validation_data=(x_val, y_validation), **self.kwargs_fit, callbacks=[callback])
+
+                x_train = x_combined
+                y_train = y_combined
+
+                x_unlabeled = np.delete(x_unlabeled, high_confidence_indices, axis=0)
+
+                for key in model_trained.history.keys():
+                    model_trained.history[key].extend(unsupervised_model_trained.history[key])
+            else:
+                logging.info("No more unlabeled data. Stopping.")
+                break
+        
+        training_results = {
+            'model_trained': model_trained
+        }
+
+        return training_results
 
     def train_incremental_model(self, kafka_dataset, decoder, validation_rate, callback, start):
         """Trains incremental model"""
@@ -355,8 +437,91 @@ class MainTraining(object):
                             self.sendMetrics(None, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, None)
 
         training_results = {
-                'model_trained': model_trained
-            }
+            'model_trained': model_trained
+        }
+
+        return training_results
+    
+    def train_incremental_semi_supervised_model(self, splits, unsupervised_kafka_dataset, decoder, callback, start):
+        """Trains incremental model"""
+
+        x_train = np.concatenate([x for x, y in splits['train_dataset']], axis=0)
+        y_train = np.concatenate([y for x, y in splits['train_dataset']], axis=0)
+
+        x_val = np.concatenate([x for x, y in splits['validation_dataset']], axis=0)
+        y_val = np.concatenate([y for x, y in splits['validation_dataset']], axis=0)
+
+        logging.info("Training model with labeled data")
+        
+        if not hasattr(self, 'N'):
+            model_trained = self.model.fit(x=x_train, y=y_train, validation_data=(x_val, y_val), **self.kwargs_fit, callbacks=[callback])
+        else:
+            y_training = []
+            y_validation = []
+            for i in range(self.N):
+                y_training.append(y_train)
+                y_validation.append(y_val)
+            model_trained = self.model.fit(x=x_train, y=y_training, validation_data=(x_val, y_validation), **self.kwargs_fit, callbacks=[callback])
+
+        for unsupervised_mini_ds in unsupervised_kafka_dataset:
+            if len(unsupervised_mini_ds) > 0:
+                unsupervised_mini_ds = unsupervised_mini_ds.map(lambda x, y: decoder.decode(x, y)).batch(self.batch)
+                x_unlabeled = np.concatenate([x for x, y in unsupervised_mini_ds], axis=0)
+
+                predictions = self.model.predict(x_unlabeled)
+                
+                if not hasattr(self, 'N'):
+                    confidence_scores = np.max(predictions, axis=1)
+                    pseudo_labels = np.argmax(predictions, axis=1)
+                else:
+                    confidence_scores = np.max(predictions[-1], axis=1)
+                    pseudo_labels = np.argmax(predictions[-1], axis=1)
+
+                high_confidence_indices = confidence_scores >= self.confidence
+                high_confidence_pseudo_labels = pseudo_labels[high_confidence_indices]
+                high_confidence_unlabeled_data = x_unlabeled[high_confidence_indices]
+
+                if len(high_confidence_pseudo_labels) == 0:
+                    logging.info("No high-confidence pseudo-labels found. Stopping.")
+                    break
+                else:
+                    logging.info("Found %d high-confidence pseudo-labels", len(high_confidence_pseudo_labels))
+
+                high_confidence_pseudo_labels = np.expand_dims(high_confidence_pseudo_labels, axis=1)
+
+                x_combined = np.concatenate([x_train, high_confidence_unlabeled_data])
+                y_combined = np.concatenate([y_train, high_confidence_pseudo_labels])
+
+                logging.info("Training model with labeled and pseudo-labeled data")
+                
+                if not hasattr(self, 'N'):
+                    unsupervised_model_trained = self.model.fit(x_combined, y_combined, validation_data=(x_val, y_val), **self.kwargs_fit, callbacks=[callback])
+                else:
+                    y_training = []
+                    for i in range(self.N):
+                        y_training.append(y_combined)
+                    unsupervised_model_trained = self.model.fit(x_combined, y_training, validation_data=(x_val, y_validation), **self.kwargs_fit, callbacks=[callback])
+
+                x_train = x_combined
+                y_train = y_combined
+
+                for key in model_trained.history.keys():
+                    model_trained.history[key].extend(unsupervised_model_trained.history[key])
+
+                if self.stream_timeout == -1:
+                    if 'reference' not in locals() and 'reference' not in globals():
+                        reference = model_trained.history['val_'+self.monitoring_metric][-1]
+                    last = model_trained.history['val_'+self.monitoring_metric][-1]
+                    if reference != last:
+                        if (self.change == 'up' and last - reference >= self.improvement) or (self.change == 'down' and reference - last >= self.improvement):
+                            dtime = time.time() - start
+                            reference = last
+                            epoch_training_metrics, epoch_validation_metrics, test_metrics = self.saveMetrics(model_trained)
+                            self.sendMetrics(None, epoch_training_metrics, epoch_validation_metrics, test_metrics, dtime, None)
+
+        training_results = {
+            'model_trained': model_trained
+        }
 
         return training_results
     

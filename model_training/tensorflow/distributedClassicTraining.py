@@ -53,12 +53,15 @@ class DistributedClassicTraining(MainTraining):
 
         super().create_distributed_model()
     
-    def train(self, splits, kafka_dataset, decoder, validation_rate, start):
+    def train(self, splits, kafka_dataset, unsupervised_kafka_dataset, decoder, validation_rate, start):
         """Trains the model"""
 
         callback = DistributedTrackTrainingCallback(DISTRIBUTED_NOT_INCREMENTAL, self.result_url, self.tensorflow_models)
 
-        return super().train_classic_model(splits, callback)
+        if unsupervised_kafka_dataset is None:
+            return super().train_classic_model(splits, callback)
+        else:
+            return super().train_classic_semi_supervised_model(splits, unsupervised_kafka_dataset, callback)
     
     def saveMetrics(self, model_trained):
         """Saves the metrics of the model"""

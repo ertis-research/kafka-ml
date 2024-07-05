@@ -126,6 +126,7 @@ def deploy_on_kubernetes(datasource_item, model_item, framework, case):
                                         'env': [{'name': 'KML_CLOUD_BOOTSTRAP_SERVERS', 'value': settings.KML_CLOUD_BOOTSTRAP_SERVERS},
                                                 {'name': 'DATA_BOOTSTRAP_SERVERS', 'value': settings.FEDERATED_BOOTSTRAP_SERVERS},
                                                 {'name': 'DATA_TOPIC', 'value': datasource_item['topic']},
+                                                {'name': 'UNSUPERVISED_TOPIC', 'value': datasource_item['unsupervised_topic']},
                                                 {'name': 'INPUT_FORMAT', 'value': datasource_item['input_format']},
                                                 {'name': 'INPUT_CONFIG', 'value': datasource_item['input_config']},
                                                 {'name': 'VALIDATION_RATE', 'value': str(datasource_item['validation_rate'])},
@@ -170,11 +171,9 @@ class DatasourceList(generics.ListCreateAPIView):
             
             if ds_serializer.is_valid():
                 """Checks if data received is valid"""
-                # save data to database
+                # Save data to database
                 logging.info("Data received is valid. Saving to database...")
                 ds_serializer.save()
-
-                incremental = True if ds_serializer.data['total_msg'] == None else False
 
                 """Checks for all datasources if there is a model that can be trained"""
                 modelsources = ModelSource.objects.all()
@@ -183,12 +182,12 @@ class DatasourceList(generics.ListCreateAPIView):
                     ms_serializer = ModelSourceSerializer(modelsource)
 
                     if not ms_serializer.data['distributed']:
-                        if not incremental:
+                        if not ds_serializer.data['incremental']:
                             case = 1
                         else:
                             case = 2
                     else:
-                        if not incremental:
+                        if not ds_serializer.data['incremental']:
                             case = 3
                         else:
                             case = 4
@@ -236,7 +235,7 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
             
             if ms_serializer.is_valid():
                 """Checks if data received is valid"""
-                # save data to database
+                # Save data to database
                 logging.info("Data received is valid. Saving to database...")
                 ms_serializer.save()
 

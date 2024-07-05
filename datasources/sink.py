@@ -51,12 +51,15 @@ class KafkaMLSink(object):
 
     def __init__(self, boostrap_servers, topic, deployment_id,
         input_format, description='', dataset_restrictions={},
-        validation_rate=0, test_rate=0, control_topic='KAFKA_ML_CONTROL_TOPIC', group_id='sink'):
+        validation_rate=0, test_rate=0, control_topic='KAFKA_ML_CONTROL_TOPIC', group_id='sink', unsupervised_topic=None):
 
         self.boostrap_servers = boostrap_servers
         self.topic = topic
         self.deployment_id = deployment_id
         self.input_format = input_format
+        self.unsupervised_topic = unsupervised_topic
+        if self.unsupervised_topic == '':
+            self.unsupervised_topic = None
         self.description = description
         self.dataset_restrictions = dataset_restrictions
         self.validation_rate = validation_rate
@@ -65,6 +68,7 @@ class KafkaMLSink(object):
         self.group_id = group_id
         self.total_messages = 0
         self.__partitions = {}
+        self.__unsupervised_partitions = {}
         self.input_config = {}
         self.__consumer = KafkaConsumer(
             bootstrap_servers=self.boostrap_servers,
@@ -72,7 +76,8 @@ class KafkaMLSink(object):
             enable_auto_commit=False
         )
         self.__producer = KafkaProducer(
-            bootstrap_servers=self.boostrap_servers
+            bootstrap_servers=self.boostrap_servers,
+            request_timeout_ms=60000,
         )
         self.__init_partitions()
         logging.info("Partitions received [%s]", str(self.__partitions))
@@ -93,14 +98,14 @@ class KafkaMLSink(object):
             logging.error('Type %s not supported for converting to bytes', value.__class__.__name__)
             raise Exception("Type not supported")
             
-    def __get_partitions_and_offsets(self):
+    def __get_partitions_and_offsets(self, topic):
         """Obtains the partitions and offsets in the topic defined"""
         
         dic = {} 
-        partitions = self.__consumer.partitions_for_topic(self.topic)
+        partitions = self.__consumer.partitions_for_topic(topic)
         if partitions is not None:
-            for p in self.__consumer.partitions_for_topic(self.topic):
-                tp = TopicPartition(self.topic, p)
+            for p in self.__consumer.partitions_for_topic(topic):
+                tp = TopicPartition(topic, p)
                 self.__consumer.assign([tp])
                 self.__consumer.seek_to_end(tp)
                 last_offset = self.__consumer.position(tp)
@@ -110,33 +115,35 @@ class KafkaMLSink(object):
     def __init_partitions(self):
         """Obtains the partitions and offsets in the topic defined and save them in self.__partitions"""
         
-        self.__partitions = self.__get_partitions_and_offsets()
+        self.__partitions = self.__get_partitions_and_offsets(self.topic)
+        if self.unsupervised_topic is not None:
+            self.__unsupervised_partitions = self.__get_partitions_and_offsets(self.unsupervised_topic)
 
-    def __update_partitions(self):
+    def __update_partitions(self, topic, partitions):
         """Updates the offsets and length in the topic defined after sending data"""
         
-        dic = self.__get_partitions_and_offsets()
+        dic = self.__get_partitions_and_offsets(topic)
         self.total_messages = 0
         for p in dic.keys():
-            if p in self.__partitions.keys():
-                diff = dic[p]['offset'] - self.__partitions[p]['offset']
-                self.__partitions[p]['length'] = dic[p]['offset']
+            if p in partitions.keys():
+                diff = dic[p]['offset'] - partitions[p]['offset']
+                partitions[p]['length'] = dic[p]['offset']
             else:
                 diff = dic[p]['offset']
-                self.__partitions[p] = {'offset': 0, 'length': dic[p]['offset']}
+                partitions[p] = {'offset': 0, 'length': dic[p]['offset']}
             self.total_messages += diff
         
         logging.info("%d messages have been sent to Kafka", self.total_messages)
     
-    def __stringify_partitions(self):
+    def __stringify_partitions(self, topic, partitions):
         """Stringify the partition information for sending to Apache Kafka"""
         
         res = ""
-        for p in self.__partitions.keys():
+        for p in partitions.keys():
             """ Format topic:partition:offset:length,topic1:partition:offset:length"""
-            res+= self.topic +":"+ str(p)+ ":" + str(self.__partitions[p]['offset'])
-            if 'length' in self.__partitions[p]:
-                res += ":" + str(self.__partitions[p]['length'])
+            res+= topic +":"+ str(p)+ ":" + str(partitions[p]['offset'])
+            if 'length' in partitions[p]:
+                res += ":" + str(partitions[p]['length'])
             res+=","
         
         res = res[:-1]
@@ -148,14 +155,16 @@ class KafkaMLSink(object):
         """Sends control message to Apache Kafka with the information"""
 
         dic = {
-            'topic': self.__stringify_partitions(),
+            'topic': self.__stringify_partitions(self.topic, self.__partitions),
+            'unsupervised_topic': self.__stringify_partitions(self.unsupervised_topic, self.__unsupervised_partitions) if self.unsupervised_topic is not None else None,
             'input_format': self.input_format,
             'description' : self.description,
             'dataset_restrictions': self.dataset_restrictions,
             'input_config' : self.input_config,
             'validation_rate' : self.validation_rate,
             'test_rate' : self.test_rate,
-            'total_msg': self.total_messages
+            'total_msg': self.total_messages,
+            'incremental': False
         }
         key = self.__object_to_bytes(self.deployment_id)
         data = json.dumps(dic).encode('utf-8')
@@ -167,12 +176,16 @@ class KafkaMLSink(object):
         """Sends online control message to Apache Kafka with the information"""
 
         dic = {
-            'topic': self.topic,
+            'topic': self.__stringify_partitions(self.topic, self.__partitions) if self.unsupervised_topic is not None else self.topic,
+            'unsupervised_topic': self.unsupervised_topic,
             'input_format': self.input_format,
             'description' : self.description,
             'input_config' : self.input_config,
             'validation_rate' : self.validation_rate,
-            'dataset_restrictions': self.dataset_restrictions
+            'test_rate' : self.test_rate,
+            'total_msg': self.total_messages if self.unsupervised_topic is not None else None,
+            'dataset_restrictions': self.dataset_restrictions,
+            'incremental': True
         }
         key = self.__object_to_bytes(self.deployment_id)
         data = json.dumps(dic).encode('utf-8')
@@ -190,6 +203,14 @@ class KafkaMLSink(object):
             self.__producer.send(self.topic, data)
         else:
             self.__producer.send(self.topic, key=label, value=data)
+
+    def __unsupervised_send(self, data):
+        """Converts data received to bytes and sends it to Apache Kafka"""
+        
+        data=self.__object_to_bytes(data)
+        label=self.__object_to_bytes(0)
+        if self.unsupervised_topic is not None:
+            self.__producer.send(self.unsupervised_topic, key=label, value=data)
 
     def __shape_to_string(self, out_shape):
         """Converts shape to string type.
@@ -225,6 +246,8 @@ class KafkaMLSink(object):
     def send_online_control_msg(self):
         """Sends online control message to Apache Kafka with the information"""
         
+        if self.unsupervised_topic is not None:
+            self.__update_partitions(self.topic, self.__partitions)
         self.__send_online_control_msg()
     
     def shape_to_string(self, out_shape):
@@ -241,6 +264,11 @@ class KafkaMLSink(object):
         """Sends data and label to Apache Kafka"""
         
         self.__send(data, label)
+
+    def unsupervised_send(self, data):
+        """Sends data to Apache Kafka"""
+        
+        self.__unsupervised_send(data)
 
     def send_value(self, data):
         """Sends data to Apache Kafka"""
@@ -262,7 +290,9 @@ class KafkaMLSink(object):
         """Closes the connection with Kafka and sends the control message to the control topic"""
 
         self.__producer.flush()
-        self.__update_partitions()
+        if self.unsupervised_topic is not None:
+            self.__update_partitions(self.unsupervised_topic, self.__unsupervised_partitions)
+        self.__update_partitions(self.topic, self.__partitions)
         self.__send_control_msg()
         self.__producer.close()
         self.__consumer.close(autocommit=False)

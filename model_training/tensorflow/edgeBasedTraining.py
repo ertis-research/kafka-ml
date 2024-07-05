@@ -63,25 +63,18 @@ def EdgeBasedTraining(training):
 
     training_settings = {'batch': training.batch, 'kwargs_fit': training.kwargs_fit, 'kwargs_val': training.kwargs_val}
 
-    if isinstance(training, SingleFederatedIncrementalTraining):
+    if isinstance(training, (DistributedFederatedTraining, DistributedFederatedIncrementalTraining)):
+      training_settings['N'] = training.N
+
+    if training.unsupervised:
+      training_settings['unsupervised'] = True
+      training_settings['unsupervised_rounds'] = training.unsupervised_rounds
+      training_settings['confidence'] = training.confidence
+    else:
+      training_settings['unsupervised'] = False
+
+    if isinstance(training, (SingleFederatedIncrementalTraining, DistributedFederatedIncrementalTraining)):
       training_settings['stream_timeout'] = training.stream_timeout
-      training_settings['monitoring_metric'] = training.monitoring_metric
-      training_settings['change'] = training.change
-      training_settings['improvement'] = training.improvement
-    elif isinstance(training, DistributedFederatedTraining):
-      training_settings['optimizer'] = training.optimizer
-      training_settings['learning_rate'] = training.learning_rate
-      training_settings['loss'] = training.loss
-      training_settings['metrics'] = training.metrics
-    elif isinstance(training, DistributedFederatedIncrementalTraining):
-      training_settings['stream_timeout'] = training.stream_timeout
-      training_settings['monitoring_metric'] = training.monitoring_metric
-      training_settings['change'] = training.change
-      training_settings['improvement'] = training.improvement
-      training_settings['optimizer'] = training.optimizer
-      training_settings['learning_rate'] = training.learning_rate
-      training_settings['loss'] = training.loss
-      training_settings['metrics'] = training.metrics
 
     version, rounds, model_metrics, start_time = 0, 0, [], time.time()
     """Initializes the version, rounds, model metrics and start time"""
@@ -121,7 +114,7 @@ def EdgeBasedTraining(training):
 
           train_metrics, val_metrics = training.parse_metrics(model_metrics)
           training.sendTempMetrics(train_metrics, val_metrics)
-          """ Sends the current metrics to the backend"""
+          """Sends the current metrics to the backend"""
 
         except Exception as e:
           traceback.print_exc()

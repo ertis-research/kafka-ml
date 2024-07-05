@@ -51,7 +51,9 @@ Kafka-ML article has been selected as
 - [Usage](#usage)
   - [Single models](#Single-models)
   - [Distributed models](#Distributed-models)
+  - [Semi-supervised learning](#Semi-supervised-learning)
   - [Incremental training](#Incremental-training)
+  - [Federated learning](#Federated-learning)
 - [Installation and development](#Installation-and-development)
   - [Requirements to build locally](#Requirements-to-build-locally)
   - [Steps to build Kafka-ML](#Steps-to-build-Kafka-ML)
@@ -78,6 +80,7 @@ Kafka-ML article has been selected as
 - [26/12/2022] Added indefinite incremental training support.
 - [07/07/2023] Added federated training support (currently only for Tensorflow/Keras models).
 - [28/09/2023] Federated learning enabled for distributed neural networks and incremental training.
+- [05/07/2024] Added semi-supervised learning support.
 
 ## Deploy Kafka-ML in a fast way
 
@@ -493,6 +496,46 @@ the topics deployed:
 python examples/MNIST_RAW_format/mnist_dataset_inference_example.py
 ```
 
+### Semi-supervised learning
+
+Semi-supervised learning is a type of machine learning that falls between supervised
+and unsupervised learning. In supervised learning, the model is trained on a labeled
+dataset, where each example is associated with a correct output or label. In unsupervised
+learning, the model is trained on an unlabeled dataset, and it must learn to identify
+patterns or structure in the data without any explicit guidance. Semi-supervised learning,
+on the other hand, involves training a machine learning model on a dataset that contains
+both labeled and unlabeled examples. The idea behind semi-supervised learning is to use
+the small amount of labeled data to guide the learning process, while also leveraging
+the much larger amount of unlabeled data to improve the model's performance.
+
+Currently, the only framework that supports semi-supervised training is TensorFlow.
+In this case, the usage example will be the same as the one presented for the
+single models, only the configuration deployment form will change and will now
+contain more fields.
+
+As before, change the fields as desired. The new semi-supervised fields are:
+unsupervised_rounds and confidence. Unsupervised rounds are used to define the number
+of rounds to iterate through the so far unlabelled data. Confidence is used to specify
+the minimum reliance that the model has to have in a prediction of an unlabelled data
+in order to subsequently assign that label to it. They are not required, so if not specified,
+default values are taken, which are: _5_ and _0.9_, respectively.
+
+<img src="images/deploy-unsupervised-configuration.png" width="500">
+
+Once the configuration is deployed, you will see one training result per model
+in the configuration. Models are now ready to be trained and receive stream
+data. Now, it is time to ingest the model(s) with your data stream for training.
+
+If you have used the MNIST model you can use the example
+`mnist_dataset_unsupervised_training_example.py`. You may need to install the Python
+libraries listed in datasources/requirements.txt.
+
+If so, please execute the incremental MNIST example for training:
+
+```
+python examples/MNIST_RAW_format/mnist_dataset_unsupervised_training_example.py
+```
+
 ### Incremental training
 
 Incremental training is a machine learning method in which input data is
@@ -523,7 +566,7 @@ in the configuration. Models are now ready to be trained and receive stream
 data. Now, it is time to ingest the model(s) with your data stream for training.
 
 If you have used the MNIST model you can use the example
-`mnist_dataset_federated_training_example.py`. You may need to install the Python
+`mnist_dataset_online_training_example.py`. You may need to install the Python
 libraries listed in datasources/requirements.txt.
 
 If so, please execute the incremental MNIST example for training:
