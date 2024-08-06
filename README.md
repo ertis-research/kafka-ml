@@ -549,17 +549,24 @@ In this case, the usage example will be the same as the one presented for the
 single models, only the configuration deployment form will change and will now
 contain more fields.
 
-As before, change the fields as desired. The new incremental fields are: stream
-timeout, message poll timeout, numerator and denominator batch parameters. The
-stream timeout parameter is used to configure the duration for which the dataset
-will block for new messages before timing out. The message poll timeout
-parameter is the window size to get new data. Finally, the numerator and
-denominator batch parameters represent the fraction of batches to be used for
-validation (numerator must be smaller than the denominator). They are not
-required, so if not specified, default values are taken, which are: _60000_,
-_60000_, _1_ and _5_, respectively.
+As before, change the fields as desired. For this case, there are two types of
+deployments: time-limited and indefinite. The new time-limited incremental field
+is: stream timeout. The stream timeout parameter is used to configure the duration
+for which the dataset will block for new messages before timing out. It is not
+required, so if not specified, default value is taken, which is: _60000_.
 
-<img src="images/deploy-incremental-configuration.png" width="500">
+<img src="images/deploy-incremental-configuration-1.png" width="500">
+
+The new indefinite incremental fields are: monitoring metric, direction, and improvement.
+The monitoring metric is used to keep track of a specific parameter (of the user's choice)
+within the validation phase of the model's training. The direction is used to let Kafka-ML
+know in which direction the monitoring metric is improving (as it is configurable).
+Finally, the improvement serves to establish a range from which an automatic deployment of
+the model for inference should be carried out, since this training is indefinite in time.
+Monitoring metric and direction must be specified. Improvement is not required, so if not
+specified, default value is taken, which is: _0.05_.
+
+<img src="images/deploy-incremental-configuration-2.png" width="500">
 
 Once the configuration is deployed, you will see one training result per model
 in the configuration. Models are now ready to be trained and receive stream
