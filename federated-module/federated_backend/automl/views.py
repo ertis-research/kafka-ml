@@ -79,12 +79,12 @@ def check_colission(datasource_item, model_item, case):
 
     # Distributed models input shape conversion
     aux_array = model_item['input_shape'].split()
-    if (case == 3 or case == 4) and len(aux_array) > 2:
+    if (case in [3,4]) and len(aux_array) > 2:
         delimiter = ' '
         model_item['input_shape'] = delimiter.join(aux_array[:-1])
 
     if ds_input_config['data_reshape'] == model_item['input_shape'] and json.loads(datasource_item['dataset_restrictions']) == json.loads(model_item['data_restriction']):
-        if ((case == 1 or case == 3) and datasource_item['total_msg'] >= model_item['min_data']) or (case == 2 or case == 4):
+        if ((case in [1,3,5]) and datasource_item['total_msg'] >= model_item['min_data']) or (case in [2,4]):
             return True
     
     return False
@@ -143,8 +143,15 @@ def deploy_on_kubernetes(datasource_item, model_item, framework, case):
                                 }
                             }
                         }
-                    }        
-                
+                    }
+        
+        if case == 5:
+            job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_RPC_URL', 'value': model_item['blockchain']['rpc_url']})
+            job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_CONTRACT_ADDRESS', 'value': model_item['blockchain']['contract_address']})
+            job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_CONTRACT_ABI', 'value': json.dumps(model_item['blockchain']['contract_abi'])})
+            job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_WALLET_ADDRESS', 'value': os.environ.get('FEDML_BLOCKCHAIN_WALLET_ADDRESS')})
+            job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_WALLET_KEY', 'value': os.environ.get('FEDML_BLOCKCHAIN_WALLET_KEY')})
+
         logging.debug("Job manifest: %s", job_manifest)
         resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
         return HttpResponse(status=status.HTTP_201_CREATED)
@@ -171,7 +178,7 @@ class DatasourceList(generics.ListCreateAPIView):
             
             if ds_serializer.is_valid():
                 """Checks if data received is valid"""
-                # Save data to database
+                # save data to database
                 logging.info("Data received is valid. Saving to database...")
                 ds_serializer.save()
 
@@ -183,7 +190,10 @@ class DatasourceList(generics.ListCreateAPIView):
 
                     if not ms_serializer.data['distributed']:
                         if not ds_serializer.data['incremental']:
-                            case = 1
+                            if ms_serializer.data['blockchain'] == {}:
+                                case = 1
+                            else:    
+                                case = 5
                         else:
                             case = 2
                     else:
@@ -227,7 +237,8 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
                             'input_shape': data['model_format']['input_shape'],
                             'output_shape': data['model_format']['output_shape'],
                             'framework': data['framework'],
-                            'distributed': data['distributed']
+                            'distributed': data['distributed'],
+                            'blockchain': data.get('blockchain', {}),
                         }
 
             logging.info("Received data: %s", parsed_data)
@@ -239,7 +250,13 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
                 logging.info("Data received is valid. Saving to database...")
                 ms_serializer.save()
 
-                case = 1 if ms_serializer.data['distributed'] == False else 3
+                if not ms_serializer.data['distributed']:
+                    if ms_serializer.data['blockchain'] == {}:
+                        case = 1
+                    else:
+                        case = 5
+                else:                    
+                    case = 3
 
                 """Checks for all datasources if there is a model that can be trained"""
                 datasources = Datasource.objects.all()
@@ -248,7 +265,7 @@ class ModelFromControlLogger(generics.ListCreateAPIView):
                     # Parse to JSON
                     ds_serializer = DatasourceSerializer(datasource)
                     
-                    if not incremental and ds_serializer.data['total_msg'] != None:
+                    if not incremental and ds_serializer.data['total_msg'] is not None:
                         has_collided = check_colission(ds_serializer.data, ms_serializer.data, case)
                         if has_collided:
                             logging.info("Datasource and model are compatible. Deploying model...")

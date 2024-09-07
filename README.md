@@ -734,8 +734,8 @@ steps:
 7. Install the libraries and execute the frontend:
    ```bash
    cd frontend
-   npm install
-   npm i -g @angular/cli
+   npm install # nvm install 10 & nvm use 10.24.1
+   npm i -g @angular/cli@9.1.15
    ng build -c production
    docker build --tag localhost:5000/frontend .
    docker push localhost:5000/frontend

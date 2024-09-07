@@ -20,6 +20,7 @@ class FederatedKafkaMLModelSink(object):
         control_topic (str): Control Kafka topic for sending confirmation after sending training data. 
             Defaults to federated
         group_id (str): Group ID of the Kafka consumer. Defaults to federated
+        blockchain_json (str): JSON with the blockchain information
 
     Attributes:
         bootstrap_servers (str): List of Kafka brokers
@@ -180,6 +181,7 @@ class FederatedKafkaMLModelSink(object):
         self.__producer.send(self.control_topic, key=key, value=data)
         self.__producer.flush()
         logging.info("Control message to Kafka. Topic %s - Version %s", str(dic['topic']), str(dic['version']))
+        return dic
     
     def __send(self, data, label=None):
         """Converts data and label received to bytes and sends them to Apache Kafka"""
@@ -202,7 +204,8 @@ class FederatedKafkaMLModelSink(object):
 
         # self.__producer.flush()
         self.__update_partitions()
-        self.__send_control_msg(model, version=version)
+        control_msg = self.__send_control_msg(model, version=version)
+        return control_msg
         
     def close(self):
         """Closes the connection with Kafka and sends the control message to the control topic"""

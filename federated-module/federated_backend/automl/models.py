@@ -16,6 +16,7 @@ class ModelSource(models.Model):
 
     framework = models.TextField(default='tf')
     distributed = models.BooleanField(default=False)
+    blockchain = models.JSONField(default={})
 
     time = models.DateTimeField(default=now, editable=False)
 

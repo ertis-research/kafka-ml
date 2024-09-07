@@ -21,3 +21,15 @@ data:
   # pytorch.inference.image: ertis/kafka-ml-pytorch_model_inference:master
 
   # debug: "0"
+
+  # BlockChain-based Federated Learning Configuration
+  fedml.blockchain.enable: "0"
+  fedml.blockchain.rpc-url: http://blockchain:8000
+  fedml.blockchain.chain-id: "1337"
+  fedml.blockchain.network-id: "1999"
+  fedml.blockchain.wallet-address: "0x0"
+  fedml.blockchain.wallet-key: ffff
+  fedml.blockchain.blockscout-link: "0"
+  fedml.blockchain.blockscout-url: http://blockscout:8000
+  fedml.blockchain.token-name: KafkaML-FedToken
+  fedml.blockchain.token-symbol: KFKMLA

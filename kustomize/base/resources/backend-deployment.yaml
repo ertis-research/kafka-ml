@@ -95,6 +95,60 @@ spec:
                   name: kafkaml-configmap
                   key: federated.modelloggertopic
                   optional: true
+            - name: ENABLE_FEDML_BLOCKCHAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.enable
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_RPC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.rpc-url
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_CHAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.chain-id
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_NETWORK_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.network-id
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_WALLET_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.wallet-address
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_WALLET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.wallet-key
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_BLOCKSCOUT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.blockscout-url
+                  optional: true            
+            - name: FEDML_BLOCKCHAIN_TOKEN_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.token-name
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_TOKEN_SYMBOL
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.token-symbol
+                  optional: true
 
           # - name: KUBE_TOKEN
           #  value: ...

@@ -12,6 +12,7 @@ FEDERATED_NOT_DISTRIBUTED_NOT_INCREMENTAL = 1
 FEDERATED_NOT_DISTRIBUTED_INCREMENTAL = 2
 FEDERATED_DISTRIBUTED_NOT_INCREMENTAL = 3
 FEDERATED_DISTRIBUTED_INCREMENTAL = 4
+BLOCKCHAIN_FEDERATED_NOT_DISTRIBUTED_NOT_INCREMENTAL = 5
 
 def string_to_numpy_type(out_type):
     """Converts a string with the same name to a Numpy type.
@@ -149,3 +150,22 @@ def load_federated_classic_environment_vars():
   total_msg = int(os.environ.get('TOTAL_MSG'))
 
   return (kml_cloud_bootstrap_server, data_bootstrap_server, federated_model_id, input_data_topic, input_format, input_config, validation_rate, total_msg)
+
+def load_blockchain_federated_environment_vars():
+    """Loads the blockchain federated environment information received from dockers
+    eth_rpc_url, eth_contract_address, eth_contract_abi, eth_wallet_address, eth_wallet_key
+    Returns:
+        eth_rpc_url (str): Ethereum RPC URL
+        eth_contract_address (str): Ethereum contract address
+        eth_contract_abi (str): Ethereum contract ABI
+        eth_wallet_address (str): Ethereum wallet address
+        eth_wallet_key (str): Ethereum wallet key
+    """
+
+    eth_rpc_url = os.environ.get('ETH_RPC_URL')
+    eth_contract_address = os.environ.get('ETH_CONTRACT_ADDRESS')
+    eth_contract_abi = json.loads(os.environ.get('ETH_CONTRACT_ABI'))
+    eth_wallet_address = os.environ.get('ETH_WALLET_ADDRESS')
+    eth_wallet_key = os.environ.get('ETH_WALLET_KEY')
+
+    return eth_rpc_url, eth_contract_address, eth_contract_abi, eth_wallet_address, eth_wallet_key

@@ -6,6 +6,7 @@ import { ConfigurationService } from '../services/configuration.service';
 import { DeploymentService } from '../services/deployment.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { environment } from '../../environments/environment';
 
 interface AggStrategies {
   value: string;
@@ -35,6 +36,7 @@ export class DeploymentViewComponent implements OnInit {
   showFederated: Boolean = false;
   showDistributed: Boolean = false;
   showUnsupervised: Boolean = false;
+  showBlockchain: Boolean = false;
   hideTimeout: Boolean = false;
 
   strategies: AggStrategies[] = [
@@ -72,6 +74,10 @@ export class DeploymentViewComponent implements OnInit {
     }
   }
 
+  get isFedMLBlockchainEnabled(): boolean {
+    return environment.enableFederatedBlockchain;
+  }
+
   federatedControl(e: any) {
     if (e.checked) {
       this.showFederated = true;
@@ -103,6 +109,14 @@ export class DeploymentViewComponent implements OnInit {
       this.showUnsupervised = true;
     } else {
       this.showUnsupervised = false;
+    }
+  }
+  
+  blockchainControl(e: any) {
+    if (e.checked) {
+      this.showBlockchain = true;
+    } else {
+      this.showBlockchain = false;
     }
   }
   

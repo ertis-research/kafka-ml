@@ -73,4 +73,16 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: federated-kafkaml-configmap
-                  key: federated.pytorch.training.image
+                  key: federated.pytorch.training.image            
+            - name: FEDML_BLOCKCHAIN_WALLET_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: fedml.blockchain.wallet-address
+                  optional: true
+            - name: FEDML_BLOCKCHAIN_WALLET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: federated-kafkaml-configmap
+                  key: fedml.blockchain.wallet-key
+                  optional: true

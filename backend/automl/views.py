@@ -502,7 +502,10 @@ class DeploymentList(generics.ListCreateAPIView):
                                 if not deployment.federated:
                                     case = 1 # Case 1: Single Classic Training
                                 else:
-                                    case = 5 # Case 5: Single Federated Training
+                                    if not deployment.blockchain:
+                                        case = 5 # Case 5: Single Federated Training
+                                    else:
+                                        case = 9 # Case 9: Single Federated Blockchain Training
                             else:
                                 if not deployment.federated:
                                     case = 2 # Case 2: Single Incremental Training
@@ -605,6 +608,20 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
+                                    if deployment.blockchain:
+                                        # Add Blockchain stuff
+                                        job_manifest['metadata']['name'] = 'federated-blockchain-model-training-controller-'+str(result.id)
+
+                                        # Coger todas las variables necesarias de las variables de entorno
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_RPC_URL', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_RPC_URL'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_TOKEN_ADDRESS', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_TOKEN_ADDRESS'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_TOKEN_ABI', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_ABI'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_CHAIN_ID', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_CHAIN_ID'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_NETWORK_ID', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_NETWORK_ID'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_WALLET_ADDRESS', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_WALLET_ADDRESS'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_WALLET_KEY', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_WALLET_KEY'))})
+                                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_BLOCKSCOUT_URL', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_BLOCKSCOUT_URL'))})
+
                                     resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
                                     logging.info("Job created. status='%s'" % str(resp.status))
                             else:
@@ -923,13 +940,14 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
-                    
+                                    
                     if gpu_mem_to_allocate > 0:
-                        job_manifest['spec']['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = gpu_mem_to_allocate
+                        job_manifest['spec']['template']['spec']['containers'][0]['resources'] = {'limits': {'nvidia.com/gpu': gpu_mem_to_allocate}}
                         job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
                         job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
+
+                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                    logging.info("Job created. status='%s'" % str(resp.status))
                     
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
@@ -1250,14 +1268,23 @@ class TrainingResultStop(generics.CreateAPIView):
                         #api_instance = client.BatchV1Api()
                         api_client = kubernetes_config(token=os.environ.get('KUBE_TOKEN'), external_host=os.environ.get('KUBE_HOST'))
                         api_instance = client.BatchV1Api( api_client)
+                        
+                        if result.deployment.federated and not result.deployment.blockchain:
+                            job_name = 'federated-model-training-controller-'+str(result.id)
+                        elif result.deployment.federated and result.deployment.blockchain:
+                            job_name = 'federated-blockchain-model-training-controller-'+str(result.id)
+                        else:
+                            job_name = 'model-training-'+str(result.id)
 
                         api_response = api_instance.delete_namespaced_job(
-                        name='model-training-'+str(result.id),
+                        name=job_name,
                         namespace=settings.KUBE_NAMESPACE,
                         body=client.V1DeleteOptions(
                             propagation_policy='Foreground',
                             grace_period_seconds=5))
-                    except:
+                        logging.info("Job deleted. status='%s'" % str(api_response.status))
+                    except Exception as e:
+                        logging.error(str(e))
                         pass
                     result.status = 'stopped'
                     result.save()

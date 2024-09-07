@@ -4,7 +4,7 @@ from automl.models import ModelSource, Datasource
 class ModelSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModelSource
-        fields = ['federated_string_id', 'data_restriction', 'min_data', 'input_shape', 'output_shape', 'framework', 'time', 'distributed']
+        fields = ['federated_string_id', 'data_restriction', 'min_data', 'input_shape', 'output_shape', 'framework', 'time', 'distributed', 'blockchain']
 
 
 class DatasourceSerializer(serializers.ModelSerializer):

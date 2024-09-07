@@ -19,6 +19,10 @@
         <mat-checkbox *ngIf="(showIncremental && !showFederated)" name="indefinite" [ngModel]="deployment.indefinite" (change)="timeoutControl($event)">Indefinite training</mat-checkbox>
       </div>
 
+      <div class="selector">
+        <mat-checkbox *ngIf="(!showIncremental && showFederated) && isFedMLBlockchainEnabled" name="blockchain" [ngModel]="deployment.blockchain" (change)="blockchainControl($event)">Blockchain-traced training</mat-checkbox>
+      </div>
+
       <br>
       Model training settings
       <br>

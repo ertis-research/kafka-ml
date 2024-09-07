@@ -7,8 +7,11 @@ data:
   federated.model.control.topic: FEDERATED_MODEL_CONTROL_TOPIC
   federated.backend.url: federated-backend:8085
   backend.allowedhosts: 127.0.0.1,localhost,federated-backend
-
   
   # kml.cloud.brokers: cloud-kafka-broker:9092
   # federated.data.brokers: data-kafka-broker:9092
   # debug: "0"
+  
+  # Blockchain configuration
+  fedml.blockchain.wallet-address: "0x0"
+  fedml.blockchain.wallet-key: asdf

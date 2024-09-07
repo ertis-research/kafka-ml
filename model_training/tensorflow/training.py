@@ -15,7 +15,10 @@ from singleFederatedIncrementalTraining import SingleFederatedIncrementalTrainin
 from distributedFederatedTraining import DistributedFederatedTraining
 from distributedFederatedIncrementalTraining import DistributedFederatedIncrementalTraining
 
+from blockchainSingleFederatedTraining import BlockchainSingleFederatedTraining
+
 from edgeBasedTraining import EdgeBasedTraining
+from edgeBlockchainBasedTraining import EdgeBlockchainBasedTraining
 from cloudBasedTraining import CloudBasedTraining
 
 if __name__ == '__main__':
@@ -28,7 +31,7 @@ if __name__ == '__main__':
 
     case = int(os.environ.get('CASE'))
     """Gets type of training"""
-     
+
     if case == NOT_DISTRIBUTED_NOT_INCREMENTAL:
       CloudBasedTraining(SingleClassicTraining())
     elif case == NOT_DISTRIBUTED_INCREMENTAL:
@@ -45,6 +48,8 @@ if __name__ == '__main__':
       EdgeBasedTraining(DistributedFederatedTraining())
     elif case == FEDERATED_DISTRIBUTED_INCREMENTAL_LEARNING:
       EdgeBasedTraining(DistributedFederatedIncrementalTraining())
+    elif case == BLOCKCHAIN_FEDERATED_LEARNING:
+      EdgeBlockchainBasedTraining(BlockchainSingleFederatedTraining())
     else:
       raise ValueError(case)
     """Get the training class"""

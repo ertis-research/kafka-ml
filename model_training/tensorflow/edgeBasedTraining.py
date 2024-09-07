@@ -86,7 +86,7 @@ def EdgeBasedTraining(training):
 
       sink.send_model(training.model, version if rounds < training.agg_rounds - 1 else -1)
       logging.info("Model sent to Federated devices")
-            
+
       got_aggregation = False
       while not got_aggregation:
         message = consumer.poll(1.0)

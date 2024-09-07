@@ -163,7 +163,9 @@ class FederatedKafkaMLAggregationSink(object):
         self.__producer.send(self.control_topic, key=key, value=data)
         self.__producer.flush()
         logging.info("Control message to Kafka %s", str(dic))
-    
+
+        return dic
+
     def __send(self, data, label=None):
         """Converts data and label received to bytes and sends them to Apache Kafka"""
         
@@ -173,7 +175,7 @@ class FederatedKafkaMLAggregationSink(object):
             self.__producer.send(self.topic, value=data)
         else:
             self.__producer.send(self.topic, key=label, value=data)
-  
+
     def send_model(self, model):
         """Sends layer weights"""
         self.__init_partitions()
@@ -195,7 +197,9 @@ class FederatedKafkaMLAggregationSink(object):
             self.__producer.flush()
 
         self.__update_partitions()
-        self.__send_control_msg_metrics(metrics, version, num_data)
+        control_msg = self.__send_control_msg_metrics(metrics, version, num_data)
+
+        return control_msg
         
     def close(self):
         """Closes the connection with Kafka and sends the control message to the control topic"""

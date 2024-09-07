@@ -66,6 +66,10 @@ class Deployment(models.Model):
     agg_strategy = StatusField(choices_name='AGGREGATION_STRATEGIES')
     data_restriction = models.JSONField(default=dict, blank=True, null=True)
 
+    # Federated Blockchain Deployment Settings
+    blockchain = models.BooleanField(default=False)
+
+
     class Meta(object):
         ordering = ('-time', )
     

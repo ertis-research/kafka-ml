@@ -30,4 +30,6 @@ export class Deployment {
     min_data: number;
     agg_strategy: string;
     data_restriction: string;
+    // Federated Blockchain Deployment Settings
+    blockchain: boolean;
 }

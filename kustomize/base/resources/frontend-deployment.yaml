@@ -26,4 +26,10 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: kafkaml-configmap
-                  key: backend.url
+                  key: backend.url   
+            - name: ENABLE_FEDML_BLOCKCHAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: kafkaml-configmap
+                  key: fedml.blockchain.enable
+                  optional: true
