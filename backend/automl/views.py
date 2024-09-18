@@ -561,8 +561,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                                 else:
                                     # Generate random string of 5 characters
                                     federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
@@ -622,8 +622,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                         job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_WALLET_KEY', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_WALLET_KEY'))})
                                         job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_BLOCKSCOUT_URL', 'value': str(os.environ.get('FEDML_BLOCKCHAIN_BLOCKSCOUT_URL'))})
 
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                             else:
                                 if not deployment.federated:
                                     job_manifest = {
@@ -666,8 +666,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                                 else:
                                     # Generate random string of 5 characters
                                     federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
@@ -719,8 +719,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                         
                         elif result.model.distributed and result.model.father == None:
                             """Obteins all the distributed models from a deployment and creates a job for each group of them"""
@@ -784,8 +784,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                                 else:
                                     # Generate random string of 5 characters
                                     federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
@@ -837,8 +837,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                             else:
                                 if not deployment.federated:
                                     job_manifest = {
@@ -884,8 +884,8 @@ class DeploymentList(generics.ListCreateAPIView):
                                             }
                                         }
                                     }
-                                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                                    logging.info("Job created. status='%s'" % str(resp.status))
+                                    # resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                                    # logging.info("Job created. status='%s'" % str(resp.status))
                                 else:
                                     # Generate random string of 5 characters
                                     federated_string_id = ''.join(random.choices(string.digits + string.ascii_lowercase, k=8))
