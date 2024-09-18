@@ -941,13 +941,13 @@ class DeploymentList(generics.ListCreateAPIView):
                                         }
                                     }
                                     
-                    if gpu_mem_to_allocate > 0:
-                        job_manifest['spec']['template']['spec']['containers'][0]['resources'] = {'limits': {'nvidia.com/gpu': gpu_mem_to_allocate}}
-                        job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
-                        job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
+                        if gpu_mem_to_allocate > 0:
+                            job_manifest['spec']['template']['spec']['containers'][0]['resources'] = {'limits': {'nvidia.com/gpu': gpu_mem_to_allocate}}
+                            job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'NVIDIA_VISIBLE_DEVICES', 'value': "all"})
+                            job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
 
-                    resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
-                    logging.info("Job created. status='%s'" % str(resp.status))
+                        resp = api_instance.create_namespaced_job(body=job_manifest, namespace=settings.KUBE_NAMESPACE)
+                        logging.info("Job created. status='%s'" % str(resp.status))
                     
                     return HttpResponse(status=status.HTTP_201_CREATED)
                 except ValueError as ve:
