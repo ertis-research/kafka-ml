@@ -4,6 +4,9 @@ from django.conf import settings
 from model_utils import Choices
 from model_utils.fields import StatusField, MonitorField
 
+import uuid
+
+
 class MLModel(models.Model):
     """Machine learning model to be trained in the system"""
 
@@ -12,7 +15,14 @@ class MLModel(models.Model):
     imports = models.TextField(blank=True)
     code = models.TextField()
     distributed = models.BooleanField(default=False)
-    father = models.OneToOneField('self', null=True, blank=True, default=None, related_name='child', on_delete=models.SET_NULL)
+    father = models.OneToOneField(
+        "self",
+        null=True,
+        blank=True,
+        default=None,
+        related_name="child",
+        on_delete=models.SET_NULL,
+    )
     framework = models.TextField()
 
 class Configuration(models.Model):
@@ -24,7 +34,7 @@ class Configuration(models.Model):
     time = models.DateTimeField(default=now, editable=False)
 
     class Meta(object):
-        ordering = ('-time', )
+        ordering = ("-time",)
 
 class Deployment(models.Model):
     """Deployment of a configuration of models for training"""
@@ -36,14 +46,18 @@ class Deployment(models.Model):
     pth_kwargs_fit = models.CharField(max_length=100, blank=True)
     pth_kwargs_val = models.CharField(max_length=100, blank=True)
     conf_mat_settings = models.BooleanField(default=False, blank=True, null=True)
-    configuration = models.ForeignKey(Configuration, related_name='deployments', on_delete=models.CASCADE)
+    configuration = models.ForeignKey(
+        Configuration, related_name="deployments", on_delete=models.CASCADE
+    )
     time = models.DateTimeField(default=now, editable=False)
 
     # Distributed Deployment Settings
-    optimizer = models.TextField(default='adam', blank=True)
-    learning_rate = models.DecimalField(max_digits=7, decimal_places=6, default=0.001, blank=True)
-    loss = models.TextField(default='sparse_categorical_crossentropy', blank=True)
-    metrics = models.TextField(default='sparse_categorical_accuracy', blank=True)
+    optimizer = models.TextField(default="adam", blank=True)
+    learning_rate = models.DecimalField(
+        max_digits=7, decimal_places=6, default=0.001, blank=True
+    )
+    loss = models.TextField(default="sparse_categorical_crossentropy", blank=True)
+    metrics = models.TextField(default="sparse_categorical_accuracy", blank=True)
 
     # Incremental Deployment Settings
     incremental = models.BooleanField(default=False)
@@ -51,82 +65,103 @@ class Deployment(models.Model):
     stream_timeout = models.IntegerField(default=60000, blank=True, null=True)
     monitoring_metric = models.TextField(blank=True, null=True)
     change = models.TextField(blank=True, null=True)
-    improvement = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.05)
+    improvement = models.DecimalField(
+        max_digits=7, decimal_places=6, blank=True, null=True, default=0.05
+    )
 
     # Unsupervised Deployment Settings
     unsupervised = models.BooleanField(default=False)
     unsupervised_rounds = models.IntegerField(default=5, blank=True, null=True)
-    confidence = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True, default=0.9)
+    confidence = models.DecimalField(
+        max_digits=7, decimal_places=6, blank=True, null=True, default=0.9
+    )
 
     # Federated Deployment Settings
     federated = models.BooleanField(default=False)
     agg_rounds = models.IntegerField(default=15, blank=True, null=True)
     min_data = models.IntegerField(default=1000, blank=True, null=True)
-    AGGREGATION_STRATEGIES = Choices('FedAvg', 'FedOpt', 'FedAdagrad', 'FedAdam', 'FedYogi')
-    agg_strategy = StatusField(choices_name='AGGREGATION_STRATEGIES')
+    AGGREGATION_STRATEGIES = Choices(
+        "FedAvg", "FedOpt", "FedAdagrad", "FedAdam", "FedYogi"
+    )
+    agg_strategy = StatusField(choices_name="AGGREGATION_STRATEGIES")
     data_restriction = models.JSONField(default=dict, blank=True, null=True)
 
     # Federated Blockchain Deployment Settings
     blockchain = models.BooleanField(default=False)
 
-
     class Meta(object):
-        ordering = ('-time', )
-    
+        ordering = ("-time",)
+
+
 class TrainingResult(models.Model):
     """Training result information obtained once deployed a model"""
-    
-    STATUS = Choices('created', 'deployed', 'stopped', 'finished')
+
+    STATUS = Choices("created", "deployed", "stopped", "finished")
     """Sets its default value to the first item in the STATUS choices:"""
     status = StatusField()
-    status_changed = MonitorField(monitor='status')
-    deployment = models.ForeignKey(Deployment, default=None, related_name='results', on_delete=models.CASCADE)
-    model = models.ForeignKey(MLModel, related_name='trained', on_delete=models.CASCADE)
+    status_changed = MonitorField(monitor="status")
+    deployment = models.ForeignKey(
+        Deployment, default=None, related_name="results", on_delete=models.CASCADE
+    )
+    model = models.ForeignKey(MLModel, related_name="trained", on_delete=models.CASCADE)
     train_metrics = models.JSONField(blank=True, null=True)
     val_metrics = models.JSONField(blank=True, null=True)
     test_metrics = models.JSONField(blank=True, null=True)
     confusion_matrix = models.JSONField(blank=True, null=True, default=None)
-    training_time = models.DecimalField(max_digits=14, decimal_places=4, blank=True, null=True)
+    training_time = models.DecimalField(
+        max_digits=14, decimal_places=4, blank=True, null=True
+    )
     trained_model = models.FileField(upload_to=settings.TRAINED_MODELS_DIR, blank=True)
-    confusion_mat_img = models.FileField(upload_to=settings.TRAINED_MODELS_DIR, blank=True, null=True)
+    confusion_mat_img = models.FileField(
+        upload_to=settings.TRAINED_MODELS_DIR, blank=True, null=True
+    )
 
     class Meta(object):
-        ordering = ('-status_changed', )
+        ordering = ("-status_changed",)
+
 
 class Datasource(models.Model):
     """Datasource used for training a deployed model"""
 
-    INPUT_FORMAT = Choices('RAW', 'AVRO', 'JSON', 'TELEGRAF_STR_JSON')
+    INPUT_FORMAT = Choices("RAW", "AVRO", "JSON", "TELEGRAF_STR_JSON")
     """Sets its default value to the first item in the STATUS choices:"""
-    input_format = StatusField(choices_name='INPUT_FORMAT')
-    deployment = models.TextField() 
-    input_config = models.TextField(blank=True) 
+    input_format = StatusField(choices_name="INPUT_FORMAT")
+    deployment = models.TextField()
+    input_config = models.TextField(blank=True)
     description = models.TextField(blank=True)
     topic = models.TextField()
     total_msg = models.IntegerField(blank=True, null=True)
-    validation_rate = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True)
-    test_rate = models.DecimalField(max_digits=7, decimal_places=6, blank=True, null=True)
+    validation_rate = models.DecimalField(
+        max_digits=7, decimal_places=6, blank=True, null=True
+    )
+    test_rate = models.DecimalField(
+        max_digits=7, decimal_places=6, blank=True, null=True
+    )
     time = models.DateTimeField()
 
     class Meta(object):
-        ordering = ('-time', )
+        ordering = ("-time",)
+
 
 class Inference(models.Model):
     """Training result information obtained once deployed a model"""
-    INPUT_FORMAT = Choices('RAW', 'AVRO', 'JSON', 'TELEGRAF_STR_JSON')
-    STATUS = Choices('deployed', 'stopped')
+
+    INPUT_FORMAT = Choices("RAW", "AVRO", "JSON", "TELEGRAF_STR_JSON")
+    STATUS = Choices("deployed", "stopped")
     """Sets its default value to the first item in the STATUS choices:"""
-    
+
     status = StatusField()
-    status_changed = MonitorField(monitor='status')
-    model_result = models.ForeignKey(TrainingResult, null=True, related_name='inferences', on_delete=models.SET_NULL)
+    status_changed = MonitorField(monitor="status")
+    model_result = models.ForeignKey(
+        TrainingResult, null=True, related_name="inferences", on_delete=models.SET_NULL
+    )
     replicas = models.IntegerField(default=1)
-    input_format = StatusField(choices_name='INPUT_FORMAT')
+    input_format = StatusField(choices_name="INPUT_FORMAT")
     input_config = models.TextField(blank=True)
     input_topic = models.TextField(blank=True)
     output_topic = models.TextField(blank=True)
     time = models.DateTimeField(default=now, editable=False)
-    limit = models.DecimalField(max_digits=15, decimal_places=10, blank=True,  null=True)
+    limit = models.DecimalField(max_digits=15, decimal_places=10, blank=True, null=True)
     output_upper = models.TextField(blank=True)
     token = models.TextField(blank=True, default=None, null=True)
     external_host = models.TextField(blank=True, default=None, null=True)
@@ -135,4 +170,23 @@ class Inference(models.Model):
     upper_kafka_broker = models.TextField(blank=True, default=None, null=True)
 
     class Meta(object):
-        ordering = ('-time', )
+        ordering = ("-time",)
+
+def generate_unique_token():
+    return str(uuid.uuid4())[:8].upper()
+
+class IoTDevice(models.Model):
+    """IoT device to be used for training a deployed model"""
+
+    friendly_name = models.CharField(unique=True, max_length=30)
+    # Generate tokens for the devices (Numbers and letters, 8 characters)
+    token = models.CharField(
+        max_length=8, auto_created=True, default=generate_unique_token, unique=True
+    )
+    mqtt_address = models.TextField()
+    mqtt_port = models.IntegerField()
+    mqtt_username = models.TextField()
+    mqtt_password = models.TextField()  # WARNING: This should be encrypted. Now is plain for testing purposes, but it should be encrypted in production
+
+    class Meta(object):
+        ordering = ("friendly_name",)

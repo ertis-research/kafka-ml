@@ -11,8 +11,9 @@ ENV PYTHONUNBUFFERED 1
 
 # install dependencies
 RUN pip install --upgrade pip
+RUN pip install uv
 COPY ./requirements.txt /usr/src/app/requirements.txt
-RUN pip install -r requirements.txt
+RUN uv pip install -r requirements.txt --prerelease=allow --system
 
 # copy project
 COPY . /usr/src/app/
