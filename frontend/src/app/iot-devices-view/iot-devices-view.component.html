@@ -1,0 +1,41 @@
+<div class="container">
+  <mat-card>
+    <mat-card-title>
+      <div *ngIf="create">Create IoT Device</div>
+      <div *ngIf="!create">Edit IoT Device</div>
+    </mat-card-title>
+
+    <form class="create-model-form" #form="ngForm" (ngSubmit)="onSubmit(form.value)" autocomplete="off">
+      <!-- NAME -->
+      <mat-form-field class="full-width">
+        <input matInput autofocus required placeholder="Friendly Name" id="friendly_name" #nameRef="ngModel" name="friendly_name"
+          [ngModel]="device.friendly_name">
+      </mat-form-field>
+      <p class="text-danger" *ngIf="nameRef.invalid && (nameRef.dirty || nameRef.touched)">
+        <span>This field is required</span>&nbsp;
+      </p>
+      <!-- MQTT Settings -->
+      <mat-form-field class="full-width">
+        <input matInput placeholder="MQTT Address" name="mqtt_address" [ngModel]="device.mqtt_address">
+      </mat-form-field>
+      <mat-form-field class="full-width">
+        <input matInput placeholder="MQTT Port" name="mqtt_port" [ngModel]="device.mqtt_port">
+      </mat-form-field>
+      <mat-form-field class="full-width">
+        <input matInput placeholder="MQTT User" name="mqtt_username" [ngModel]="device.mqtt_username">
+      </mat-form-field>
+      <mat-form-field class="full-width">
+        <input matInput type="password" placeholder="MQTT Password" name="mqtt_password" [ngModel]="device.mqtt_password">
+      </mat-form-field>
+
+      <div class="row-buttons">
+        <span class="spacer"></span>
+        <a (click)="back()" class="form-btn" mat-button>Go Back</a>
+        <button type="submit" *ngIf="valid" class="form-btn" [disabled]="form.invalid" mat-raised-button color="accent">
+          <div *ngIf="create">Create</div>
+          <div *ngIf="!create">Edit</div>
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>

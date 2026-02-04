@@ -49,6 +49,9 @@ import { InferenceListComponent } from './inference-list/inference-list.componen
 import { PlotViewComponent } from './plot-view/plot-view.component';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { VisualizationComponent } from './visualization/visualization.component';
+import { IoTDevicesListComponent } from './iot-devices-list/iot-devices-list.component';
+import { IoTDevicesViewComponent } from './iot-devices-view/iot-devices-view.component';
+import { InferenceIoTViewComponent } from './inference-iot-view/inference-iot-view.component';
 
 @NgModule({
   declarations: [
@@ -71,7 +74,9 @@ import { VisualizationComponent } from './visualization/visualization.component'
     InferenceListComponent,
     PlotViewComponent,
     VisualizationComponent,
-
+    IoTDevicesListComponent,
+    IoTDevicesViewComponent,
+    InferenceIoTViewComponent,
   ],
   imports: [
     BrowserModule,

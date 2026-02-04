@@ -50,7 +50,7 @@
           <mat-cell *matCellDef="let element" title="{{element.father}}"> {{getName(element.father)}} </mat-cell>
         </ng-container>
 
-         <ng-container matColumnDef="view">
+        <ng-container matColumnDef="view">
           <mat-header-cell *matHeaderCellDef > View </mat-header-cell>
           <mat-cell *matCellDef="let element">            
             <a mat-icon-button title="View/edit model" routerLink="/model/{{ element.id }}">

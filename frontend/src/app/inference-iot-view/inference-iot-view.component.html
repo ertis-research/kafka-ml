@@ -1,0 +1,40 @@
+<div class="container">
+  <mat-card>
+    <mat-card-title>
+      Deploy Training result {{resultID}} for inference in Tasmota
+    </mat-card-title>
+
+    <form class="create-inference-form" #form="ngForm" (ngSubmit)="deployIoTInference(form.value)" autocomplete="off">
+
+      <mat-form-field>
+        <mat-label>Available Tasmotas for deploy</mat-label>
+
+        <mat-select [ngModel]="inference.iot_device_token" required name="device_token" multiple>
+          <mat-option *ngFor="let device of availableDevices" [value]="device.token">{{device.friendly_name}} |
+            {{device.token}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+
+      <mat-form-field class="full-width">
+        <mat-label>Berry Script for Tasmota</mat-label>
+        <textarea matInput required #codeRef="ngModel" rows="15" name="code" [ngModel]="inference.berry_script">
+        </textarea>
+      </mat-form-field>
+
+      <div class="selector">
+        <mat-checkbox name="applyIntQuant" [ngModel]="inference.applyIntQuant">Apply int8 quantization</mat-checkbox>
+      </div>
+
+
+      <div class="row-buttons">
+        <span class="spacer"></span>
+        <a (click)="back()" class="form-btn" mat-button>Go Back</a>
+        <button type="submit" class="form-btn" [disabled]="form.invalid" mat-raised-button color="accent">
+          Deploy
+        </button>
+      </div>
+      
+    </form>
+  </mat-card>
+</div>

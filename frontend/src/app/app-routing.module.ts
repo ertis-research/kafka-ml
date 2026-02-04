@@ -12,6 +12,9 @@ import {InferenceViewComponent} from './inference-view/inference-view.component'
 import {InferenceListComponent} from './inference-list/inference-list.component'
 import {PlotViewComponent} from './plot-view/plot-view.component'
 import {VisualizationComponent} from './visualization/visualization.component'
+import {IoTDevicesListComponent} from './iot-devices-list/iot-devices-list.component'
+import {IoTDevicesViewComponent} from './iot-devices-view/iot-devices-view.component'
+import { InferenceIoTViewComponent } from './inference-iot-view/inference-iot-view.component';
 
 const routes: Routes = [
   {path: 'configuration-create', component: ConfigurationViewComponent},
@@ -29,7 +32,11 @@ const routes: Routes = [
   {path: 'results/:id', component: ResultListComponent},
   {path: 'results/inference/:id', component: InferenceViewComponent},
   {path: 'results/chart/:id', component: PlotViewComponent},
-  {path: 'visualization', component: VisualizationComponent}
+  {path: 'visualization', component: VisualizationComponent},
+  {path: 'devices', component: IoTDevicesListComponent},
+  {path: 'device/:id', component: IoTDevicesViewComponent},
+  {path: 'devices-create', component: IoTDevicesViewComponent},
+  {path: 'results/inference-iot/:id', component: InferenceIoTViewComponent}, 
 ];
 
 @NgModule({

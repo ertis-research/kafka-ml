@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from  '@angular/common/http';
 import { environment } from '../../environments/environment';
-import {Inference} from '../shared/inference.model'
+import { Inference } from '../shared/inference.model';
+import { IoTInference } from '../shared/iot-inference.model';
 
 @Injectable({
   providedIn: 'root'
@@ -58,6 +59,11 @@ export class ResultService {
     stopTraining(id: number){
       const url = `${this.url}stop/${id}`
       return this.httpClient.post(url, null);
+    }
+
+    deployIoTInference(id: number, inference: IoTInference){
+      const url = `${this.url}inference-iot/${id}`
+      return this.httpClient.post(url, inference);
     }
 
 }

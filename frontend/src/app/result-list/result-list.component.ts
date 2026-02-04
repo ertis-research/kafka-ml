@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 import { ResultService } from '../services/result.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
@@ -11,8 +11,9 @@ import { ActivatedRoute } from '@angular/router';
   styleUrls: ['./result-list.component.css']
 })
 export class ResultListComponent implements OnInit {
+  @ViewChild('metricsModal') metricsModal: TemplateRef<any>;
 
-  displayedColumns = ['id' ,'model', 'train_metrics', 'val_metrics', 'test_metrics', 'training_time', 'status', 'status_changed', 'chart', 'inference', 'manage', 'download'];
+  displayedColumns = ['id' ,'model', 'metrics', 'status', 'status_changed', 'actions']
 
   results: JSON[];
   dataSource = new MatTableDataSource(this.results);
@@ -87,6 +88,12 @@ export class ResultListComponent implements OnInit {
     }); 
     res = res.slice(0,-1)
     return res
+  }
+
+  openMetricsModal(element): void {
+    this.dialog.open(this.metricsModal, {
+      data: element
+    });
   }
 
   confirmDeletion(id: number) {

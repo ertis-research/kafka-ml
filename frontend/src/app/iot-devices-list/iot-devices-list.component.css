@@ -1,0 +1,14 @@
+
+.mat-column-view   {
+  flex: 0 0 70px !important;
+  white-space: unset !important;
+}
+
+.mat-column-delete   {
+  flex: 0 0 70px !important;
+  white-space: unset !important;
+}
+
+.mat-row {
+  max-height: 30px;
+}
