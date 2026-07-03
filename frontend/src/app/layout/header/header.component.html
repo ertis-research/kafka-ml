@@ -1,39 +1,42 @@
 <mat-toolbar color="primary">
-  <div fxHide.gt-xs>
-      <button mat-icon-button (click)="onToggleSidenav()">
-          <mat-icon>menu</mat-icon>
-      </button>
-  </div>
-  <div>
-      <a style="padding=12px" routerLink="/models">Kafka-ML</a>
-  </div>
-  <div fxFlex fxLayout fxLayoutAlign="end" fxHide.xs>
-       <ul fxLayout fxLayoutGap="15px" class="navigation-items">
-          <li routerLinkActive="active">
-              <a routerLink="/models">Models</a>
-          </li>
-          <li routerLinkActive="active">
-              <a routerLink="/configurations">Configurations</a>
-          </li>
-          <li routerLinkActive="active">
-              <a routerLink="/deployments">Deployments</a>
-          </li>
-          <li routerLinkActive="active">
-              <a routerLink="/results">Training</a>
-          </li>
-          
-          <li routerLinkActive="active">
-              <a routerLink="/inferences">Inference</a>
-          </li>
+    <div fxHide.gt-xs>
+        <button mat-icon-button (click)="onToggleSidenav()">
+            <mat-icon>menu</mat-icon>
+        </button>
+    </div>
+    <div>
+        <a style="padding=12px" routerLink="/models">Kafka-ML</a>
+    </div>
+    <div fxFlex fxLayout fxLayoutAlign="end" fxHide.xs>
+        <ul fxLayout fxLayoutGap="15px" class="navigation-items">
+            <li routerLinkActive="active">
+                <a routerLink="/models">Models</a>
+            </li>
+            <li routerLinkActive="active">
+                <a routerLink="/configurations">Configurations</a>
+            </li>
+            <li routerLinkActive="active">
+                <a routerLink="/deployments">Deployments</a>
+            </li>
+            <li routerLinkActive="active">
+                <a routerLink="/results">Training</a>
+            </li>
 
-          <li routerLinkActive="active">
-              <a routerLink="/datasources">Datasources</a>
-          </li>
+            <li routerLinkActive="active">
+                <a routerLink="/inferences">Inference</a>
+            </li>
 
-          <li routerLinkActive="active">
-            <a routerLink="/visualization">Visualization</a>
-        </li>
-          
-      </ul>
-  </div>
+            <li routerLinkActive="active">
+                <a routerLink="/datasources">Datasources</a>
+            </li>
+
+            <li routerLinkActive="active">
+                <a routerLink="/visualization">Visualization</a>
+            </li>
+
+            <li routerLinkActive="active">
+                <a routerLink="/devices">IoT Devices</a>
+            </li>
+        </ul>
+    </div>
 </mat-toolbar>
