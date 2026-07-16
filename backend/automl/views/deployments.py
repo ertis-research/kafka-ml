@@ -193,8 +193,6 @@ class DeploymentList(generics.ListCreateAPIView):
                             kwargs_fit = pth_kwargs_fit
                             kwargs_val = pth_kwargs_val
 
-                        
-
                         if not result.model.distributed:
                             if not deployment.incremental:
                                 if not deployment.federated:
@@ -239,7 +237,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                         kwargs_val,
                                         settings,
                                     )
-                        else:
+                        elif result.model.distributed and result.model.father == None:
                             """Obtains all the distributed models from a deployment and creates a job for each group of them"""
                             result_urls = []
                             result_ids = []
