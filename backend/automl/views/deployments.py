@@ -184,6 +184,9 @@ class DeploymentList(generics.ListCreateAPIView):
                     deployment = serializer.save()
 
                     for result in TrainingResult.objects.filter(deployment=deployment):
+                        if result.model.distributed and result.model.father != None:
+                            continue
+
                         if result.model.framework == "tf":
                             image = settings.TENSORFLOW_TRAINING_MODEL_IMAGE
                             kwargs_fit = tf_kwargs_fit
@@ -237,7 +240,7 @@ class DeploymentList(generics.ListCreateAPIView):
                                         kwargs_val,
                                         settings,
                                     )
-                        elif result.model.distributed and result.model.father == None:
+                        else:
                             """Obtains all the distributed models from a deployment and creates a job for each group of them"""
                             result_urls = []
                             result_ids = []
