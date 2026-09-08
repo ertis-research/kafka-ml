@@ -11,6 +11,9 @@ from config import *
 from utils import *
 from FederatedKafkaMLAggregationSink import FederatedKafkaMLAggregationSink
 
+from federated_singleIncrementalTraining import SingleIncrementalTraining
+from federated_distributedIncrementalTraining import DistributedIncrementalTraining
+
 RETRIES = 10
 '''Number of retries for requests'''
 
@@ -67,8 +70,9 @@ def classicFederatedTraining(training):
             training.get_data(training_settings)
         """Gets the dataset from kafka"""
 
-        if unsupervised and training.unsupervised_kafka_dataset is None:
-          training.get_unsupervised_data(training_settings)
+        if unsupervised:
+          if isinstance(training, (SingleIncrementalTraining, DistributedIncrementalTraining)) or training.unsupervised_kafka_dataset is None:
+            training.get_unsupervised_data(training_settings)
         """Gets the unlabeled dataset from kafka"""
 
         logging.info("Starting training with settings: {}".format(training_settings))
@@ -97,6 +101,8 @@ def classicFederatedTraining(training):
         traceback.print_exc()
         logging.error("Error with the received data [%s]. Waiting for new a new prediction.", str(e))
 
+    training.close_online_kafka_consumer()
+    training.close_online_unsupervised_kafka_consumer()
     consumer_control.close()
     sink.close()
     logging.info("Model trained and sent the final weights to the aggregation topic")

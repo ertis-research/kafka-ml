@@ -204,11 +204,11 @@ class KafkaMLSink(object):
         else:
             self.__producer.send(self.topic, key=label, value=data)
 
-    def __unsupervised_send(self, data):
+    def __unsupervised_send(self, data, label=0):
         """Converts data received to bytes and sends it to Apache Kafka"""
         
         data=self.__object_to_bytes(data)
-        label=self.__object_to_bytes(0)
+        label=self.__object_to_bytes(label)
         if self.unsupervised_topic is not None:
             self.__producer.send(self.unsupervised_topic, key=label, value=data)
 
@@ -245,7 +245,8 @@ class KafkaMLSink(object):
 
     def send_online_control_msg(self):
         """Sends online control message to Apache Kafka with the information"""
-        
+
+        self.__producer.flush()
         if self.unsupervised_topic is not None:
             self.__update_partitions(self.topic, self.__partitions)
         self.__send_online_control_msg()
@@ -265,10 +266,10 @@ class KafkaMLSink(object):
         
         self.__send(data, label)
 
-    def unsupervised_send(self, data):
+    def unsupervised_send(self, data, label=0):
         """Sends data to Apache Kafka"""
         
-        self.__unsupervised_send(data)
+        self.__unsupervised_send(data, label)
 
     def send_value(self, data):
         """Sends data to Apache Kafka"""

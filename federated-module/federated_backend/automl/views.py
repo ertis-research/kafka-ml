@@ -122,6 +122,7 @@ def deploy_on_kubernetes(datasource_item, model_item, framework, case):
                                 'spec': {
                                     'containers': [{
                                         'image': image,
+                                        'imagePullPolicy': 'Always',
                                         'name': 'training',
                                         'env': [{'name': 'KML_CLOUD_BOOTSTRAP_SERVERS', 'value': settings.KML_CLOUD_BOOTSTRAP_SERVERS},
                                                 {'name': 'DATA_BOOTSTRAP_SERVERS', 'value': settings.FEDERATED_BOOTSTRAP_SERVERS},
@@ -138,13 +139,22 @@ def deploy_on_kubernetes(datasource_item, model_item, framework, case):
                                                 {'name': 'CASE', 'value': str(case)}
                                                 ],
                                     }],
-                                    'imagePullPolicy': 'Always', #'IfNotPresent', # TODO: Remove this when the image is in DockerHub
                                     'restartPolicy': 'OnFailure'
                                 }
                             }
                         }
                     }
         
+        gpu_mem_to_allocate = int(os.environ.get('FEDERATED_GPU_MEM', '0'))
+
+        if gpu_mem_to_allocate > 0:
+            job_manifest['spec']['template']['spec']['containers'][0]['resources'] = {
+                'limits': {
+                    'nvidia.com/gpu': gpu_mem_to_allocate
+                }
+            }
+            job_manifest['spec']['template']['spec']['runtimeClassName'] = 'nvidia'
+
         if case == 5:
             job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_RPC_URL', 'value': model_item['blockchain']['rpc_url']})
             job_manifest['spec']['template']['spec']['containers'][0]['env'].append({'name': 'ETH_CONTRACT_ADDRESS', 'value': model_item['blockchain']['contract_address']})

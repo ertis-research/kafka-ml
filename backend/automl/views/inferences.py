@@ -302,6 +302,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                             "containers": [
                                                 {
                                                     "image": image,
+                                                    "imagePullPolicy": "Always",
                                                     "name": "inference",
                                                     "env": [
                                                         {
@@ -355,8 +356,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         },
                                                     ],
                                                 }
-                                            ],
-                                            "imagePullPolicy": "Always",
+                                            ]
                                         },
                                     },
                                 },
@@ -393,6 +393,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                             "containers": [
                                                 {
                                                     "image": settings.TENSORFLOW_INFERENCE_MODEL_IMAGE,
+                                                    "imagePullPolicy": "Always",
                                                     "name": "inference",
                                                     "env": [
                                                         {
@@ -450,8 +451,7 @@ class InferenceResultID(generics.ListCreateAPIView):
                                                         },
                                                     ],
                                                 }
-                                            ],
-                                            "imagePullPolicy": "Always",
+                                            ]
                                         },
                                     },
                                 },

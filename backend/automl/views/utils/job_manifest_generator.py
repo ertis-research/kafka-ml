@@ -28,6 +28,7 @@ def single_classic_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -88,7 +89,6 @@ def single_classic_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -115,6 +115,7 @@ def single_federated_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -196,7 +197,6 @@ def single_federated_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -282,6 +282,7 @@ def single_incremental_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -361,7 +362,6 @@ def single_incremental_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -397,6 +397,7 @@ def single_federated_incremental_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -501,7 +502,6 @@ def single_federated_incremental_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -535,6 +535,7 @@ def distributed_classic_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -610,7 +611,6 @@ def distributed_classic_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -645,6 +645,7 @@ def distributed_federated_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -745,7 +746,6 @@ def distributed_federated_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -776,6 +776,7 @@ def distributed_incremental_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -862,7 +863,6 @@ def distributed_incremental_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },
@@ -897,6 +897,7 @@ def distributed_federated_incremental_training(
                     "containers": [
                         {
                             "image": image,
+                            "imagePullPolicy": "Always",
                             "name": "training",
                             "env": [
                                 {
@@ -1008,7 +1009,6 @@ def distributed_federated_incremental_training(
                             ],
                         }
                     ],
-                    "imagePullPolicy": "Always",
                     "restartPolicy": "OnFailure",
                 }
             },

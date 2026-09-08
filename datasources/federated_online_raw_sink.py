@@ -1,4 +1,5 @@
 from .sink import KafkaMLSink
+import numpy as np
 
 class OnlineFederatedRawSink(KafkaMLSink):
     """Class representing a sink of RAW training data to Apache Kafka.
@@ -73,4 +74,6 @@ class OnlineFederatedRawSink(KafkaMLSink):
     def unsupervised_send(self, data):
         """Sends data to Apache Kafka"""
         
-        super().unsupervised_send(data.tobytes())
+        label_shape = tuple(int(value) for value in str(self.label_reshape).split()) if self.label_reshape is not None and str(self.label_reshape).strip() else (1,)
+        dummy_label = np.zeros(label_shape, dtype=np.dtype(self.label_type))
+        super().unsupervised_send(data.tobytes(), dummy_label.tobytes())
