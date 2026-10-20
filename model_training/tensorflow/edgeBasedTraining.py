@@ -7,7 +7,9 @@ import time
 import traceback
 
 from decoders import *
+from utils import load_federated_aggregation_environment_vars
 
+from aggregators import get_aggregator, check_weights, aggregate_metrics
 from FederatedKafkaMLModelSink import FederatedKafkaMLModelSink
 from KafkaModelEngine import KafkaModelEngine
 
@@ -15,47 +17,92 @@ from singleFederatedIncrementalTraining import SingleFederatedIncrementalTrainin
 from distributedFederatedTraining import DistributedFederatedTraining
 from distributedFederatedIncrementalTraining import DistributedFederatedIncrementalTraining
 
-def aggregate_model(model, trained_model, aggregation_strategy, control_msg, model_metrics):
-  """Aggregates the model with the trained model"""
+def collect_updates(consumer, training, expected_version, clients_per_round, min_clients_per_round, round_timeout):
+  """Collects the models sent by the federated devices in the current round.
 
-  if aggregation_strategy == 'FedAvg':
-    weights = [model.get_weights(), trained_model.get_weights()]
-    new_weights = list()
-    for weights_list_tuple in zip(*weights): 
-        new_weights.append(
-            np.array([np.array(w).mean(axis=0) for w in zip(*weights_list_tuple)])
-        )
-      
-    model.set_weights(new_weights)
+  The round finishes once clients_per_round updates have been received. If round_timeout (seconds) is greater
+  than 0 and expires, the round finishes as soon as min_clients_per_round updates are available.
+  In synchronous rounds (clients_per_round > 1), updates trained on another model version and repeated
+  updates of the same device are discarded.
+  """
 
-    model_metrics.append(control_msg['metrics'])
+  asynchronous = clients_per_round == 1
+  updates, round_start, timeout_logged = [], time.time(), False
 
-  elif aggregation_strategy == 'FedAvg+':
-    # Weighted FedAvg: se hace un promedio de los modelos, pero se le da mas peso a los modelos mas recientes
-    raise NotImplementedError
-  elif aggregation_strategy == 'Another':
-    raise NotImplementedError
-  else:
-    raise Exception('Aggregation strategy not implemented')
-  
-  version = control_msg['version']
+  while len(updates) < clients_per_round:
+    if round_timeout > 0 and time.time() - round_start >= round_timeout:
+      if len(updates) >= min_clients_per_round:
+        logging.info("Round timeout reached with %d/%d updates. Aggregating the received ones", len(updates), clients_per_round)
+        break
+      if not timeout_logged:
+        logging.warning("Round timeout reached with %d/%d updates. Waiting for at least %d updates", len(updates), clients_per_round, min_clients_per_round)
+        timeout_logged = True
 
-  return model, version, model_metrics
+    message = consumer.poll(1.0)
+    if message is None:
+        continue
+    if message.error():
+        logging.info("Consumer error: {}".format(message.error()))
+        continue
+
+    try:
+      control_msg = json.loads(message.value().decode('utf-8'))
+      client = message.key().decode('utf-8') if message.key() is not None else None
+      logging.info("Message received from client [%s] with version [%s]", client, control_msg['version'])
+
+      if asynchronous:
+        if expected_version != -1 and control_msg['version'] != -1:
+          logging.info("Update staleness: %d", expected_version - control_msg['version'])
+      else:
+        if control_msg['version'] != expected_version:
+          logging.info("Discarding update of client [%s] trained on another model version ([%s], expected [%s])", client, control_msg['version'], expected_version)
+          continue
+        if client is not None and any(update['client'] == client for update in updates):
+          logging.info("Discarding repeated update of client [%s] in this round", client)
+          continue
+
+      model_reader = KafkaModelEngine(training.bootstrap_servers, 'server')
+      weights = model_reader.getWeights(control_msg)
+      check_weights(training.model.get_weights(), weights)
+      logging.info("Model received from Federated devices")
+
+      updates.append({
+        'weights': weights,
+        'num_data': control_msg.get('num_data'),
+        'metrics': control_msg['metrics'],
+        'version': control_msg['version'],
+        'client': client
+      })
+      logging.info("Updates received in this round: %d/%d", len(updates), clients_per_round)
+
+    except Exception as e:
+      traceback.print_exc()
+      logging.error("Error with the received data [%s]. Waiting for new a new prediction.", str(e))
+
+  return updates
 
 def EdgeBasedTraining(training):
+    clients_per_round, min_clients_per_round, round_timeout = load_federated_aggregation_environment_vars()
+    logging.info("Received federated aggregation information (clients_per_round, min_clients_per_round, round_timeout) ([%d], [%d], [%d])",
+                 clients_per_round, min_clients_per_round, round_timeout)
+
+    aggregator = get_aggregator(training.agg_strategy, asynchronous=clients_per_round == 1)
+    logging.info("Using %s aggregation (%s)", training.agg_strategy, 'asynchronous' if clients_per_round == 1 else 'synchronous')
+    """Loads the aggregation strategy before starting, so not implemented strategies fail fast"""
+
     training.get_models()
     """Downloads the models from the URLs received, saves and loads them from the filesystem to Tensorflow models"""
 
     if isinstance(training, DistributedFederatedTraining) or isinstance(training, DistributedFederatedIncrementalTraining):
       training.configure_distributed_models()
     """Distributed models configuration"""
-    
+
     training.generate_and_send_data_standardization()
     """Generates the data standardization and sends it to the model control topic"""
 
     training.generate_federated_kafka_topics()
     """Generates the federated Kafka topics to receive the data from the federated nodes"""
-  
+
     logging.info("Started Kafka consumer in [%s] topic", training.model_control_topic)
     consumer = Consumer({'bootstrap.servers': training.bootstrap_servers, 'group.id': 'group_id_'+training.federated_string_id ,'auto.offset.reset': 'earliest','enable.auto.commit': False})
     consumer.subscribe([training.aggregation_control_topic])
@@ -80,45 +127,31 @@ def EdgeBasedTraining(training):
     """Initializes the version, rounds, model metrics and start time"""
 
     sink = FederatedKafkaMLModelSink(bootstrap_servers=training.bootstrap_servers, topic=training.model_data_topic, control_topic=training.model_control_topic, federated_id=training.result_id, training_settings=training_settings)
-    
+
     while rounds < training.agg_rounds:
       logging.info("Round: {}".format(rounds))
 
-      sink.send_model(training.model, version if rounds < training.agg_rounds - 1 else -1)
+      sent_version = version if rounds < training.agg_rounds - 1 else -1
+      sink.send_model(training.model, sent_version)
       logging.info("Model sent to Federated devices")
 
-      got_aggregation = False
-      while not got_aggregation:
-        message = consumer.poll(1.0)
-        if message is None:
-            continue
-        if message.error():
-            logging.info("Consumer error: {}".format(message.error()))
-            continue
+      expected_version = sent_version + 1 if sent_version != -1 else -1
+      """Devices return the version received plus one, or -1 for the last round"""
 
-        try:
-          control_msg = json.loads(message.value().decode('utf-8'))
-          logging.info("Message received for prediction")
+      updates = collect_updates(consumer, training, expected_version, clients_per_round, min_clients_per_round, round_timeout)
 
-          model_reader = KafkaModelEngine(training.bootstrap_servers, 'server')
-          trained_model = model_reader.setWeights(training.model, control_msg)
-          logging.info("Model received from Federated devices")
+      training.model.set_weights(aggregator.aggregate(training.model.get_weights(), updates))
+      model_metrics.append(aggregate_metrics(updates))
 
-          training.model, version, model_metrics = aggregate_model(training.model, trained_model, training.agg_strategy, control_msg, model_metrics)
-          logging.info("Aggregation completed. New model version: {}".format(version))
+      version += 1
+      rounds += 1
+      logging.info("Aggregation of %d updates completed. New model version: %d", len(updates), version)
 
-          rounds += 1
+      consumer.commit()
 
-          consumer.commit()
-          got_aggregation = True
-
-          train_metrics, val_metrics = training.parse_metrics(model_metrics)
-          training.sendTempMetrics(train_metrics, val_metrics)
-          """Sends the current metrics to the backend"""
-
-        except Exception as e:
-          traceback.print_exc()
-          logging.error("Error with the received data [%s]. Waiting for new a new prediction.", str(e))
+      train_metrics, val_metrics = training.parse_metrics(model_metrics)
+      training.sendTempMetrics(train_metrics, val_metrics)
+      """Sends the current metrics to the backend"""
 
     logging.info("Federated training finished. Sending final model to Kafka-ML Cloud")
     consumer.close()
@@ -129,7 +162,7 @@ def EdgeBasedTraining(training):
     logging.info("Total training time: %s", str(elapsed_time))
 
     logging.info("Taking last metrics per epoch")
-    
+
     train_metrics, val_metrics = training.parse_metrics(model_metrics)
     logging.info("Epoch training metrics: %s", str(train_metrics))
     logging.info("Epoch validation metrics: %s", str(val_metrics))

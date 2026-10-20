@@ -252,6 +252,26 @@ def load_federated_environment_vars():
     )
 
 
+def load_federated_aggregation_environment_vars():
+    """Loads the federated aggregation round settings received from dockers
+    clients_per_round, min_clients_per_round, round_timeout
+    Returns:
+        clients_per_round (int): updates to collect before aggregating (1 means asynchronous aggregation)
+        min_clients_per_round (int): minimum updates to aggregate once the round timeout has expired
+        round_timeout (int): seconds to wait for clients_per_round updates (0 waits indefinitely)
+    """
+
+    clients_per_round = int(os.environ.get("CLIENTS_PER_ROUND", 1))
+    min_clients_per_round = int(os.environ.get("MIN_CLIENTS_PER_ROUND", 1))
+    round_timeout = int(os.environ.get("ROUND_TIMEOUT", 0))
+
+    return (
+        clients_per_round,
+        min_clients_per_round,
+        round_timeout,
+    )
+
+
 def load_blockchain_federated_environment_vars():
     """Loads the blockchain federated environment information received from dockers
     eth_rpc_url, eth_token_address, eth_token_abi, eth_chain_id, eth_network_id, eth_wallet_address, eth_wallet_key, eth_blockscout_url

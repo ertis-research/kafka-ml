@@ -24,6 +24,10 @@ class KafkaModelEngine():
         weights = self.__getModelWeights__(controlMessage)        
         model.set_weights(weights)        
         return model 
+
+      def getWeights(self, controlMessage):
+        """Reads the model weights from Kafka without modifying any model"""
+        return self.__getModelWeights__(controlMessage)
       
       def __parse_model_compile_args(self, model):
         """Parse the model compile arguments to send to Kafka"""

@@ -6,6 +6,7 @@ import numpy as np
 
 from decoders import *
 
+from aggregators import get_aggregator, check_weights
 from FederatedKafkaMLModelSink import FederatedKafkaMLModelSink
 from KafkaModelEngine import KafkaModelEngine
 
@@ -14,30 +15,10 @@ from KafkaModelEngine import KafkaModelEngine
 # from distributedFederatedTraining import DistributedBlockchainFederatedTraining
 # from distributedFederatedIncrementalTraining import DistributedBlockchainFederatedIncrementalTraining
 
-def aggregate_model(model, trained_model, aggregation_strategy, control_msg):
-  """Aggregates the model with the trained model"""
-
-  if aggregation_strategy == 'FedAvg':
-    weights = [model.get_weights(), trained_model.get_weights()]
-    new_weights = list()
-    for weights_list_tuple in zip(*weights): 
-        new_weights.append(
-            np.array([np.array(w).mean(axis=0) for w in zip(*weights_list_tuple)])
-        )
-      
-    model.set_weights(new_weights)
-
-  elif aggregation_strategy == 'FedAvg+':
-    # Weighted FedAvg: se hace un promedio de los modelos, pero se le da mas peso a los modelos mas recientes
-    raise NotImplementedError
-  elif aggregation_strategy == 'Another':
-    raise NotImplementedError
-  else:
-    raise NotImplementedError('Aggregation strategy not implemented')
-  
-  return model
-
 def EdgeBlockchainBasedTraining(training):
+    aggregator = get_aggregator(training.agg_strategy, asynchronous=True)
+    """Blockchain-traced training aggregates every update as soon as it arrives"""
+
     training.get_models()
     """Downloads the models from the URLs received, saves and loads them from the filesystem to Tensorflow models"""
 
@@ -117,10 +98,12 @@ def EdgeBlockchainBasedTraining(training):
         logging.info("Message received for prediction")
 
         model_reader = KafkaModelEngine(training.bootstrap_servers, 'server')
-        trained_model = model_reader.setWeights(training.model, control_msg)
+        weights = model_reader.getWeights(control_msg)
+        check_weights(training.model.get_weights(), weights)
         logging.info("Model received from Federated devices")
-        
-        training.model = aggregate_model(training.model, trained_model, training.agg_strategy, control_msg)
+
+        update = {'weights': weights, 'num_data': client_data_size, 'metrics': metrics, 'version': rounds, 'client': client_account}
+        training.model.set_weights(aggregator.aggregate(training.model.get_weights(), [update]))
         model_metrics.append(metrics)
         logging.info("Aggregation completed. New model version: {}".format(rounds))
 
