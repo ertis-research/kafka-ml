@@ -168,6 +168,9 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
                 "min_data",
                 "agg_strategy",
                 "data_restriction",
+                "clients_per_round",
+                "min_clients_per_round",
+                "round_timeout",
             ]
             + ["blockchain"]
         )
@@ -178,6 +181,38 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("Batch has to be greater than 0")
         return value
+
+    def validate(self, data):
+        """Checks the federated aggregation settings"""
+
+        if not data.get("federated"):
+            return data
+
+        agg_strategy = data.get("agg_strategy", Deployment.AGGREGATION_STRATEGIES.FedAvg)
+        if agg_strategy not in Deployment.IMPLEMENTED_AGGREGATION_STRATEGIES:
+            raise serializers.ValidationError(
+                {"agg_strategy": "Aggregation strategy %s is not implemented yet" % agg_strategy}
+            )
+
+        clients_per_round = data.get("clients_per_round", 1)
+        min_clients_per_round = data.get("min_clients_per_round", 1)
+        if clients_per_round < 1:
+            raise serializers.ValidationError(
+                {"clients_per_round": "Clients per round has to be greater than 0"}
+            )
+        if not 1 <= min_clients_per_round <= clients_per_round:
+            raise serializers.ValidationError(
+                {"min_clients_per_round": "Minimum clients per round has to be between 1 and clients per round"}
+            )
+        if data.get("round_timeout", 0) < 0:
+            raise serializers.ValidationError(
+                {"round_timeout": "Round timeout cannot be negative"}
+            )
+        if data.get("blockchain") and clients_per_round != 1:
+            raise serializers.ValidationError(
+                {"clients_per_round": "Blockchain-traced training only supports asynchronous aggregation (1 client per round)"}
+            )
+        return data
 
     def validate_kwargs_fit(self, value):
         """Checks that arguments for training have the expected format"""
@@ -259,6 +294,9 @@ class DeploymentSerializer(serializers.ModelSerializer):
                 "min_data",
                 "agg_strategy",
                 "data_restriction",
+                "clients_per_round",
+                "min_clients_per_round",
+                "round_timeout",
             ]
             + ["blockchain"]
         )

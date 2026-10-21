@@ -83,8 +83,15 @@ class Deployment(models.Model):
     AGGREGATION_STRATEGIES = Choices(
         "FedAvg", "FedOpt", "FedAdagrad", "FedAdam", "FedYogi"
     )
+    # Strategies already supported by the federated training jobs, the rest are pending implementation
+    IMPLEMENTED_AGGREGATION_STRATEGIES = ("FedAvg",)
     agg_strategy = StatusField(choices_name="AGGREGATION_STRATEGIES")
     data_restriction = models.JSONField(default=dict, blank=True, null=True)
+    # Updates to aggregate per round: 1 is asynchronous, more than 1 is synchronous
+    clients_per_round = models.IntegerField(default=1, blank=True)
+    min_clients_per_round = models.IntegerField(default=1, blank=True)
+    # Seconds to wait for clients_per_round updates, 0 waits indefinitely
+    round_timeout = models.IntegerField(default=0, blank=True)
 
     # Federated Blockchain Deployment Settings
     blockchain = models.BooleanField(default=False)

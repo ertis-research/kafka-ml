@@ -183,6 +183,18 @@ def single_federated_training(
                                     "value": str(deployment.agg_strategy),
                                 },
                                 {
+                                    "name": "CLIENTS_PER_ROUND",
+                                    "value": str(deployment.clients_per_round),
+                                },
+                                {
+                                    "name": "MIN_CLIENTS_PER_ROUND",
+                                    "value": str(deployment.min_clients_per_round),
+                                },
+                                {
+                                    "name": "ROUND_TIMEOUT",
+                                    "value": str(deployment.round_timeout),
+                                },
+                                {
                                     "name": "DATA_RESTRICTION",
                                     "value": str(deployment.data_restriction),
                                 },
@@ -488,6 +500,18 @@ def single_federated_incremental_training(
                                     "value": str(deployment.agg_strategy),
                                 },
                                 {
+                                    "name": "CLIENTS_PER_ROUND",
+                                    "value": str(deployment.clients_per_round),
+                                },
+                                {
+                                    "name": "MIN_CLIENTS_PER_ROUND",
+                                    "value": str(deployment.min_clients_per_round),
+                                },
+                                {
+                                    "name": "ROUND_TIMEOUT",
+                                    "value": str(deployment.round_timeout),
+                                },
+                                {
                                     "name": "DATA_RESTRICTION",
                                     "value": str(deployment.data_restriction),
                                 },
@@ -730,6 +754,18 @@ def distributed_federated_training(
                                 {
                                     "name": "AGG_STRATEGY",
                                     "value": str(deployment.agg_strategy),
+                                },
+                                {
+                                    "name": "CLIENTS_PER_ROUND",
+                                    "value": str(deployment.clients_per_round),
+                                },
+                                {
+                                    "name": "MIN_CLIENTS_PER_ROUND",
+                                    "value": str(deployment.min_clients_per_round),
+                                },
+                                {
+                                    "name": "ROUND_TIMEOUT",
+                                    "value": str(deployment.round_timeout),
                                 },
                                 {
                                     "name": "DATA_RESTRICTION",
@@ -993,6 +1029,18 @@ def distributed_federated_incremental_training(
                                 {
                                     "name": "AGG_STRATEGY",
                                     "value": str(deployment.agg_strategy),
+                                },
+                                {
+                                    "name": "CLIENTS_PER_ROUND",
+                                    "value": str(deployment.clients_per_round),
+                                },
+                                {
+                                    "name": "MIN_CLIENTS_PER_ROUND",
+                                    "value": str(deployment.min_clients_per_round),
+                                },
+                                {
+                                    "name": "ROUND_TIMEOUT",
+                                    "value": str(deployment.round_timeout),
                                 },
                                 {
                                     "name": "DATA_RESTRICTION",
