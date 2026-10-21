@@ -339,7 +339,12 @@ class DeploymentList(generics.ListCreateAPIView):
                     Deployment.objects.filter(pk=deployment.pk).delete()
                     logging.error(str(e))
                     return HttpResponse(str(e), status=status.HTTP_400_BAD_REQUEST)
-            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+            errors = "; ".join(
+                "%s: %s" % (field, " ".join(str(m) for m in messages))
+                for field, messages in serializer.errors.items()
+            )
+            logging.warning("Deployment not valid: %s", errors)
+            return HttpResponse(errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logging.error(str(e))
             traceback.print_exc()
