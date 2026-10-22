@@ -166,6 +166,15 @@ export class DeploymentViewComponent implements OnInit {
     if (deployment.data_restriction == null) {
       delete deployment.data_restriction;
     }
+    if (deployment.clients_per_round == null) {
+      delete deployment.clients_per_round;
+    }
+    if (deployment.min_clients_per_round == null) {
+      delete deployment.min_clients_per_round;
+    }
+    if (deployment.round_timeout == null) {
+      delete deployment.round_timeout;
+    }
 
     deployment.tf_kwargs_fit = deployment.tf_kwargs_fit || "";
     deployment.tf_kwargs_val = deployment.tf_kwargs_val || "";

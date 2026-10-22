@@ -30,6 +30,9 @@ export class Deployment {
     min_data: number;
     agg_strategy: string;
     data_restriction: string;
+    clients_per_round: number;
+    min_clients_per_round: number;
+    round_timeout: number;
     // Federated Blockchain Deployment Settings
     blockchain: boolean;
 }

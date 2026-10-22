@@ -176,6 +176,22 @@
             </mat-option>
           </mat-select>
         </mat-form-field>
+
+        <mat-form-field *ngIf="!showBlockchain">
+          <mat-label>Clients per round (1 = asynchronous)</mat-label>
+          <input matInput type="number" min="1" placeholder="1" name="clients_per_round"
+            [(ngModel)]="deployment.clients_per_round">
+        </mat-form-field>
+
+        <mat-form-field *ngIf="!showBlockchain && deployment.clients_per_round > 1">
+          <mat-label>Round timeout in seconds (0 = no timeout)</mat-label>
+          <input matInput type="number" min="0" placeholder="0" name="round_timeout" [ngModel]="deployment.round_timeout">
+        </mat-form-field>
+
+        <mat-form-field *ngIf="!showBlockchain && deployment.clients_per_round > 1">
+          <mat-label>Minimum clients to aggregate after timeout</mat-label>
+          <input matInput type="number" min="1" placeholder="1" name="min_clients_per_round" [ngModel]="deployment.min_clients_per_round">
+        </mat-form-field>
       </div>
 
       <mat-slide-toggle *ngIf="detectedFrameworks.length > 0 && (!showIncremental && !showFederated)" name="conf_mat_settings"
