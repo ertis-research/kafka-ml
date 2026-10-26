@@ -67,13 +67,17 @@ class KafkaModelEngine():
       
 
       def __getModelWeights__(self, controlMessage):
-        data = []
+        data = {}
         for kafkaControl in self.__splitPartitionsIntoControlMsgs__(controlMessage):
+            topic = kafkaControl['topic'].split(":")
+            if len(topic) == 4 and int(topic[2]) >= int(topic[3]):
+                continue
+            """Skips partitions without new messages, as the consumer would wait for them indefinitely"""
             consumer, end_offset = self.__createconsumer__(kafkaControl)
             for message in consumer:
                 # print(message.offset)
                 decoded_data = self.__decodedata__(message)
-                data.insert(decoded_data[1], decoded_data[0])
+                data[decoded_data[1]] = decoded_data[0]
                 if message.offset >= end_offset-1:
                     consumer.unsubscribe()
                     logging.info("Finished reading model weights from Kafka")
@@ -81,7 +85,7 @@ class KafkaModelEngine():
 
         # print("Data received: ", len(data))
             
-        return data        
+        return [data[idx] for idx in sorted(data)]        
 
       def __splitPartitionsIntoControlMsgs__(self, controlMessage):
         res = []
@@ -89,7 +93,7 @@ class KafkaModelEngine():
         for topic in partitions:
             auxControlMessage = controlMessage.copy()
             auxControlMessage['topic'] = topic
-            res.append(controlMessage)
+            res.append(auxControlMessage)
             
         return res
 
