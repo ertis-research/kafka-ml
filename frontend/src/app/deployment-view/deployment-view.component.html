@@ -170,7 +170,7 @@
 
         <mat-form-field>
           <mat-label>Aggregation strategy</mat-label>
-          <mat-select required [(ngModel)]="deployment.agg_strategy" name="strategy">
+          <mat-select required [(ngModel)]="deployment.agg_strategy" name="agg_strategy">
             <mat-option matInput *ngFor="let strategy of strategies" [value]="strategy.value">
               {{strategy.viewValue}}
             </mat-option>
