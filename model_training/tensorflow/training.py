@@ -1,6 +1,7 @@
 __author__ = 'Cristian Martin Fdz'
 
 import os
+import sys
 import traceback
 
 from decoders import *
@@ -57,3 +58,4 @@ if __name__ == '__main__':
   except Exception as e:
       traceback.print_exc()
       logging.error("Error in main [%s]. Service will be restarted.", str(e))
+      sys.exit(1)
