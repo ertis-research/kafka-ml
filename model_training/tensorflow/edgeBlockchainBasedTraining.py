@@ -20,6 +20,7 @@ def EdgeBlockchainBasedTraining(training):
     """Blockchain-traced training aggregates every update as soon as it arrives"""
 
     training.get_models()
+    aggregator.configure(training.model)
     """Downloads the models from the URLs received, saves and loads them from the filesystem to Tensorflow models"""
 
     # TODO: Implement Incremental and Distributed Blockchain Federated Training if needed

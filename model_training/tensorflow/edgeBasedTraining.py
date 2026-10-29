@@ -7,7 +7,7 @@ import time
 import traceback
 
 from decoders import *
-from utils import load_federated_aggregation_environment_vars
+from utils import load_federated_aggregation_environment_vars, load_federated_aggregator_params
 
 from aggregators import get_aggregator, check_weights, aggregate_metrics
 from FederatedKafkaMLModelSink import FederatedKafkaMLModelSink
@@ -86,8 +86,9 @@ def EdgeBasedTraining(training):
     logging.info("Received federated aggregation information (clients_per_round, min_clients_per_round, round_timeout) ([%d], [%d], [%d])",
                  clients_per_round, min_clients_per_round, round_timeout)
 
-    aggregator = get_aggregator(training.agg_strategy, asynchronous=clients_per_round == 1)
-    logging.info("Using %s aggregation (%s)", training.agg_strategy, 'asynchronous' if clients_per_round == 1 else 'synchronous')
+    aggregator_params = load_federated_aggregator_params()
+    aggregator = get_aggregator(training.agg_strategy, asynchronous=clients_per_round == 1, **aggregator_params)
+    logging.info("Using %s aggregation (%s) with params %s", training.agg_strategy, 'asynchronous' if clients_per_round == 1 else 'synchronous', str(aggregator_params))
     """Loads the aggregation strategy before starting, so not implemented strategies fail fast"""
 
     training.get_models()
@@ -96,6 +97,9 @@ def EdgeBasedTraining(training):
     if isinstance(training, DistributedFederatedTraining) or isinstance(training, DistributedFederatedIncrementalTraining):
       training.configure_distributed_models()
     """Distributed models configuration"""
+
+    aggregator.configure(training.model)
+    """Gives the global model to the aggregation strategy"""
 
     training.generate_and_send_data_standardization()
     """Generates the data standardization and sends it to the model control topic"""

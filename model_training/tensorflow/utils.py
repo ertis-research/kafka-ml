@@ -272,6 +272,16 @@ def load_federated_aggregation_environment_vars():
     )
 
 
+def load_federated_aggregator_params():
+    """Loads the hyperparameters of the adaptive aggregation strategies received from dockers
+    Returns:
+        params (dict): server_lr, beta1, beta2 and tau, only those that were received
+    """
+
+    names = {"AGG_SERVER_LR": "server_lr", "AGG_BETA1": "beta1", "AGG_BETA2": "beta2", "AGG_TAU": "tau"}
+    return {param: float(os.environ[var]) for var, param in names.items() if os.environ.get(var)}
+
+
 def load_blockchain_federated_environment_vars():
     """Loads the blockchain federated environment information received from dockers
     eth_rpc_url, eth_token_address, eth_token_abi, eth_chain_id, eth_network_id, eth_wallet_address, eth_wallet_key, eth_blockscout_url
