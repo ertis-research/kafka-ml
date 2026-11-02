@@ -11,6 +11,7 @@ import { environment } from '../../environments/environment';
 interface AggStrategies {
   value: string;
   viewValue: string;
+  adaptive: boolean;
 }
 
 @Component({
@@ -40,12 +41,12 @@ export class DeploymentViewComponent implements OnInit {
   hideTimeout: Boolean = false;
 
   strategies: AggStrategies[] = [
-    {value: 'FedAvg',     viewValue: 'Federated Averaging strategy'},
-    // {value: 'FedOpt',     viewValue: 'Federated Optim strategy'},
-    // {value: 'FedAdagrad', viewValue: 'Federated Adagrad-based strategy'},
-    // {value: 'FedAdam',    viewValue: 'Federated Adam strategy'},
-    // {value: 'FedYogi',    viewValue: 'Federated Yogi strategy'},
+    {value: 'FedAvg',     viewValue: 'Federated Averaging strategy',       adaptive: false},
+    {value: 'FedAdagrad', viewValue: 'Federated Adagrad-based strategy',   adaptive: true},
+    {value: 'FedAdam',    viewValue: 'Federated Adam strategy',            adaptive: true},
+    {value: 'FedYogi',    viewValue: 'Federated Yogi strategy',            adaptive: true},
   ];
+
   
   ngOnInit(): void {
     this.deployment.conf_mat_settings = false;

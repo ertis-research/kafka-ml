@@ -33,6 +33,11 @@ export class Deployment {
     clients_per_round: number;
     min_clients_per_round: number;
     round_timeout: number;
+    // Hyperparameters of the adaptive aggregation strategies, not shown in the form (the backend has defaults)
+    agg_server_lr?: number;
+    agg_beta1?: number;
+    agg_beta2?: number;
+    agg_tau?: number;
     // Federated Blockchain Deployment Settings
     blockchain: boolean;
 }
