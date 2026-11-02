@@ -171,6 +171,10 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
                 "clients_per_round",
                 "min_clients_per_round",
                 "round_timeout",
+                "agg_server_lr",
+                "agg_beta1",
+                "agg_beta2",
+                "agg_tau",
             ]
             + ["blockchain"]
         )
@@ -207,6 +211,23 @@ class DeployDeploymentSerializer(serializers.ModelSerializer):
         if data.get("round_timeout", 0) < 0:
             raise serializers.ValidationError(
                 {"round_timeout": "Round timeout cannot be negative"}
+            )
+        if agg_strategy in Deployment.ADAPTIVE_AGGREGATION_STRATEGIES and clients_per_round < 2:
+            raise serializers.ValidationError(
+                {"clients_per_round": "%s needs more than 1 client per round" % agg_strategy}
+            )
+        if data.get("agg_server_lr", 0.01) <= 0:
+            raise serializers.ValidationError(
+                {"agg_server_lr": "Server learning rate has to be greater than 0"}
+            )
+        for beta in ("agg_beta1", "agg_beta2"):
+            if not 0 <= data.get(beta, 0.5) < 1:
+                raise serializers.ValidationError(
+                    {beta: "%s has to be in [0, 1)" % beta}
+                )
+        if data.get("agg_tau", 1e-3) <= 0:
+            raise serializers.ValidationError(
+                {"agg_tau": "Tau has to be greater than 0"}
             )
         if data.get("blockchain") and clients_per_round != 1:
             raise serializers.ValidationError(
@@ -297,6 +318,10 @@ class DeploymentSerializer(serializers.ModelSerializer):
                 "clients_per_round",
                 "min_clients_per_round",
                 "round_timeout",
+                "agg_server_lr",
+                "agg_beta1",
+                "agg_beta2",
+                "agg_tau",
             ]
             + ["blockchain"]
         )
