@@ -20,6 +20,20 @@ RETRIES = 10
 SLEEP_BETWEEN_REQUESTS = 5
 '''Number of seconds between failed requests'''
 
+def get_latest_message(consumer, timeout_ms=1000):
+  """Returns the newest message received in the control topic, or None if there is no new one.
+
+  Models that arrived while the device was training are stale, only the newest one is used. The last model
+  (version -1) is always the newest message, so it is never skipped: using seek_to_end to discard the stale
+  models is not safe, as kafka-python resolves its position lazily, in the next read, and it would also
+  discard the messages published while training.
+  """
+
+  messages = [message for batch in consumer.poll(timeout_ms=timeout_ms).values() for message in batch]
+  if len(messages) > 1:
+    logging.info("Skipping %d stale models received while training", len(messages) - 1)
+  return messages[-1] if messages else None
+
 def classicFederatedTraining(training):
   try:
     consumer_control = KafkaConsumer(training.model_control_topic, bootstrap_servers=training.kml_cloud_bootstrap_server,
@@ -33,13 +47,14 @@ def classicFederatedTraining(training):
                                             control_topic=training.aggregation_control_topic, federated_id=training.group_id)
 
     """Read model from Kafka"""
-    for msg in consumer_control:
+    while True:
+      msg = get_latest_message(consumer_control)
+      if msg is None:
+        continue
       logging.info("Received message from control topic")
 
       try:
         consumer_control.commit()
-        consumer_control.poll()
-        consumer_control.seek_to_end()
 
         message = msg.value.decode('utf-8')
         message = json.loads(message)
@@ -95,7 +110,7 @@ def classicFederatedTraining(training):
           logging.info("Last model received, stopping training")
           break
 
-        logging.info("Seeked to end of topic, waiting for the newest model")
+        logging.info("Waiting for the newest model")
 
       except Exception as e:
         traceback.print_exc()
