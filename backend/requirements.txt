@@ -7,7 +7,7 @@ gunicorn==20.0.4
 confluent-kafka==1.8.2
 channels==3.0.4
 daphne==3.0.2
-py-solc-x==2.0.2
+py-solc-x==2.0.5
 web3==5.28.0
 paho-mqtt==2.1.0
 loguru==0.7.3
