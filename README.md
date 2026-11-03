@@ -608,9 +608,28 @@ round is a round in which the model is trained with the data of the devices and 
 with the other models). The minimun_data parameter is the minimum number of data that a device
 must have to be able to participate in the training. The data_restriction parameter is the
 data pattern (such as input shape, labels, etc.) that the data must have to be able to participate.
-Finally, the aggregation strategy parameter is the strategy that will be used to aggregate the
-models. Currently, the only strategy available is the average strategy, which consists of averaging
-the weights of the models.
+The aggregation strategy parameter is the strategy that will be used to aggregate the
+models. FedAvg averages the weights of the models weighted by the number of samples of each
+device. FedAdagrad, FedAdam and FedYogi (Reddi et al., 2021) treat the difference between that
+average and the global model as a gradient and apply an adaptive optimizer to it on the server,
+which usually helps when the data of the devices is not identically distributed. These three
+only change the server: devices train and send their weights exactly as with FedAvg. As they
+need several models per round, they require 2 or more clients per round. Their hyperparameters
+(`agg_server_lr`, `agg_beta1`, `agg_beta2` and `agg_tau`, with defaults 0.01, 0.9, 0.99 and 0.001)
+are not shown in the form, but can be set when deploying through the API. FedAdagrad usually needs
+a bigger server learning rate than the other two.
+
+Finally, the clients per round parameter sets how many device models are collected before
+aggregating. With 1 (default) the aggregation is asynchronous: every model received is mixed with
+the global model as soon as it arrives, and the updated model is sent back to the devices. With 2
+or more the aggregation is synchronous: the server waits for that number of models trained on the
+current version of the global model, aggregates them and starts a new round. Models trained on
+older versions are discarded. In synchronous mode, the round timeout (in seconds, 0 to wait
+indefinitely) and the minimum clients per round parameters allow to aggregate with fewer models
+when not all the expected devices answer in time: once the timeout expires, the round is
+aggregated as soon as the minimum number of models is available. Note that the number of
+aggregation rounds counts individual models in asynchronous mode and rounds of models in
+synchronous mode. Blockchain-traced training only supports asynchronous aggregation.
 
 <img src="images/deploy-federated-configuration.png" width="500">
 
