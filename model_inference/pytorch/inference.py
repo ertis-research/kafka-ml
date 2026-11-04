@@ -142,13 +142,8 @@ if __name__ == '__main__':
         input_decoded = decoder.decode(msg.value())
         """Decodes the message received"""
 
-        if input_decoded.shape[0] == 1 and len(input_decoded.shape) == 4:
-          input_decoded = input_decoded[0]
-        """Outwrapping the input data"""
-  
-        tensored_input = ToTensor()(input_decoded)
-        
-        tensored_input = torch.unsqueeze(tensored_input, 0)
+        tensored_input = sample_to_tensor(input_decoded)
+        """Transforms the input as in training and adds the batch dimension"""
 
         tensored_input = tensored_input.to(device)
 

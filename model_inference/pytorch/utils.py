@@ -9,6 +9,7 @@ import requests
 import json
 import numpy as np
 import torchvision.models as models
+from torchvision.transforms import ToTensor
 
 from torch.utils import data
 from config import *
@@ -99,17 +100,30 @@ def string_to_numpy_type(out_type):
         raise Exception('string_to_numpy_type: Unsupported type')
 
 def decode_raw(x, output_type, output_reshape):
-    """Decodes the raw data received from Kafka and reshapes it if needed.
+    """Decodes the raw data received from Kafka and reshapes it if needed, as the training does.
 
         Args:
         x (raw): input data
         output_type (numpy type): output type of the received data
         reshape (array): reshape the numpy type (optional)
-        
+
         Returns:
-        DType: raw data to tensorflow model loaded
+        ndarray: sample with the shape received in reshape, without the batch dimension
     """
-    res = np.frombuffer(x, dtype=output_type)
-    output_reshape = np.insert(output_reshape, 0, 1, axis=0)
-    res = res.reshape(*output_reshape)
+    res = np.copy(np.frombuffer(x, dtype=output_type))
+    if output_reshape is not None and len(output_reshape) > 0:
+        res = res.reshape(*output_reshape)
     return res
+
+def sample_to_tensor(sample):
+    """Converts a decoded sample to the input of the model with the same transformation used for training
+    (ToTensor for samples with 2 or more dimensions, such as images) and adds the batch dimension.
+
+        Args:
+        sample (ndarray): decoded sample
+
+        Returns:
+        Tensor: batch with the sample
+    """
+    tensor = ToTensor()(sample) if sample.ndim >= 2 else torch.from_numpy(sample)
+    return torch.unsqueeze(tensor, 0)
