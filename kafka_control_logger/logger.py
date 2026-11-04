@@ -2,6 +2,7 @@ __author__ = 'Cristian Martin Fdz'
 
 
 from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import traceback
@@ -32,6 +33,24 @@ def load_environment_vars():
 
   return (bootstrap_servers, backend, control_topic)
 
+def create_consumer(bootstrap_servers, control_topic):
+  """Creates the Kafka consumer of the control topic, waiting until Kafka is available.
+  When the group has no committed offsets (e.g. in a new deployment) the consumer starts at the beginning
+  of the control topic, so the datasources sent before the logger was consuming are not lost.
+  Args:
+      bootstrap_servers (str): list of boostrap server for the Kafka connection
+      control_topic (str): name of the control topic
+  Returns:
+      KafkaConsumer: consumer of the control topic
+  """
+  while True:
+    try:
+      return KafkaConsumer(control_topic, enable_auto_commit=False, bootstrap_servers=bootstrap_servers,
+                           group_id='logger', auto_offset_reset='earliest')
+    except NoBrokersAvailable:
+      logging.warning("Kafka is not available yet. Trying again in [%d]s.", SLEEP_BETWEEN_REQUESTS)
+      time.sleep(SLEEP_BETWEEN_REQUESTS)
+
 if __name__ == '__main__':
   try:
     logging.basicConfig(
@@ -46,7 +65,7 @@ if __name__ == '__main__':
     logging.info("Received environment information (bootstrap_servers, backend, control_topic, control_topic) ([%s], [%s], [%s])", 
               bootstrap_servers, backend, control_topic)
     
-    consumer = KafkaConsumer(control_topic, enable_auto_commit=False, bootstrap_servers=bootstrap_servers, group_id='logger')
+    consumer = create_consumer(bootstrap_servers, control_topic)
     """Starts a Kafka consumer to receive the datasource information from the control topic"""
     
     url = 'http://'+backend+'/datasources/' 
